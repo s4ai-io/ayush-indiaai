@@ -1,0 +1,601 @@
+transaction_id,user_id,transaction_type,amount,transaction_date,payment_method,status,popcoins_earned,vendor_name,category
+TXN00000001,U000001,Recharge,2992.87,2025-10-11 17:08:37,Net Banking,Completed,29,Gas Agency,Entertainment
+TXN00000002,U000001,Recharge,1616.03,2025-09-09 17:08:37,Net Banking,Completed,16,Electricity Board,Fashion
+TXN00000003,U000001,Bill_Payment,2009.14,2025-10-26 17:08:37,Card,Completed,30,Electricity Board,Electronics
+TXN00000004,U000001,UPI_Payment,2318.51,2025-11-21 17:08:37,UPI,Pending,0,Gas Agency,Fashion
+TXN00000005,U000001,Recharge,1362.74,2025-11-25 17:08:37,UPI,Failed,0,Electricity Board,Utilities
+TXN00000006,U000001,Card_Payment,2219.01,2025-10-26 17:08:37,Net Banking,Completed,22,Water Board,Entertainment
+TXN00000007,U000001,UPI_Payment,3355.92,2025-09-10 17:08:37,UPI,Completed,67,Flipkart,Utilities
+TXN00000008,U000001,UPI_Payment,4454.08,2025-11-14 17:08:37,Card,Completed,89,Electricity Board,Entertainment
+TXN00000009,U000001,Card_Payment,3602.18,2025-09-13 17:08:37,Card,Completed,36,Gas Agency,Groceries
+TXN00000010,U000001,Bill_Payment,4531.42,2025-11-22 17:08:37,Net Banking,Completed,67,Mobile Operator,Utilities
+TXN00000011,U000001,UPI_Payment,67.55,2025-09-13 17:08:37,Card,Completed,1,Flipkart,Groceries
+TXN00000012,U000001,Recharge,3543.05,2025-11-19 17:08:37,UPI,Completed,35,Water Board,Fashion
+TXN00000013,U000001,Recharge,228.34,2025-09-24 17:08:37,UPI,Completed,2,Mobile Operator,Fashion
+TXN00000014,U000001,UPI_Payment,1575.88,2025-11-28 17:08:37,Card,Failed,0,Flipkart,Fashion
+TXN00000015,U000001,UPI_Payment,1800.71,2025-10-12 17:08:37,Net Banking,Completed,36,Water Board,Fashion
+TXN00000016,U000001,Card_Payment,4329.8,2025-11-11 17:08:37,Card,Pending,0,Amazon,Fashion
+TXN00000017,U000001,Bill_Payment,3922.81,2025-09-09 17:08:37,Net Banking,Completed,58,Flipkart,Utilities
+TXN00000018,U000001,Card_Payment,3947.5,2025-11-29 17:08:37,Card,Completed,39,Flipkart,Fashion
+TXN00000019,U000001,Shopping,1780.81,2025-11-04 17:08:37,UPI,Completed,17,Amazon,Fashion
+TXN00000020,U000001,Shopping,1674.9,2025-10-29 17:08:37,Card,Failed,0,Water Board,Entertainment
+TXN00000021,U000001,Shopping,3413.61,2025-10-22 17:08:37,UPI,Completed,34,Amazon,Utilities
+TXN00000022,U000001,Card_Payment,2923.92,2025-11-29 17:08:37,UPI,Pending,0,Gas Agency,Groceries
+TXN00000023,U000001,Bill_Payment,3656.3,2025-09-17 17:08:37,Net Banking,Completed,54,Amazon,Groceries
+TXN00000024,U000001,Recharge,990.89,2025-10-09 17:08:37,UPI,Completed,9,Gas Agency,Entertainment
+TXN00000025,U000001,Card_Payment,1852.9,2025-09-09 17:08:37,Card,Completed,18,Gas Agency,Utilities
+TXN00000026,U000001,UPI_Payment,3612.78,2025-10-25 17:08:37,Net Banking,Completed,72,Mobile Operator,Utilities
+TXN00000027,U000001,Shopping,3501.18,2025-11-09 17:08:37,Card,Completed,35,Water Board,Groceries
+TXN00000028,U000001,Card_Payment,3096.8,2025-09-24 17:08:37,UPI,Completed,30,Electricity Board,Utilities
+TXN00000029,U000001,Card_Payment,2177.95,2025-09-11 17:08:37,Card,Completed,21,Mobile Operator,Groceries
+TXN00000030,U000001,Shopping,3394.35,2025-11-12 17:08:37,Net Banking,Completed,33,Amazon,Utilities
+TXN00000031,U000002,Recharge,1709.18,2025-11-03 17:08:37,Net Banking,Completed,17,Electricity Board,Fashion
+TXN00000032,U000002,Card_Payment,779.4,2025-10-04 17:08:37,Net Banking,Completed,7,Amazon,Groceries
+TXN00000033,U000002,Shopping,4436.38,2025-09-05 17:08:37,Card,Completed,44,Mobile Operator,Groceries
+TXN00000034,U000002,Card_Payment,780.48,2025-11-20 17:08:37,Card,Completed,7,Flipkart,Fashion
+TXN00000035,U000002,Recharge,2349.52,2025-11-18 17:08:37,Card,Completed,23,Flipkart,Groceries
+TXN00000036,U000002,Recharge,4940.07,2025-10-08 17:08:37,Net Banking,Completed,49,Water Board,Entertainment
+TXN00000037,U000002,Shopping,4161.32,2025-11-13 17:08:37,Net Banking,Completed,41,Mobile Operator,Groceries
+TXN00000038,U000002,Bill_Payment,3771.3,2025-10-29 17:08:37,Net Banking,Completed,56,Mobile Operator,Fashion
+TXN00000039,U000002,Bill_Payment,2227.37,2025-11-03 17:08:37,Card,Completed,33,Electricity Board,Utilities
+TXN00000040,U000002,Recharge,448.86,2025-10-15 17:08:37,Net Banking,Completed,4,Flipkart,Fashion
+TXN00000041,U000002,UPI_Payment,2103.6,2025-10-05 17:08:37,Card,Completed,42,Amazon,Fashion
+TXN00000042,U000002,Shopping,1977.91,2025-09-05 17:08:37,UPI,Completed,19,Gas Agency,Groceries
+TXN00000043,U000002,Shopping,79.19,2025-10-15 17:08:37,Card,Completed,0,Gas Agency,Entertainment
+TXN00000044,U000002,Recharge,4494.17,2025-10-30 17:08:37,Card,Completed,44,Mobile Operator,Electronics
+TXN00000045,U000002,Shopping,1713.84,2025-10-13 17:08:37,Net Banking,Completed,17,Flipkart,Groceries
+TXN00000046,U000002,Card_Payment,4904.57,2025-10-14 17:08:37,Net Banking,Completed,49,Gas Agency,Electronics
+TXN00000047,U000002,UPI_Payment,3231.61,2025-10-05 17:08:37,UPI,Completed,64,Amazon,Utilities
+TXN00000048,U000002,Shopping,1670.4,2025-10-21 17:08:37,Card,Completed,16,Electricity Board,Groceries
+TXN00000049,U000002,Bill_Payment,4182.81,2025-09-25 17:08:37,UPI,Completed,62,Electricity Board,Fashion
+TXN00000050,U000002,UPI_Payment,3917.1,2025-11-30 17:08:37,UPI,Completed,78,Flipkart,Electronics
+TXN00000051,U000002,Recharge,804.29,2025-09-09 17:08:37,UPI,Completed,8,Gas Agency,Fashion
+TXN00000052,U000002,Shopping,3512.35,2025-11-12 17:08:37,Net Banking,Completed,35,Gas Agency,Electronics
+TXN00000053,U000002,Card_Payment,4825.37,2025-11-30 17:08:37,Card,Completed,48,Gas Agency,Groceries
+TXN00000054,U000002,Shopping,4710.28,2025-09-19 17:08:37,Net Banking,Completed,47,Water Board,Fashion
+TXN00000055,U000002,UPI_Payment,3501.11,2025-09-07 17:08:37,Net Banking,Completed,70,Amazon,Entertainment
+TXN00000056,U000002,UPI_Payment,1768.66,2025-10-17 17:08:37,UPI,Completed,35,Gas Agency,Utilities
+TXN00000057,U000002,UPI_Payment,4255.4,2025-11-20 17:08:37,Card,Completed,85,Electricity Board,Groceries
+TXN00000058,U000002,Card_Payment,2205.66,2025-09-11 17:08:37,Card,Completed,22,Gas Agency,Entertainment
+TXN00000059,U000002,Shopping,2351.13,2025-09-19 17:08:37,Card,Completed,23,Electricity Board,Fashion
+TXN00000060,U000002,UPI_Payment,1430.69,2025-10-05 17:08:37,Net Banking,Completed,28,Gas Agency,Groceries
+TXN00000061,U000002,Bill_Payment,192.06,2025-11-10 17:08:37,Card,Failed,0,Flipkart,Utilities
+TXN00000062,U000002,Bill_Payment,1734.68,2025-09-05 17:08:37,Card,Failed,0,Gas Agency,Electronics
+TXN00000063,U000002,Recharge,4742.91,2025-10-12 17:08:37,Card,Completed,47,Gas Agency,Fashion
+TXN00000064,U000002,Shopping,3247.22,2025-12-01 17:08:37,UPI,Completed,32,Electricity Board,Fashion
+TXN00000065,U000002,Shopping,3474.35,2025-09-20 17:08:37,Card,Completed,34,Mobile Operator,Entertainment
+TXN00000066,U000002,Recharge,1751.6,2025-09-24 17:08:37,Card,Pending,0,Electricity Board,Groceries
+TXN00000067,U000002,Bill_Payment,1567.78,2025-11-09 17:08:37,Card,Completed,23,Amazon,Entertainment
+TXN00000068,U000002,Card_Payment,998.13,2025-10-29 17:08:37,Net Banking,Completed,9,Gas Agency,Entertainment
+TXN00000069,U000002,Recharge,1450.84,2025-11-09 17:08:37,Card,Completed,14,Flipkart,Utilities
+TXN00000070,U000002,Card_Payment,1546.22,2025-11-17 17:08:37,Card,Completed,15,Amazon,Electronics
+TXN00000071,U000002,Recharge,1496.08,2025-09-13 17:08:37,Card,Failed,0,Amazon,Electronics
+TXN00000072,U000002,Recharge,1457.48,2025-10-21 17:08:37,UPI,Completed,14,Amazon,Utilities
+TXN00000073,U000002,Shopping,614.73,2025-10-02 17:08:37,UPI,Completed,6,Gas Agency,Electronics
+TXN00000074,U000002,Card_Payment,788.53,2025-10-26 17:08:37,UPI,Completed,7,Flipkart,Electronics
+TXN00000075,U000002,Recharge,3834.0,2025-09-15 17:08:37,UPI,Completed,38,Gas Agency,Groceries
+TXN00000076,U000002,Shopping,4547.1,2025-09-19 17:08:37,Card,Completed,45,Electricity Board,Entertainment
+TXN00000077,U000002,Recharge,348.14,2025-11-21 17:08:37,UPI,Pending,0,Water Board,Fashion
+TXN00000078,U000003,UPI_Payment,827.43,2025-11-24 17:08:37,UPI,Completed,16,Amazon,Groceries
+TXN00000079,U000003,Shopping,3462.39,2025-11-29 17:08:37,UPI,Completed,34,Electricity Board,Utilities
+TXN00000080,U000003,Shopping,402.34,2025-10-31 17:08:37,Net Banking,Completed,4,Gas Agency,Fashion
+TXN00000081,U000003,Shopping,618.14,2025-11-14 17:08:37,Card,Completed,6,Flipkart,Electronics
+TXN00000082,U000003,UPI_Payment,871.32,2025-09-22 17:08:37,Card,Completed,17,Mobile Operator,Electronics
+TXN00000083,U000003,Shopping,3458.96,2025-10-30 17:08:37,Net Banking,Completed,34,Gas Agency,Groceries
+TXN00000084,U000003,Shopping,448.19,2025-10-09 17:08:37,Net Banking,Completed,4,Electricity Board,Entertainment
+TXN00000085,U000003,Bill_Payment,178.03,2025-09-08 17:08:37,Net Banking,Completed,2,Gas Agency,Electronics
+TXN00000086,U000003,Bill_Payment,2902.42,2025-11-11 17:08:37,Card,Completed,43,Gas Agency,Groceries
+TXN00000087,U000003,Bill_Payment,948.37,2025-09-13 17:08:37,Card,Completed,14,Amazon,Groceries
+TXN00000088,U000003,Bill_Payment,2071.32,2025-11-20 17:08:37,UPI,Completed,31,Electricity Board,Groceries
+TXN00000089,U000003,Shopping,1476.68,2025-09-24 17:08:37,UPI,Failed,0,Mobile Operator,Electronics
+TXN00000090,U000003,Bill_Payment,1299.37,2025-10-13 17:08:37,Net Banking,Completed,19,Amazon,Entertainment
+TXN00000091,U000003,Shopping,2095.58,2025-10-18 17:08:37,Net Banking,Completed,20,Mobile Operator,Groceries
+TXN00000092,U000003,UPI_Payment,1057.61,2025-10-28 17:08:37,Card,Completed,21,Water Board,Groceries
+TXN00000093,U000003,UPI_Payment,192.9,2025-11-03 17:08:37,Net Banking,Completed,3,Flipkart,Utilities
+TXN00000094,U000003,Recharge,117.69,2025-11-05 17:08:37,UPI,Completed,1,Mobile Operator,Electronics
+TXN00000095,U000003,Card_Payment,2516.96,2025-09-29 17:08:37,Net Banking,Completed,25,Electricity Board,Groceries
+TXN00000096,U000003,Shopping,4902.21,2025-09-24 17:08:37,UPI,Completed,49,Mobile Operator,Fashion
+TXN00000097,U000003,Recharge,2565.79,2025-11-25 17:08:37,Card,Failed,0,Mobile Operator,Utilities
+TXN00000098,U000003,Recharge,1372.5,2025-10-26 17:08:37,Net Banking,Completed,13,Gas Agency,Groceries
+TXN00000099,U000003,Card_Payment,2260.41,2025-10-22 17:08:37,Net Banking,Completed,22,Gas Agency,Groceries
+TXN00000100,U000003,Shopping,4667.62,2025-09-05 17:08:37,UPI,Failed,0,Gas Agency,Groceries
+TXN00000101,U000003,Card_Payment,4287.26,2025-10-24 17:08:37,Net Banking,Completed,42,Mobile Operator,Groceries
+TXN00000102,U000003,Shopping,4942.65,2025-09-11 17:08:37,UPI,Completed,49,Mobile Operator,Electronics
+TXN00000103,U000003,Card_Payment,2536.34,2025-11-21 17:08:37,Card,Completed,25,Amazon,Entertainment
+TXN00000104,U000003,Shopping,125.97,2025-09-11 17:08:37,UPI,Completed,1,Amazon,Groceries
+TXN00000105,U000003,Bill_Payment,1725.88,2025-09-11 17:08:37,UPI,Completed,25,Electricity Board,Entertainment
+TXN00000106,U000003,Shopping,4772.99,2025-10-02 17:08:37,Net Banking,Completed,47,Amazon,Entertainment
+TXN00000107,U000003,UPI_Payment,1212.11,2025-10-28 17:08:37,UPI,Completed,24,Water Board,Electronics
+TXN00000108,U000003,Shopping,4892.77,2025-09-04 17:08:37,UPI,Completed,48,Mobile Operator,Fashion
+TXN00000109,U000004,UPI_Payment,277.66,2025-10-27 17:08:37,Card,Completed,5,Electricity Board,Groceries
+TXN00000110,U000004,Card_Payment,1258.78,2025-09-07 17:08:37,UPI,Completed,12,Flipkart,Fashion
+TXN00000111,U000004,UPI_Payment,3066.98,2025-09-07 17:08:37,UPI,Completed,61,Mobile Operator,Entertainment
+TXN00000112,U000004,Card_Payment,1199.33,2025-10-06 17:08:37,Card,Completed,11,Water Board,Electronics
+TXN00000113,U000004,Shopping,4510.99,2025-11-13 17:08:37,UPI,Completed,45,Mobile Operator,Utilities
+TXN00000114,U000004,Recharge,1530.81,2025-09-06 17:08:37,Card,Pending,0,Mobile Operator,Utilities
+TXN00000115,U000004,Card_Payment,4996.9,2025-11-20 17:08:37,UPI,Failed,0,Mobile Operator,Entertainment
+TXN00000116,U000004,Bill_Payment,2895.32,2025-10-27 17:08:37,UPI,Pending,0,Water Board,Groceries
+TXN00000117,U000004,Bill_Payment,90.08,2025-11-27 17:08:37,Net Banking,Failed,0,Water Board,Groceries
+TXN00000118,U000004,Bill_Payment,3889.92,2025-10-19 17:08:37,UPI,Completed,58,Water Board,Fashion
+TXN00000119,U000004,Recharge,1290.6,2025-09-10 17:08:37,Net Banking,Completed,12,Flipkart,Electronics
+TXN00000120,U000004,UPI_Payment,1579.22,2025-09-20 17:08:37,Card,Completed,31,Water Board,Fashion
+TXN00000121,U000004,UPI_Payment,4552.66,2025-10-11 17:08:37,UPI,Completed,91,Flipkart,Fashion
+TXN00000122,U000004,Recharge,4388.48,2025-09-30 17:08:37,Card,Completed,43,Flipkart,Utilities
+TXN00000123,U000004,Shopping,4838.55,2025-10-21 17:08:37,UPI,Completed,48,Mobile Operator,Electronics
+TXN00000124,U000004,Card_Payment,3783.05,2025-09-08 17:08:37,Net Banking,Completed,37,Water Board,Groceries
+TXN00000125,U000004,Recharge,1860.59,2025-12-02 17:08:37,Card,Completed,18,Gas Agency,Electronics
+TXN00000126,U000004,Shopping,1874.5,2025-10-31 17:08:37,Net Banking,Completed,18,Mobile Operator,Utilities
+TXN00000127,U000004,UPI_Payment,3390.44,2025-09-15 17:08:37,Net Banking,Completed,67,Electricity Board,Entertainment
+TXN00000128,U000004,Card_Payment,3255.88,2025-10-05 17:08:37,Net Banking,Completed,32,Electricity Board,Groceries
+TXN00000129,U000004,UPI_Payment,741.9,2025-10-26 17:08:37,Card,Failed,0,Amazon,Electronics
+TXN00000130,U000004,Card_Payment,4441.93,2025-10-06 17:08:37,Card,Completed,44,Water Board,Entertainment
+TXN00000131,U000004,Shopping,2957.33,2025-10-11 17:08:37,Net Banking,Completed,29,Amazon,Groceries
+TXN00000132,U000004,Recharge,2070.17,2025-11-29 17:08:37,Net Banking,Pending,0,Electricity Board,Fashion
+TXN00000133,U000004,Shopping,2251.24,2025-10-18 17:08:37,UPI,Completed,22,Water Board,Utilities
+TXN00000134,U000004,Recharge,4513.4,2025-11-26 17:08:37,Card,Completed,45,Electricity Board,Fashion
+TXN00000135,U000004,UPI_Payment,4747.6,2025-11-22 17:08:37,Net Banking,Completed,94,Flipkart,Entertainment
+TXN00000136,U000004,UPI_Payment,300.36,2025-11-17 17:08:37,Net Banking,Completed,6,Flipkart,Electronics
+TXN00000137,U000004,Recharge,1075.43,2025-11-04 17:08:37,Card,Completed,10,Flipkart,Entertainment
+TXN00000138,U000004,UPI_Payment,1422.51,2025-11-17 17:08:37,Net Banking,Pending,0,Electricity Board,Fashion
+TXN00000139,U000004,UPI_Payment,3322.24,2025-12-02 17:08:37,Card,Completed,66,Flipkart,Entertainment
+TXN00000140,U000004,Bill_Payment,128.12,2025-11-17 17:08:37,Net Banking,Completed,1,Mobile Operator,Entertainment
+TXN00000141,U000004,UPI_Payment,3741.04,2025-10-18 17:08:37,Net Banking,Completed,74,Gas Agency,Electronics
+TXN00000142,U000004,Shopping,2544.0,2025-11-28 17:08:37,Net Banking,Failed,0,Water Board,Entertainment
+TXN00000143,U000005,Shopping,3234.54,2025-10-03 17:08:37,Card,Completed,32,Mobile Operator,Electronics
+TXN00000144,U000005,Shopping,3576.39,2025-11-23 17:08:37,Card,Completed,35,Gas Agency,Fashion
+TXN00000145,U000005,UPI_Payment,674.65,2025-09-20 17:08:37,Net Banking,Completed,13,Water Board,Utilities
+TXN00000146,U000005,Shopping,4973.41,2025-10-06 17:08:37,Net Banking,Completed,49,Gas Agency,Groceries
+TXN00000147,U000005,UPI_Payment,3975.83,2025-09-11 17:08:37,Net Banking,Completed,79,Gas Agency,Fashion
+TXN00000148,U000005,Shopping,2285.2,2025-10-21 17:08:37,Card,Completed,22,Mobile Operator,Groceries
+TXN00000149,U000005,UPI_Payment,1597.11,2025-11-01 17:08:37,Card,Completed,31,Flipkart,Groceries
+TXN00000150,U000005,UPI_Payment,501.56,2025-10-09 17:08:37,UPI,Completed,10,Water Board,Utilities
+TXN00000151,U000005,Card_Payment,2804.04,2025-09-23 17:08:37,Net Banking,Completed,28,Electricity Board,Electronics
+TXN00000152,U000005,Shopping,1800.31,2025-10-10 17:08:37,Net Banking,Completed,18,Amazon,Utilities
+TXN00000153,U000005,Recharge,1596.62,2025-09-30 17:08:37,UPI,Completed,15,Flipkart,Groceries
+TXN00000154,U000005,Card_Payment,4244.01,2025-09-23 17:08:37,Card,Completed,42,Amazon,Utilities
+TXN00000155,U000005,Recharge,1169.49,2025-09-23 17:08:37,Net Banking,Completed,11,Gas Agency,Entertainment
+TXN00000156,U000005,UPI_Payment,3064.52,2025-09-06 17:08:37,Card,Completed,61,Amazon,Fashion
+TXN00000157,U000005,Bill_Payment,3528.36,2025-10-21 17:08:37,Card,Completed,52,Amazon,Fashion
+TXN00000158,U000005,Card_Payment,2853.29,2025-11-15 17:08:37,Net Banking,Completed,28,Water Board,Electronics
+TXN00000159,U000005,UPI_Payment,3743.25,2025-10-11 17:08:37,Card,Completed,74,Electricity Board,Fashion
+TXN00000160,U000005,Bill_Payment,1592.6,2025-09-22 17:08:37,Net Banking,Completed,23,Amazon,Electronics
+TXN00000161,U000005,Card_Payment,829.18,2025-09-08 17:08:37,UPI,Completed,8,Electricity Board,Groceries
+TXN00000162,U000005,Shopping,2454.03,2025-10-30 17:08:37,UPI,Completed,24,Gas Agency,Electronics
+TXN00000163,U000005,Bill_Payment,2178.07,2025-09-08 17:08:37,Net Banking,Completed,32,Mobile Operator,Entertainment
+TXN00000164,U000005,Bill_Payment,274.82,2025-09-18 17:08:37,UPI,Completed,4,Amazon,Fashion
+TXN00000165,U000005,Bill_Payment,4729.35,2025-11-01 17:08:37,Card,Completed,70,Electricity Board,Electronics
+TXN00000166,U000005,UPI_Payment,2512.06,2025-11-17 17:08:37,Card,Completed,50,Gas Agency,Fashion
+TXN00000167,U000005,Recharge,2815.68,2025-10-19 17:08:37,UPI,Completed,28,Mobile Operator,Electronics
+TXN00000168,U000005,Shopping,142.77,2025-10-24 17:08:37,Net Banking,Failed,0,Mobile Operator,Entertainment
+TXN00000169,U000005,Shopping,3562.02,2025-11-19 17:08:37,Card,Completed,35,Amazon,Utilities
+TXN00000170,U000005,Card_Payment,4016.54,2025-09-06 17:08:37,Card,Completed,40,Amazon,Groceries
+TXN00000171,U000005,UPI_Payment,1254.42,2025-09-27 17:08:37,UPI,Completed,25,Mobile Operator,Utilities
+TXN00000172,U000005,Bill_Payment,1146.78,2025-11-24 17:08:37,Net Banking,Completed,17,Water Board,Electronics
+TXN00000173,U000005,Recharge,2574.26,2025-10-20 17:08:37,Card,Failed,0,Water Board,Fashion
+TXN00000174,U000005,Card_Payment,558.88,2025-11-11 17:08:37,Net Banking,Completed,5,Flipkart,Electronics
+TXN00000175,U000005,Card_Payment,4758.9,2025-10-05 17:08:37,Net Banking,Completed,47,Gas Agency,Groceries
+TXN00000176,U000005,Recharge,3232.81,2025-10-23 17:08:37,Net Banking,Pending,0,Electricity Board,Fashion
+TXN00000177,U000006,UPI_Payment,2371.16,2025-10-29 17:08:37,Net Banking,Completed,47,Amazon,Utilities
+TXN00000178,U000006,Recharge,417.24,2025-11-29 17:08:37,UPI,Completed,4,Electricity Board,Utilities
+TXN00000179,U000006,UPI_Payment,3241.1,2025-11-22 17:08:37,Net Banking,Pending,0,Gas Agency,Entertainment
+TXN00000180,U000006,Shopping,2340.42,2025-11-28 17:08:37,Card,Completed,23,Gas Agency,Fashion
+TXN00000181,U000006,Bill_Payment,3044.78,2025-11-26 17:08:37,Card,Completed,45,Amazon,Utilities
+TXN00000182,U000006,UPI_Payment,2547.52,2025-11-02 17:08:37,Net Banking,Completed,50,Mobile Operator,Groceries
+TXN00000183,U000006,Recharge,2637.6,2025-10-17 17:08:37,Card,Completed,26,Mobile Operator,Groceries
+TXN00000184,U000006,Bill_Payment,3410.54,2025-09-14 17:08:37,Net Banking,Completed,51,Electricity Board,Electronics
+TXN00000185,U000006,Bill_Payment,517.8,2025-10-28 17:08:37,Card,Completed,7,Water Board,Entertainment
+TXN00000186,U000006,Card_Payment,1700.14,2025-11-15 17:08:37,Card,Completed,17,Electricity Board,Groceries
+TXN00000187,U000006,Card_Payment,2995.45,2025-10-25 17:08:37,Net Banking,Failed,0,Mobile Operator,Utilities
+TXN00000188,U000006,Card_Payment,3367.08,2025-09-07 17:08:37,Net Banking,Completed,33,Amazon,Groceries
+TXN00000189,U000006,Recharge,1841.05,2025-11-10 17:08:37,UPI,Completed,18,Electricity Board,Groceries
+TXN00000190,U000006,Card_Payment,1171.39,2025-11-24 17:08:37,Card,Completed,11,Amazon,Entertainment
+TXN00000191,U000006,Recharge,4183.84,2025-11-29 17:08:37,Net Banking,Failed,0,Electricity Board,Entertainment
+TXN00000192,U000006,Card_Payment,3006.37,2025-11-10 17:08:37,Net Banking,Completed,30,Gas Agency,Fashion
+TXN00000193,U000006,Shopping,266.28,2025-11-03 17:08:37,Card,Completed,2,Gas Agency,Utilities
+TXN00000194,U000006,Shopping,1208.31,2025-10-04 17:08:37,UPI,Completed,12,Electricity Board,Entertainment
+TXN00000195,U000006,Shopping,2335.32,2025-10-16 17:08:37,Net Banking,Completed,23,Gas Agency,Groceries
+TXN00000196,U000006,Card_Payment,4093.61,2025-11-16 17:08:37,Card,Completed,40,Amazon,Groceries
+TXN00000197,U000006,Bill_Payment,2794.98,2025-09-28 17:08:37,UPI,Completed,41,Electricity Board,Electronics
+TXN00000198,U000006,Card_Payment,1400.32,2025-11-15 17:08:37,Card,Failed,0,Amazon,Fashion
+TXN00000199,U000006,Shopping,4428.92,2025-10-11 17:08:37,UPI,Failed,0,Mobile Operator,Entertainment
+TXN00000200,U000006,Bill_Payment,1217.1,2025-10-17 17:08:37,UPI,Pending,0,Amazon,Utilities
+TXN00000201,U000006,UPI_Payment,4203.92,2025-11-15 17:08:37,UPI,Completed,84,Amazon,Utilities
+TXN00000202,U000006,Shopping,3495.56,2025-09-04 17:08:37,Card,Completed,34,Mobile Operator,Entertainment
+TXN00000203,U000006,UPI_Payment,4533.99,2025-11-06 17:08:37,UPI,Completed,90,Gas Agency,Entertainment
+TXN00000204,U000006,Recharge,2145.11,2025-11-03 17:08:37,Card,Completed,21,Amazon,Electronics
+TXN00000205,U000006,Card_Payment,2128.14,2025-10-06 17:08:37,UPI,Completed,21,Amazon,Groceries
+TXN00000206,U000006,Recharge,2703.47,2025-09-21 17:08:37,UPI,Completed,27,Water Board,Fashion
+TXN00000207,U000006,Bill_Payment,2174.73,2025-11-03 17:08:37,Net Banking,Completed,32,Mobile Operator,Fashion
+TXN00000208,U000006,UPI_Payment,2641.25,2025-09-27 17:08:37,Net Banking,Completed,52,Gas Agency,Entertainment
+TXN00000209,U000006,Recharge,150.65,2025-11-28 17:08:37,Net Banking,Failed,0,Mobile Operator,Utilities
+TXN00000210,U000006,Bill_Payment,3749.22,2025-11-25 17:08:37,Card,Completed,56,Flipkart,Electronics
+TXN00000211,U000006,Recharge,3689.18,2025-11-28 17:08:37,Card,Completed,36,Gas Agency,Utilities
+TXN00000212,U000006,Card_Payment,4160.4,2025-09-05 17:08:37,Card,Completed,41,Water Board,Fashion
+TXN00000213,U000006,Card_Payment,362.35,2025-10-06 17:08:37,UPI,Completed,3,Electricity Board,Fashion
+TXN00000214,U000006,UPI_Payment,3965.99,2025-10-24 17:08:37,Card,Failed,0,Gas Agency,Groceries
+TXN00000215,U000006,Recharge,2393.33,2025-09-12 17:08:37,UPI,Completed,23,Electricity Board,Utilities
+TXN00000216,U000006,UPI_Payment,4335.7,2025-11-18 17:08:37,Card,Completed,86,Mobile Operator,Groceries
+TXN00000217,U000006,Shopping,4478.46,2025-11-10 17:08:37,Card,Completed,44,Water Board,Groceries
+TXN00000218,U000006,Bill_Payment,4625.34,2025-11-23 17:08:37,Net Banking,Completed,69,Mobile Operator,Electronics
+TXN00000219,U000006,Shopping,3032.14,2025-09-25 17:08:37,Card,Completed,30,Electricity Board,Electronics
+TXN00000220,U000007,Bill_Payment,3321.55,2025-09-17 17:08:37,Net Banking,Completed,49,Mobile Operator,Fashion
+TXN00000221,U000007,Shopping,1790.16,2025-10-19 17:08:37,Net Banking,Completed,17,Mobile Operator,Utilities
+TXN00000222,U000007,UPI_Payment,421.45,2025-10-18 17:08:37,Net Banking,Completed,8,Water Board,Fashion
+TXN00000223,U000007,UPI_Payment,756.76,2025-10-08 17:08:37,UPI,Completed,15,Flipkart,Electronics
+TXN00000224,U000007,Card_Payment,3903.65,2025-10-15 17:08:37,Net Banking,Completed,39,Amazon,Entertainment
+TXN00000225,U000007,Card_Payment,3411.36,2025-10-17 17:08:37,Card,Failed,0,Amazon,Entertainment
+TXN00000226,U000007,Card_Payment,2670.83,2025-09-11 17:08:37,Card,Completed,26,Flipkart,Electronics
+TXN00000227,U000007,UPI_Payment,3691.59,2025-10-15 17:08:37,Net Banking,Completed,73,Amazon,Utilities
+TXN00000228,U000007,Bill_Payment,3534.99,2025-09-16 17:08:37,Card,Completed,53,Water Board,Groceries
+TXN00000229,U000007,Card_Payment,657.06,2025-10-07 17:08:37,UPI,Failed,0,Water Board,Groceries
+TXN00000230,U000007,UPI_Payment,4062.04,2025-10-24 17:08:37,Net Banking,Pending,0,Electricity Board,Electronics
+TXN00000231,U000007,Recharge,2733.75,2025-11-13 17:08:37,Net Banking,Failed,0,Water Board,Fashion
+TXN00000232,U000007,Bill_Payment,2568.34,2025-11-08 17:08:37,UPI,Completed,38,Flipkart,Groceries
+TXN00000233,U000007,UPI_Payment,1836.44,2025-10-05 17:08:37,Net Banking,Completed,36,Flipkart,Entertainment
+TXN00000234,U000007,UPI_Payment,375.45,2025-10-03 17:08:37,Net Banking,Completed,7,Mobile Operator,Groceries
+TXN00000235,U000007,Recharge,415.07,2025-09-12 17:08:37,UPI,Pending,0,Mobile Operator,Groceries
+TXN00000236,U000007,Recharge,1755.35,2025-09-24 17:08:37,Net Banking,Failed,0,Gas Agency,Fashion
+TXN00000237,U000007,Card_Payment,2191.46,2025-11-26 17:08:37,UPI,Failed,0,Gas Agency,Fashion
+TXN00000238,U000007,Bill_Payment,865.05,2025-09-04 17:08:37,UPI,Completed,12,Electricity Board,Entertainment
+TXN00000239,U000007,Bill_Payment,4237.37,2025-09-13 17:08:37,Net Banking,Completed,63,Electricity Board,Fashion
+TXN00000240,U000008,Recharge,2690.72,2025-11-12 17:08:37,Net Banking,Completed,26,Gas Agency,Fashion
+TXN00000241,U000008,Card_Payment,3310.73,2025-09-17 17:08:37,Card,Completed,33,Gas Agency,Electronics
+TXN00000242,U000008,UPI_Payment,452.05,2025-09-21 17:08:37,Card,Failed,0,Water Board,Fashion
+TXN00000243,U000008,Recharge,2112.1,2025-10-01 17:08:37,Net Banking,Completed,21,Gas Agency,Utilities
+TXN00000244,U000008,Bill_Payment,2440.58,2025-09-07 17:08:37,Card,Completed,36,Electricity Board,Groceries
+TXN00000245,U000008,UPI_Payment,3458.64,2025-10-11 17:08:37,Card,Completed,69,Mobile Operator,Fashion
+TXN00000246,U000008,Bill_Payment,3052.97,2025-10-24 17:08:37,Net Banking,Completed,45,Electricity Board,Groceries
+TXN00000247,U000008,Card_Payment,3815.29,2025-11-20 17:08:37,Card,Completed,38,Flipkart,Groceries
+TXN00000248,U000008,UPI_Payment,1373.98,2025-11-21 17:08:37,UPI,Completed,27,Electricity Board,Groceries
+TXN00000249,U000008,Recharge,2119.77,2025-11-13 17:08:37,Card,Pending,0,Gas Agency,Utilities
+TXN00000250,U000008,Card_Payment,3827.45,2025-09-29 17:08:37,Card,Completed,38,Mobile Operator,Utilities
+TXN00000251,U000008,Shopping,164.72,2025-09-30 17:08:37,Card,Failed,0,Flipkart,Fashion
+TXN00000252,U000008,Recharge,1796.83,2025-10-01 17:08:37,Net Banking,Completed,17,Water Board,Groceries
+TXN00000253,U000008,Bill_Payment,2706.62,2025-10-09 17:08:37,UPI,Completed,40,Electricity Board,Utilities
+TXN00000254,U000008,Shopping,1861.39,2025-09-22 17:08:37,Net Banking,Completed,18,Flipkart,Utilities
+TXN00000255,U000008,Recharge,1478.58,2025-10-07 17:08:37,Net Banking,Completed,14,Electricity Board,Entertainment
+TXN00000256,U000008,Recharge,638.11,2025-10-14 17:08:37,Card,Pending,0,Electricity Board,Entertainment
+TXN00000257,U000008,Bill_Payment,3787.08,2025-09-29 17:08:37,Card,Completed,56,Gas Agency,Electronics
+TXN00000258,U000008,UPI_Payment,242.62,2025-10-04 17:08:37,Net Banking,Completed,4,Mobile Operator,Fashion
+TXN00000259,U000008,Recharge,4471.0,2025-09-16 17:08:37,Card,Completed,44,Flipkart,Groceries
+TXN00000260,U000008,Recharge,3709.63,2025-10-21 17:08:37,Net Banking,Completed,37,Gas Agency,Entertainment
+TXN00000261,U000008,Shopping,3558.26,2025-12-01 17:08:37,Card,Completed,35,Electricity Board,Electronics
+TXN00000262,U000008,Shopping,2939.33,2025-09-06 17:08:37,Net Banking,Completed,29,Amazon,Entertainment
+TXN00000263,U000008,Shopping,1364.38,2025-09-20 17:08:37,Net Banking,Completed,13,Flipkart,Electronics
+TXN00000264,U000008,Recharge,2428.22,2025-09-15 17:08:37,Card,Completed,24,Flipkart,Fashion
+TXN00000265,U000008,UPI_Payment,2884.22,2025-11-09 17:08:37,UPI,Completed,57,Mobile Operator,Utilities
+TXN00000266,U000008,Shopping,799.58,2025-10-12 17:08:37,Net Banking,Completed,7,Gas Agency,Groceries
+TXN00000267,U000008,UPI_Payment,3543.59,2025-09-23 17:08:37,Card,Completed,70,Water Board,Groceries
+TXN00000268,U000008,Recharge,1915.28,2025-10-06 17:08:37,Net Banking,Pending,0,Electricity Board,Entertainment
+TXN00000269,U000008,Bill_Payment,3395.55,2025-09-07 17:08:37,Net Banking,Failed,0,Water Board,Utilities
+TXN00000270,U000008,Recharge,2446.69,2025-10-29 17:08:37,Net Banking,Pending,0,Electricity Board,Fashion
+TXN00000271,U000008,Bill_Payment,3867.31,2025-09-06 17:08:37,Net Banking,Completed,58,Mobile Operator,Utilities
+TXN00000272,U000008,Shopping,1776.58,2025-10-29 17:08:37,Card,Failed,0,Amazon,Entertainment
+TXN00000273,U000008,Recharge,1929.49,2025-10-20 17:08:37,UPI,Pending,0,Electricity Board,Electronics
+TXN00000274,U000009,UPI_Payment,1764.5,2025-11-01 17:08:37,Net Banking,Completed,35,Mobile Operator,Fashion
+TXN00000275,U000009,Card_Payment,4148.36,2025-09-23 17:08:37,Net Banking,Completed,41,Electricity Board,Fashion
+TXN00000276,U000009,UPI_Payment,3097.6,2025-11-02 17:08:37,UPI,Completed,61,Water Board,Entertainment
+TXN00000277,U000009,Card_Payment,3207.83,2025-10-12 17:08:37,Card,Completed,32,Water Board,Groceries
+TXN00000278,U000009,UPI_Payment,3421.9,2025-09-24 17:08:37,UPI,Completed,68,Mobile Operator,Groceries
+TXN00000279,U000009,Shopping,3270.17,2025-10-28 17:08:37,Card,Completed,32,Electricity Board,Electronics
+TXN00000280,U000009,UPI_Payment,3278.88,2025-11-29 17:08:37,UPI,Completed,65,Mobile Operator,Fashion
+TXN00000281,U000009,UPI_Payment,4986.0,2025-10-01 17:08:37,UPI,Completed,99,Water Board,Utilities
+TXN00000282,U000009,UPI_Payment,95.87,2025-11-20 17:08:37,Card,Completed,1,Electricity Board,Groceries
+TXN00000283,U000009,Recharge,2645.38,2025-11-16 17:08:37,Net Banking,Failed,0,Mobile Operator,Utilities
+TXN00000284,U000009,Card_Payment,4053.63,2025-10-06 17:08:37,Net Banking,Completed,40,Electricity Board,Fashion
+TXN00000285,U000009,UPI_Payment,3696.26,2025-09-22 17:08:37,Net Banking,Completed,73,Flipkart,Fashion
+TXN00000286,U000009,Recharge,4287.93,2025-10-10 17:08:37,Net Banking,Failed,0,Electricity Board,Electronics
+TXN00000287,U000009,Shopping,3362.82,2025-11-16 17:08:37,Card,Completed,33,Electricity Board,Fashion
+TXN00000288,U000009,UPI_Payment,1340.89,2025-10-30 17:08:37,Card,Completed,26,Electricity Board,Entertainment
+TXN00000289,U000009,Recharge,106.61,2025-09-06 17:08:37,UPI,Completed,1,Amazon,Electronics
+TXN00000290,U000009,Shopping,1568.69,2025-09-30 17:08:37,Net Banking,Completed,15,Electricity Board,Electronics
+TXN00000291,U000009,Bill_Payment,1869.34,2025-11-16 17:08:37,Card,Completed,28,Flipkart,Groceries
+TXN00000292,U000009,Recharge,1899.44,2025-10-04 17:08:37,Net Banking,Completed,18,Water Board,Fashion
+TXN00000293,U000009,Card_Payment,3417.69,2025-11-23 17:08:37,Net Banking,Completed,34,Mobile Operator,Entertainment
+TXN00000294,U000009,Bill_Payment,436.61,2025-11-26 17:08:37,Net Banking,Completed,6,Gas Agency,Fashion
+TXN00000295,U000009,Recharge,2706.47,2025-09-28 17:08:37,Card,Completed,27,Amazon,Fashion
+TXN00000296,U000009,Recharge,2469.7,2025-10-07 17:08:37,UPI,Failed,0,Mobile Operator,Fashion
+TXN00000297,U000009,Recharge,2106.35,2025-09-23 17:08:37,Card,Completed,21,Water Board,Utilities
+TXN00000298,U000009,UPI_Payment,2009.95,2025-11-06 17:08:37,Net Banking,Completed,40,Amazon,Electronics
+TXN00000299,U000009,Shopping,1755.42,2025-11-26 17:08:37,UPI,Completed,17,Mobile Operator,Electronics
+TXN00000300,U000009,Bill_Payment,2073.89,2025-09-12 17:08:37,Net Banking,Completed,31,Water Board,Groceries
+TXN00000301,U000009,Bill_Payment,4964.64,2025-10-16 17:08:37,Card,Completed,74,Amazon,Entertainment
+TXN00000302,U000009,Card_Payment,3284.99,2025-11-11 17:08:37,Net Banking,Completed,32,Mobile Operator,Entertainment
+TXN00000303,U000009,Card_Payment,3652.9,2025-12-03 17:08:37,UPI,Completed,36,Electricity Board,Groceries
+TXN00000304,U000009,Recharge,2149.43,2025-11-04 17:08:37,UPI,Completed,21,Mobile Operator,Utilities
+TXN00000305,U000009,Card_Payment,1414.47,2025-11-19 17:08:37,UPI,Failed,0,Water Board,Groceries
+TXN00000306,U000009,Recharge,3841.96,2025-12-01 17:08:37,UPI,Failed,0,Flipkart,Electronics
+TXN00000307,U000010,Recharge,216.2,2025-09-04 17:08:37,UPI,Completed,2,Flipkart,Electronics
+TXN00000308,U000010,Shopping,2222.87,2025-11-26 17:08:37,UPI,Completed,22,Gas Agency,Utilities
+TXN00000309,U000010,Card_Payment,4088.14,2025-10-24 17:08:37,Net Banking,Completed,40,Gas Agency,Utilities
+TXN00000310,U000010,Card_Payment,1543.73,2025-09-10 17:08:37,Net Banking,Completed,15,Flipkart,Groceries
+TXN00000311,U000010,Bill_Payment,1412.01,2025-09-19 17:08:37,Net Banking,Completed,21,Flipkart,Groceries
+TXN00000312,U000010,Recharge,2503.32,2025-09-12 17:08:37,Net Banking,Pending,0,Mobile Operator,Entertainment
+TXN00000313,U000010,Bill_Payment,3496.73,2025-10-26 17:08:37,Card,Completed,52,Flipkart,Entertainment
+TXN00000314,U000010,Shopping,1242.79,2025-09-04 17:08:37,UPI,Completed,12,Mobile Operator,Electronics
+TXN00000315,U000010,Recharge,2092.75,2025-09-27 17:08:37,UPI,Completed,20,Mobile Operator,Fashion
+TXN00000316,U000010,Bill_Payment,1056.52,2025-10-07 17:08:37,Card,Completed,15,Amazon,Entertainment
+TXN00000317,U000010,Card_Payment,305.11,2025-09-17 17:08:37,Net Banking,Completed,3,Amazon,Electronics
+TXN00000318,U000010,Card_Payment,4033.02,2025-09-09 17:08:37,Net Banking,Completed,40,Flipkart,Groceries
+TXN00000319,U000010,Card_Payment,4353.9,2025-12-02 17:08:37,UPI,Completed,43,Flipkart,Electronics
+TXN00000320,U000010,Shopping,4576.48,2025-09-04 17:08:37,UPI,Completed,45,Mobile Operator,Fashion
+TXN00000321,U000010,Recharge,1641.99,2025-10-05 17:08:37,Net Banking,Completed,16,Water Board,Utilities
+TXN00000322,U000010,Bill_Payment,1344.73,2025-10-01 17:08:37,Card,Completed,20,Amazon,Groceries
+TXN00000323,U000010,Bill_Payment,4575.94,2025-10-12 17:08:37,UPI,Completed,68,Gas Agency,Fashion
+TXN00000324,U000010,Card_Payment,130.29,2025-09-20 17:08:37,Net Banking,Completed,1,Water Board,Groceries
+TXN00000325,U000010,Bill_Payment,804.44,2025-10-16 17:08:37,Net Banking,Completed,12,Flipkart,Groceries
+TXN00000326,U000010,Recharge,3290.31,2025-11-01 17:08:37,Card,Completed,32,Water Board,Groceries
+TXN00000327,U000010,Shopping,882.76,2025-11-12 17:08:37,UPI,Completed,8,Water Board,Entertainment
+TXN00000328,U000011,Card_Payment,4588.65,2025-09-12 17:08:37,UPI,Completed,45,Gas Agency,Electronics
+TXN00000329,U000011,UPI_Payment,4728.68,2025-12-03 17:08:37,Card,Completed,94,Flipkart,Fashion
+TXN00000330,U000011,UPI_Payment,3550.49,2025-09-30 17:08:37,Card,Completed,71,Electricity Board,Electronics
+TXN00000331,U000011,Recharge,3206.76,2025-10-03 17:08:37,Net Banking,Failed,0,Mobile Operator,Electronics
+TXN00000332,U000011,UPI_Payment,2684.45,2025-12-01 17:08:37,Net Banking,Completed,53,Water Board,Utilities
+TXN00000333,U000011,Recharge,4888.52,2025-09-05 17:08:37,Net Banking,Completed,48,Mobile Operator,Fashion
+TXN00000334,U000011,UPI_Payment,4594.34,2025-11-03 17:08:37,UPI,Completed,91,Gas Agency,Entertainment
+TXN00000335,U000011,Bill_Payment,4085.31,2025-10-14 17:08:37,UPI,Completed,61,Electricity Board,Groceries
+TXN00000336,U000011,Shopping,2846.76,2025-11-05 17:08:37,Card,Pending,0,Water Board,Electronics
+TXN00000337,U000011,UPI_Payment,512.83,2025-09-24 17:08:37,Card,Completed,10,Amazon,Electronics
+TXN00000338,U000011,Card_Payment,459.3,2025-09-12 17:08:37,Card,Completed,4,Gas Agency,Electronics
+TXN00000339,U000011,Recharge,4599.8,2025-09-06 17:08:37,Net Banking,Completed,45,Mobile Operator,Utilities
+TXN00000340,U000011,UPI_Payment,4624.59,2025-10-29 17:08:37,Net Banking,Completed,92,Gas Agency,Electronics
+TXN00000341,U000011,Card_Payment,4647.39,2025-11-07 17:08:37,Net Banking,Completed,46,Flipkart,Groceries
+TXN00000342,U000011,UPI_Payment,1531.42,2025-09-22 17:08:37,Card,Completed,30,Water Board,Entertainment
+TXN00000343,U000011,Bill_Payment,1950.04,2025-09-06 17:08:37,Net Banking,Completed,29,Amazon,Entertainment
+TXN00000344,U000011,Bill_Payment,315.8,2025-11-24 17:08:37,Card,Completed,4,Gas Agency,Entertainment
+TXN00000345,U000011,Recharge,2013.68,2025-11-30 17:08:37,Net Banking,Completed,20,Electricity Board,Groceries
+TXN00000346,U000011,Shopping,1179.29,2025-10-16 17:08:37,Card,Completed,11,Flipkart,Entertainment
+TXN00000347,U000011,Shopping,474.19,2025-11-02 17:08:37,Net Banking,Completed,4,Amazon,Electronics
+TXN00000348,U000011,Bill_Payment,813.39,2025-09-13 17:08:37,UPI,Completed,12,Water Board,Groceries
+TXN00000349,U000011,Bill_Payment,1835.47,2025-10-25 17:08:37,Card,Completed,27,Electricity Board,Utilities
+TXN00000350,U000011,UPI_Payment,705.91,2025-10-07 17:08:37,Net Banking,Completed,14,Gas Agency,Entertainment
+TXN00000351,U000011,Shopping,561.3,2025-09-24 17:08:37,UPI,Completed,5,Gas Agency,Entertainment
+TXN00000352,U000011,Bill_Payment,4325.4,2025-10-12 17:08:37,Card,Completed,64,Amazon,Entertainment
+TXN00000353,U000011,Card_Payment,2881.2,2025-10-16 17:08:37,UPI,Completed,28,Flipkart,Utilities
+TXN00000354,U000011,Bill_Payment,1378.61,2025-11-12 17:08:37,Card,Completed,20,Electricity Board,Groceries
+TXN00000355,U000011,Bill_Payment,2446.95,2025-11-01 17:08:37,UPI,Completed,36,Water Board,Groceries
+TXN00000356,U000011,Recharge,3102.51,2025-11-16 17:08:37,Card,Completed,31,Amazon,Groceries
+TXN00000357,U000011,Bill_Payment,4215.99,2025-10-22 17:08:37,Card,Completed,63,Electricity Board,Groceries
+TXN00000358,U000011,Recharge,723.82,2025-09-06 17:08:37,UPI,Completed,7,Mobile Operator,Utilities
+TXN00000359,U000011,Card_Payment,4824.64,2025-10-27 17:08:37,Net Banking,Pending,0,Water Board,Groceries
+TXN00000360,U000011,Recharge,3920.77,2025-10-29 17:08:37,Card,Completed,39,Electricity Board,Electronics
+TXN00000361,U000011,Recharge,1039.01,2025-11-10 17:08:37,Net Banking,Pending,0,Gas Agency,Electronics
+TXN00000362,U000011,Shopping,4717.73,2025-10-27 17:08:37,Net Banking,Completed,47,Amazon,Groceries
+TXN00000363,U000011,Shopping,738.94,2025-11-01 17:08:37,Net Banking,Completed,7,Flipkart,Groceries
+TXN00000364,U000011,Shopping,416.13,2025-10-03 17:08:37,Net Banking,Pending,0,Mobile Operator,Entertainment
+TXN00000365,U000011,Recharge,4621.3,2025-10-11 17:08:37,Net Banking,Failed,0,Amazon,Utilities
+TXN00000366,U000011,Recharge,2989.41,2025-11-20 17:08:37,UPI,Failed,0,Water Board,Utilities
+TXN00000367,U000011,Card_Payment,3252.65,2025-09-12 17:08:37,Net Banking,Completed,32,Water Board,Groceries
+TXN00000368,U000011,Bill_Payment,4830.3,2025-12-02 17:08:37,UPI,Completed,72,Electricity Board,Fashion
+TXN00000369,U000011,Recharge,3746.92,2025-09-06 17:08:37,Net Banking,Completed,37,Flipkart,Groceries
+TXN00000370,U000011,Bill_Payment,1986.11,2025-09-19 17:08:37,Net Banking,Completed,29,Gas Agency,Fashion
+TXN00000371,U000011,Bill_Payment,4988.63,2025-10-27 17:08:37,Card,Completed,74,Amazon,Electronics
+TXN00000372,U000011,Card_Payment,1774.23,2025-11-07 17:08:37,Net Banking,Completed,17,Mobile Operator,Utilities
+TXN00000373,U000011,Shopping,533.23,2025-10-07 17:08:37,Card,Completed,5,Amazon,Utilities
+TXN00000374,U000012,UPI_Payment,161.8,2025-11-20 17:08:37,Net Banking,Completed,3,Flipkart,Fashion
+TXN00000375,U000012,Recharge,913.54,2025-09-23 17:08:37,Card,Completed,9,Mobile Operator,Fashion
+TXN00000376,U000012,Shopping,3167.31,2025-09-10 17:08:37,Card,Completed,31,Mobile Operator,Electronics
+TXN00000377,U000012,Recharge,4421.33,2025-10-10 17:08:37,Card,Completed,44,Amazon,Fashion
+TXN00000378,U000012,Card_Payment,1427.81,2025-11-25 17:08:37,Net Banking,Completed,14,Amazon,Entertainment
+TXN00000379,U000012,Card_Payment,1860.68,2025-11-19 17:08:37,Card,Completed,18,Water Board,Groceries
+TXN00000380,U000012,Recharge,4831.29,2025-10-15 17:08:37,Net Banking,Completed,48,Mobile Operator,Entertainment
+TXN00000381,U000012,UPI_Payment,1772.23,2025-09-15 17:08:37,UPI,Completed,35,Water Board,Utilities
+TXN00000382,U000012,Recharge,2971.33,2025-10-24 17:08:37,UPI,Completed,29,Flipkart,Utilities
+TXN00000383,U000012,UPI_Payment,956.07,2025-09-29 17:08:37,Card,Completed,19,Mobile Operator,Entertainment
+TXN00000384,U000012,Card_Payment,2895.29,2025-10-02 17:08:37,Net Banking,Completed,28,Gas Agency,Fashion
+TXN00000385,U000012,Recharge,875.98,2025-11-10 17:08:37,Card,Completed,8,Mobile Operator,Entertainment
+TXN00000386,U000012,UPI_Payment,4334.34,2025-10-02 17:08:37,UPI,Pending,0,Flipkart,Groceries
+TXN00000387,U000012,Recharge,2551.92,2025-09-07 17:08:37,Card,Completed,25,Mobile Operator,Groceries
+TXN00000388,U000012,Shopping,877.9,2025-11-05 17:08:37,Card,Completed,8,Amazon,Utilities
+TXN00000389,U000012,Card_Payment,2711.16,2025-10-06 17:08:37,Net Banking,Completed,27,Water Board,Groceries
+TXN00000390,U000012,Recharge,2578.49,2025-10-30 17:08:37,Net Banking,Completed,25,Electricity Board,Entertainment
+TXN00000391,U000013,Shopping,2754.45,2025-11-20 17:08:37,Net Banking,Pending,0,Water Board,Fashion
+TXN00000392,U000013,Bill_Payment,4380.31,2025-10-31 17:08:37,Card,Completed,65,Amazon,Groceries
+TXN00000393,U000013,UPI_Payment,3889.38,2025-09-19 17:08:37,Net Banking,Completed,77,Electricity Board,Entertainment
+TXN00000394,U000013,Shopping,871.61,2025-11-07 17:08:37,UPI,Completed,8,Amazon,Entertainment
+TXN00000395,U000013,Bill_Payment,2684.79,2025-11-12 17:08:37,Card,Completed,40,Water Board,Utilities
+TXN00000396,U000013,Bill_Payment,2885.04,2025-09-29 17:08:37,Net Banking,Pending,0,Amazon,Fashion
+TXN00000397,U000013,Shopping,4597.91,2025-09-11 17:08:37,UPI,Pending,0,Water Board,Fashion
+TXN00000398,U000013,Card_Payment,773.91,2025-11-02 17:08:37,Net Banking,Completed,7,Mobile Operator,Groceries
+TXN00000399,U000013,Card_Payment,2908.26,2025-10-11 17:08:37,Card,Completed,29,Mobile Operator,Electronics
+TXN00000400,U000013,UPI_Payment,2044.11,2025-09-06 17:08:37,Card,Completed,40,Mobile Operator,Groceries
+TXN00000401,U000013,Bill_Payment,2930.68,2025-11-22 17:08:37,Net Banking,Failed,0,Mobile Operator,Utilities
+TXN00000402,U000013,UPI_Payment,3988.61,2025-10-10 17:08:37,UPI,Completed,79,Mobile Operator,Utilities
+TXN00000403,U000013,Bill_Payment,4150.3,2025-09-21 17:08:37,UPI,Completed,62,Gas Agency,Groceries
+TXN00000404,U000013,Bill_Payment,4476.07,2025-11-28 17:08:37,UPI,Completed,67,Water Board,Groceries
+TXN00000405,U000013,UPI_Payment,664.97,2025-10-08 17:08:37,Card,Failed,0,Amazon,Groceries
+TXN00000406,U000013,Card_Payment,4978.69,2025-09-11 17:08:37,Card,Failed,0,Flipkart,Utilities
+TXN00000407,U000013,UPI_Payment,3290.21,2025-10-17 17:08:37,Net Banking,Completed,65,Water Board,Fashion
+TXN00000408,U000014,Shopping,3146.74,2025-11-04 17:08:37,Card,Completed,31,Water Board,Electronics
+TXN00000409,U000014,UPI_Payment,55.38,2025-11-17 17:08:37,Net Banking,Completed,1,Flipkart,Entertainment
+TXN00000410,U000014,Shopping,95.97,2025-11-18 17:08:37,Card,Completed,0,Water Board,Fashion
+TXN00000411,U000014,Shopping,400.6,2025-11-20 17:08:37,UPI,Completed,4,Electricity Board,Utilities
+TXN00000412,U000014,Bill_Payment,728.79,2025-11-16 17:08:37,Net Banking,Completed,10,Water Board,Fashion
+TXN00000413,U000014,UPI_Payment,2676.02,2025-09-11 17:08:37,UPI,Completed,53,Mobile Operator,Utilities
+TXN00000414,U000014,Card_Payment,3159.0,2025-10-12 17:08:37,Net Banking,Completed,31,Water Board,Groceries
+TXN00000415,U000014,Card_Payment,479.11,2025-11-18 17:08:37,Net Banking,Completed,4,Water Board,Groceries
+TXN00000416,U000014,Bill_Payment,4818.08,2025-11-16 17:08:37,UPI,Completed,72,Electricity Board,Electronics
+TXN00000417,U000014,Card_Payment,2789.31,2025-09-17 17:08:37,Card,Completed,27,Water Board,Electronics
+TXN00000418,U000014,Bill_Payment,1066.96,2025-11-09 17:08:37,Net Banking,Completed,16,Mobile Operator,Utilities
+TXN00000419,U000014,UPI_Payment,3929.82,2025-11-03 17:08:37,Card,Completed,78,Mobile Operator,Electronics
+TXN00000420,U000014,Card_Payment,2522.93,2025-09-27 17:08:37,UPI,Completed,25,Electricity Board,Utilities
+TXN00000421,U000014,Card_Payment,1964.85,2025-10-11 17:08:37,Card,Completed,19,Gas Agency,Fashion
+TXN00000422,U000014,Shopping,4774.54,2025-12-01 17:08:37,Net Banking,Completed,47,Amazon,Electronics
+TXN00000423,U000014,Bill_Payment,1117.93,2025-10-14 17:08:37,Net Banking,Failed,0,Electricity Board,Entertainment
+TXN00000424,U000014,Shopping,2146.7,2025-09-13 17:08:37,Net Banking,Completed,21,Gas Agency,Entertainment
+TXN00000425,U000014,Card_Payment,1423.47,2025-09-29 17:08:37,UPI,Completed,14,Flipkart,Entertainment
+TXN00000426,U000015,Shopping,2952.86,2025-09-11 17:08:37,Net Banking,Completed,29,Water Board,Electronics
+TXN00000427,U000015,Bill_Payment,3508.45,2025-11-03 17:08:37,UPI,Completed,52,Flipkart,Electronics
+TXN00000428,U000015,Shopping,624.13,2025-11-26 17:08:37,Card,Completed,6,Water Board,Fashion
+TXN00000429,U000015,UPI_Payment,112.69,2025-12-02 17:08:37,UPI,Completed,2,Mobile Operator,Utilities
+TXN00000430,U000015,Recharge,2610.25,2025-10-31 17:08:37,UPI,Completed,26,Electricity Board,Fashion
+TXN00000431,U000015,Bill_Payment,3678.03,2025-11-30 17:08:37,Card,Completed,55,Mobile Operator,Utilities
+TXN00000432,U000015,Recharge,366.17,2025-09-21 17:08:37,Net Banking,Completed,3,Amazon,Groceries
+TXN00000433,U000015,Shopping,2578.37,2025-09-22 17:08:37,UPI,Completed,25,Electricity Board,Fashion
+TXN00000434,U000015,Bill_Payment,3877.98,2025-09-08 17:08:37,Net Banking,Failed,0,Amazon,Fashion
+TXN00000435,U000015,Recharge,62.71,2025-12-02 17:08:37,UPI,Failed,0,Amazon,Groceries
+TXN00000436,U000015,Bill_Payment,1945.75,2025-11-29 17:08:37,Net Banking,Completed,29,Water Board,Groceries
+TXN00000437,U000015,Card_Payment,1642.92,2025-10-24 17:08:37,Card,Completed,16,Amazon,Entertainment
+TXN00000438,U000015,Bill_Payment,641.03,2025-11-27 17:08:37,UPI,Completed,9,Flipkart,Entertainment
+TXN00000439,U000015,UPI_Payment,4772.69,2025-10-05 17:08:37,Card,Completed,95,Electricity Board,Utilities
+TXN00000440,U000015,UPI_Payment,2787.8,2025-11-08 17:08:37,Card,Completed,55,Gas Agency,Utilities
+TXN00000441,U000015,Recharge,1250.79,2025-10-01 17:08:37,UPI,Completed,12,Water Board,Entertainment
+TXN00000442,U000015,Card_Payment,795.3,2025-11-30 17:08:37,UPI,Failed,0,Gas Agency,Utilities
+TXN00000443,U000015,UPI_Payment,4757.4,2025-09-10 17:08:37,Card,Completed,95,Water Board,Utilities
+TXN00000444,U000015,UPI_Payment,1065.71,2025-10-11 17:08:37,Card,Pending,0,Amazon,Fashion
+TXN00000445,U000015,Bill_Payment,510.48,2025-09-28 17:08:37,Card,Failed,0,Water Board,Utilities
+TXN00000446,U000015,Shopping,4874.05,2025-11-21 17:08:37,Net Banking,Completed,48,Flipkart,Groceries
+TXN00000447,U000015,UPI_Payment,2979.88,2025-09-10 17:08:37,UPI,Completed,59,Flipkart,Utilities
+TXN00000448,U000015,Bill_Payment,4262.02,2025-10-14 17:08:37,Net Banking,Failed,0,Water Board,Utilities
+TXN00000449,U000015,Bill_Payment,2291.15,2025-11-08 17:08:37,UPI,Completed,34,Gas Agency,Electronics
+TXN00000450,U000015,Card_Payment,573.01,2025-10-24 17:08:37,Card,Completed,5,Amazon,Entertainment
+TXN00000451,U000015,Bill_Payment,4824.94,2025-10-25 17:08:37,Card,Completed,72,Electricity Board,Electronics
+TXN00000452,U000015,UPI_Payment,830.2,2025-09-04 17:08:37,Net Banking,Completed,16,Gas Agency,Electronics
+TXN00000453,U000015,Card_Payment,4187.83,2025-11-22 17:08:37,Net Banking,Completed,41,Flipkart,Utilities
+TXN00000454,U000015,Shopping,2591.63,2025-10-31 17:08:37,UPI,Completed,25,Amazon,Groceries
+TXN00000455,U000015,Shopping,2801.97,2025-11-21 17:08:37,Card,Completed,28,Amazon,Fashion
+TXN00000456,U000015,UPI_Payment,109.19,2025-11-05 17:08:37,UPI,Completed,2,Flipkart,Groceries
+TXN00000457,U000015,Bill_Payment,3447.11,2025-11-23 17:08:37,Net Banking,Failed,0,Gas Agency,Utilities
+TXN00000458,U000015,UPI_Payment,157.91,2025-09-12 17:08:37,Card,Completed,3,Flipkart,Electronics
+TXN00000459,U000015,Bill_Payment,656.51,2025-11-27 17:08:37,UPI,Failed,0,Gas Agency,Groceries
+TXN00000460,U000015,Shopping,2505.83,2025-10-10 17:08:37,UPI,Completed,25,Electricity Board,Fashion
+TXN00000461,U000016,Bill_Payment,1435.28,2025-11-29 17:08:37,Net Banking,Failed,0,Gas Agency,Entertainment
+TXN00000462,U000016,Card_Payment,3254.03,2025-09-24 17:08:37,Card,Completed,32,Amazon,Electronics
+TXN00000463,U000016,Bill_Payment,1945.93,2025-09-12 17:08:37,Net Banking,Completed,29,Flipkart,Entertainment
+TXN00000464,U000016,UPI_Payment,4947.55,2025-10-19 17:08:37,Card,Completed,98,Gas Agency,Groceries
+TXN00000465,U000016,Bill_Payment,4567.75,2025-10-15 17:08:37,Card,Completed,68,Flipkart,Electronics
+TXN00000466,U000016,Bill_Payment,3005.73,2025-10-29 17:08:37,UPI,Completed,45,Mobile Operator,Entertainment
+TXN00000467,U000016,Bill_Payment,3845.87,2025-11-13 17:08:37,UPI,Pending,0,Flipkart,Fashion
+TXN00000468,U000016,Bill_Payment,2691.76,2025-11-26 17:08:37,UPI,Completed,40,Gas Agency,Groceries
+TXN00000469,U000016,Bill_Payment,4679.27,2025-11-11 17:08:37,UPI,Pending,0,Flipkart,Entertainment
+TXN00000470,U000016,Bill_Payment,4040.74,2025-09-19 17:08:37,UPI,Completed,60,Water Board,Utilities
+TXN00000471,U000016,Recharge,2839.85,2025-11-09 17:08:37,Card,Completed,28,Gas Agency,Utilities
+TXN00000472,U000016,Card_Payment,2477.66,2025-11-04 17:08:37,Net Banking,Completed,24,Flipkart,Electronics
+TXN00000473,U000016,Recharge,2416.05,2025-09-16 17:08:37,UPI,Completed,24,Flipkart,Utilities
+TXN00000474,U000016,Card_Payment,4597.96,2025-10-23 17:08:37,UPI,Completed,45,Amazon,Fashion
+TXN00000475,U000016,Recharge,3538.25,2025-11-19 17:08:37,Net Banking,Completed,35,Electricity Board,Electronics
+TXN00000476,U000016,Bill_Payment,3537.46,2025-09-19 17:08:37,UPI,Completed,53,Electricity Board,Utilities
+TXN00000477,U000016,Bill_Payment,725.44,2025-10-09 17:08:37,Net Banking,Completed,10,Mobile Operator,Utilities
+TXN00000478,U000016,Card_Payment,3550.56,2025-09-16 17:08:37,Card,Completed,35,Flipkart,Entertainment
+TXN00000479,U000016,Card_Payment,1923.0,2025-10-27 17:08:37,UPI,Completed,19,Flipkart,Electronics
+TXN00000480,U000016,Recharge,1988.43,2025-09-22 17:08:37,UPI,Pending,0,Flipkart,Entertainment
+TXN00000481,U000016,Bill_Payment,4609.14,2025-11-05 17:08:37,Net Banking,Pending,0,Gas Agency,Electronics
+TXN00000482,U000016,Shopping,746.18,2025-11-03 17:08:37,Card,Completed,7,Electricity Board,Fashion
+TXN00000483,U000016,UPI_Payment,4117.23,2025-10-22 17:08:37,Card,Completed,82,Amazon,Utilities
+TXN00000484,U000016,Card_Payment,1285.23,2025-11-01 17:08:37,UPI,Completed,12,Water Board,Electronics
+TXN00000485,U000016,UPI_Payment,1960.39,2025-11-12 17:08:37,Card,Completed,39,Mobile Operator,Groceries
+TXN00000486,U000016,Bill_Payment,2752.82,2025-10-03 17:08:37,Net Banking,Completed,41,Water Board,Fashion
+TXN00000487,U000017,Shopping,414.86,2025-10-27 17:08:37,UPI,Completed,4,Electricity Board,Utilities
+TXN00000488,U000017,UPI_Payment,417.29,2025-10-16 17:08:37,UPI,Completed,8,Water Board,Electronics
+TXN00000489,U000017,Recharge,4712.08,2025-10-21 17:08:37,Net Banking,Pending,0,Gas Agency,Groceries
+TXN00000490,U000017,UPI_Payment,2185.05,2025-09-17 17:08:37,Card,Completed,43,Flipkart,Electronics
+TXN00000491,U000017,UPI_Payment,1688.92,2025-10-12 17:08:37,Net Banking,Pending,0,Gas Agency,Entertainment
+TXN00000492,U000017,Bill_Payment,3319.96,2025-11-21 17:08:37,UPI,Completed,49,Mobile Operator,Entertainment
+TXN00000493,U000017,Recharge,4207.28,2025-10-18 17:08:37,UPI,Completed,42,Mobile Operator,Electronics
+TXN00000494,U000017,Bill_Payment,4128.29,2025-10-03 17:08:37,UPI,Completed,61,Amazon,Electronics
+TXN00000495,U000017,Card_Payment,895.62,2025-11-23 17:08:37,Card,Completed,8,Amazon,Utilities
+TXN00000496,U000017,Shopping,2381.18,2025-10-31 17:08:37,UPI,Failed,0,Water Board,Entertainment
+TXN00000497,U000017,Shopping,965.16,2025-10-17 17:08:37,UPI,Failed,0,Mobile Operator,Electronics
+TXN00000498,U000017,Bill_Payment,2226.72,2025-10-30 17:08:37,Net Banking,Completed,33,Amazon,Fashion
+TXN00000499,U000017,UPI_Payment,474.25,2025-09-25 17:08:37,Card,Completed,9,Gas Agency,Fashion
+TXN00000500,U000017,Recharge,351.87,2025-09-28 17:08:37,Card,Completed,3,Gas Agency,Groceries
+TXN00000501,U000017,Recharge,4414.19,2025-11-23 17:08:37,Card,Completed,44,Water Board,Electronics
+TXN00000502,U000017,Recharge,2877.54,2025-09-21 17:08:37,Net Banking,Completed,28,Gas Agency,Fashion
+TXN00000503,U000017,UPI_Payment,4748.81,2025-11-12 17:08:37,UPI,Completed,94,Flipkart,Fashion
+TXN00000504,U000017,UPI_Payment,2145.71,2025-10-09 17:08:37,UPI,Pending,0,Water Board,Fashion
+TXN00000505,U000017,Recharge,1326.54,2025-11-25 17:08:37,UPI,Failed,0,Mobile Operator,Entertainment
+TXN00000506,U000017,Shopping,2782.67,2025-09-28 17:08:37,Card,Failed,0,Amazon,Entertainment
+TXN00000507,U000017,Recharge,2636.68,2025-10-11 17:08:37,UPI,Completed,26,Flipkart,Entertainment
+TXN00000508,U000017,Recharge,2934.25,2025-11-21 17:08:37,UPI,Pending,0,Gas Agency,Electronics
+TXN00000509,U000017,Bill_Payment,4344.0,2025-10-12 17:08:37,Card,Failed,0,Mobile Operator,Groceries
+TXN00000510,U000017,Recharge,3064.36,2025-10-29 17:08:37,Card,Completed,30,Flipkart,Entertainment
+TXN00000511,U000017,Recharge,3420.02,2025-10-14 17:08:37,Card,Completed,34,Water Board,Fashion
+TXN00000512,U000018,Shopping,4608.13,2025-12-01 17:08:37,Card,Failed,0,Electricity Board,Utilities
+TXN00000513,U000018,Bill_Payment,4222.09,2025-09-07 17:08:37,UPI,Failed,0,Flipkart,Fashion
+TXN00000514,U000018,Bill_Payment,4872.39,2025-10-23 17:08:37,Card,Completed,73,Water Board,Groceries
+TXN00000515,U000018,Recharge,3245.5,2025-11-06 17:08:37,Card,Completed,32,Water Board,Groceries
+TXN00000516,U000018,Recharge,4342.59,2025-09-29 17:08:37,UPI,Completed,43,Amazon,Utilities
+TXN00000517,U000018,Recharge,2046.76,2025-09-27 17:08:37,Net Banking,Completed,20,Amazon,Fashion
+TXN00000518,U000018,Card_Payment,4382.14,2025-11-26 17:08:37,UPI,Completed,43,Amazon,Groceries
+TXN00000519,U000018,UPI_Payment,4594.25,2025-10-29 17:08:37,Card,Completed,91,Mobile Operator,Entertainment
+TXN00000520,U000018,Shopping,3195.28,2025-11-30 17:08:37,UPI,Completed,31,Electricity Board,Groceries
+TXN00000521,U000018,Recharge,2258.21,2025-10-04 17:08:37,Net Banking,Pending,0,Gas Agency,Utilities
+TXN00000522,U000018,Bill_Payment,859.39,2025-09-06 17:08:37,UPI,Failed,0,Electricity Board,Electronics
+TXN00000523,U000018,Shopping,295.77,2025-11-06 17:08:37,UPI,Failed,0,Water Board,Fashion
+TXN00000524,U000018,Card_Payment,1381.96,2025-12-01 17:08:37,Net Banking,Completed,13,Amazon,Groceries
+TXN00000525,U000018,Card_Payment,3254.49,2025-12-02 17:08:37,UPI,Completed,32,Electricity Board,Entertainment
+TXN00000526,U000018,Bill_Payment,3578.07,2025-10-29 17:08:37,Card,Completed,53,Mobile Operator,Utilities
+TXN00000527,U000018,Shopping,1297.39,2025-09-08 17:08:37,Net Banking,Completed,12,Gas Agency,Groceries
+TXN00000528,U000018,Recharge,556.44,2025-09-10 17:08:37,Card,Completed,5,Gas Agency,Entertainment
+TXN00000529,U000018,Recharge,1449.25,2025-10-03 17:08:37,UPI,Completed,14,Electricity Board,Utilities
+TXN00000530,U000019,Bill_Payment,1342.68,2025-09-11 17:08:37,Card,Completed,20,Flipkart,Fashion
+TXN00000531,U000019,Recharge,3839.1,2025-09-18 17:08:37,Card,Failed,0,Water Board,Utilities
+TXN00000532,U000019,Card_Payment,3620.35,2025-10-27 17:08:37,Card,Completed,36,Mobile Operator,Groceries
+TXN00000533,U000019,Shopping,3696.82,2025-09-21 17:08:37,UPI,Completed,36,Electricity Board,Fashion
+TXN00000534,U000019,Recharge,3209.65,2025-09-09 17:08:37,Card,Completed,32,Gas Agency,Utilities
+TXN00000535,U000019,Card_Payment,4211.16,2025-11-10 17:08:37,Card,Failed,0,Amazon,Groceries
+TXN00000536,U000019,Card_Payment,3717.55,2025-09-23 17:08:37,UPI,Completed,37,Water Board,Utilities
+TXN00000537,U000019,UPI_Payment,1150.15,2025-10-25 17:08:37,Card,Completed,23,Electricity Board,Utilities
+TXN00000538,U000019,Bill_Payment,2948.57,2025-11-18 17:08:37,Card,Completed,44,Amazon,Entertainment
+TXN00000539,U000019,Recharge,4724.29,2025-11-09 17:08:37,Net Banking,Completed,47,Amazon,Groceries
+TXN00000540,U000019,Recharge,1526.86,2025-11-14 17:08:37,UPI,Completed,15,Flipkart,Utilities
+TXN00000541,U000019,Shopping,4936.6,2025-10-06 17:08:37,UPI,Failed,0,Electricity Board,Fashion
+TXN00000542,U000019,UPI_Payment,2463.53,2025-11-11 17:08:37,Card,Completed,49,Water Board,Electronics
+TXN00000543,U000019,UPI_Payment,2287.66,2025-11-12 17:08:37,Net Banking,Completed,45,Flipkart,Groceries
+TXN00000544,U000019,UPI_Payment,690.56,2025-10-10 17:08:37,Card,Completed,13,Mobile Operator,Groceries
+TXN00000545,U000019,Shopping,73.11,2025-10-17 17:08:37,UPI,Completed,0,Electricity Board,Entertainment
+TXN00000546,U000019,Card_Payment,138.68,2025-11-02 17:08:37,UPI,Completed,1,Water Board,Utilities
+TXN00000547,U000019,Bill_Payment,688.21,2025-09-19 17:08:37,Card,Completed,10,Flipkart,Electronics
+TXN00000548,U000019,UPI_Payment,1526.1,2025-09-28 17:08:37,Net Banking,Completed,30,Gas Agency,Utilities
+TXN00000549,U000019,Shopping,4445.47,2025-10-21 17:08:37,Card,Pending,0,Electricity Board,Fashion
+TXN00000550,U000019,Card_Payment,4743.02,2025-10-13 17:08:37,UPI,Failed,0,Flipkart,Fashion
+TXN00000551,U000019,Card_Payment,1095.39,2025-09-30 17:08:37,UPI,Completed,10,Amazon,Utilities
+TXN00000552,U000019,UPI_Payment,1907.2,2025-09-26 17:08:37,Net Banking,Completed,38,Amazon,Entertainment
+TXN00000553,U000019,UPI_Payment,3326.75,2025-12-01 17:08:37,UPI,Completed,66,Water Board,Electronics
+TXN00000554,U000019,Shopping,2249.36,2025-11-01 17:08:37,Card,Completed,22,Water Board,Fashion
+TXN00000555,U000019,Card_Payment,3491.2,2025-10-26 17:08:37,Card,Completed,34,Water Board,Electronics
+TXN00000556,U000019,Recharge,1386.39,2025-11-16 17:08:37,Card,Completed,13,Amazon,Entertainment
+TXN00000557,U000019,Recharge,632.79,2025-11-20 17:08:37,Card,Completed,6,Flipkart,Entertainment
+TXN00000558,U000019,Card_Payment,3900.9,2025-11-08 17:08:37,Card,Completed,39,Water Board,Groceries
+TXN00000559,U000019,Bill_Payment,843.85,2025-11-07 17:08:37,Net Banking,Completed,12,Mobile Operator,Utilities
+TXN00000560,U000019,Card_Payment,63.55,2025-11-19 17:08:37,Net Banking,Completed,0,Water Board,Groceries
+TXN00000561,U000019,Card_Payment,4749.76,2025-11-24 17:08:37,Net Banking,Completed,47,Water Board,Electronics
+TXN00000562,U000019,Bill_Payment,3239.47,2025-10-27 17:08:37,Card,Completed,48,Mobile Operator,Electronics
+TXN00000563,U000019,UPI_Payment,4075.23,2025-10-27 17:08:37,Card,Failed,0,Water Board,Utilities
+TXN00000564,U000019,Shopping,3705.77,2025-11-28 17:08:37,UPI,Completed,37,Flipkart,Fashion
+TXN00000565,U000020,Bill_Payment,4477.91,2025-10-30 17:08:37,Net Banking,Pending,0,Amazon,Utilities
+TXN00000566,U000020,Bill_Payment,955.2,2025-10-06 17:08:37,Card,Completed,14,Mobile Operator,Groceries
+TXN00000567,U000020,Shopping,3261.79,2025-11-19 17:08:37,UPI,Completed,32,Water Board,Electronics
+TXN00000568,U000020,Card_Payment,563.38,2025-10-03 17:08:37,Net Banking,Failed,0,Water Board,Groceries
+TXN00000569,U000020,Card_Payment,3076.05,2025-09-16 17:08:37,UPI,Completed,30,Water Board,Fashion
+TXN00000570,U000020,Shopping,4605.97,2025-10-12 17:08:37,Card,Completed,46,Amazon,Electronics
+TXN00000571,U000020,Bill_Payment,3292.12,2025-09-08 17:08:37,Net Banking,Completed,49,Water Board,Entertainment
+TXN00000572,U000020,Recharge,1158.73,2025-10-21 17:08:37,Net Banking,Pending,0,Gas Agency,Entertainment
+TXN00000573,U000020,UPI_Payment,2192.6,2025-10-03 17:08:37,Card,Completed,43,Water Board,Groceries
+TXN00000574,U000020,Card_Payment,4203.21,2025-09-16 17:08:37,UPI,Completed,42,Amazon,Fashion
+TXN00000575,U000020,Recharge,4251.79,2025-11-12 17:08:37,UPI,Failed,0,Mobile Operator,Utilities
+TXN00000576,U000020,Card_Payment,1687.93,2025-09-30 17:08:37,UPI,Completed,16,Gas Agency,Groceries
+TXN00000577,U000020,Shopping,4094.66,2025-10-08 17:08:37,Net Banking,Completed,40,Mobile Operator,Electronics
+TXN00000578,U000020,Shopping,2262.99,2025-10-01 17:08:37,Net Banking,Completed,22,Water Board,Electronics
+TXN00000579,U000020,UPI_Payment,2047.03,2025-09-24 17:08:37,UPI,Completed,40,Amazon,Entertainment
+TXN00000580,U000020,Recharge,3205.81,2025-09-23 17:08:37,UPI,Failed,0,Water Board,Groceries
+TXN00000581,U000020,Bill_Payment,1848.55,2025-11-05 17:08:37,Card,Completed,27,Electricity Board,Entertainment
+TXN00000582,U000020,Recharge,3019.76,2025-10-18 17:08:37,Net Banking,Completed,30,Mobile Operator,Electronics
+TXN00000583,U000020,UPI_Payment,3808.63,2025-10-21 17:08:37,Card,Completed,76,Water Board,Utilities
+TXN00000584,U000020,Recharge,2633.83,2025-11-28 17:08:37,UPI,Completed,26,Mobile Operator,Fashion
+TXN00000585,U000020,Shopping,579.46,2025-11-09 17:08:37,UPI,Completed,5,Mobile Operator,Fashion
+TXN00000586,U000020,Shopping,4131.54,2025-10-21 17:08:37,UPI,Completed,41,Mobile Operator,Electronics
+TXN00000587,U000020,Recharge,659.93,2025-10-06 17:08:37,Net Banking,Failed,0,Gas Agency,Entertainment
+TXN00000588,U000020,Card_Payment,4821.08,2025-11-27 17:08:37,Net Banking,Completed,48,Mobile Operator,Entertainment
+TXN00000589,U000020,Shopping,4625.64,2025-11-11 17:08:37,Net Banking,Completed,46,Gas Agency,Fashion
+TXN00000590,U000020,Card_Payment,562.59,2025-09-17 17:08:37,Card,Completed,5,Gas Agency,Groceries
+TXN00000591,U000020,Shopping,4898.53,2025-11-02 17:08:37,Card,Failed,0,Mobile Operator,Utilities
+TXN00000592,U000020,Bill_Payment,2291.59,2025-10-12 17:08:37,Net Banking,Completed,34,Water Board,Entertainment
+TXN00000593,U000020,Bill_Payment,4223.22,2025-10-24 17:08:37,Net Banking,Completed,63,Water Board,Entertainment
+TXN00000594,U000020,Card_Payment,1044.4,2025-10-27 17:08:37,Net Banking,Completed,10,Electricity Board,Fashion
+TXN00000595,U000020,Card_Payment,2544.27,2025-10-23 17:08:37,Net Banking,Completed,25,Amazon,Utilities
+TXN00000596,U000020,Recharge,2427.83,2025-09-09 17:08:37,Net Banking,Completed,24,Mobile Operator,Entertainment
+TXN00000597,U000020,Bill_Payment,4393.51,2025-12-02 17:08:37,Net Banking,Completed,65,Amazon,Electronics
+TXN00000598,U000020,Shopping,769.37,2025-11-08 17:08:37,Card,Completed,7,Flipkart,Utilities
+TXN00000599,U000020,Bill_Payment,774.82,2025-10-27 17:08:37,UPI,Completed,11,Gas Agency,Electronics
+TXN00000600,U000020,Bill_Payment,4079.43,2025-09-08 17:08:37,Net Banking,Completed,61,Gas Agency,Fashion

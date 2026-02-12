@@ -1,0 +1,113 @@
+.chat-widget-fab {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 9999;
+}
+
+.chat-fab-button {
+  background: #0b74ff;
+  color: white;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(11, 116, 255, 0.25);
+  cursor: pointer;
+}
+
+.chat-fab-button:focus { outline: 2px solid rgba(11,116,255,0.3); }
+
+.chat-widget-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
+  z-index: 9990;
+}
+
+.chat-widget-sidebar {
+  position: fixed;
+  top: 0;
+  right: -100%; /* hidden by default */
+  height: 100vh;
+  background: #ffffff;
+  box-shadow: -8px 0 24px rgba(0,0,0,0.12);
+  z-index: 9991;
+  display: flex;
+  flex-direction: column;
+  transition: right 280ms ease, width 120ms ease;
+}
+
+.chat-widget-sidebar.open {
+  right: 0;
+}
+
+.chat-sidebar-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chat-sidebar-header h3 { margin: 0; font-size: 16px; }
+
+.chat-header-actions .small-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #333;
+}
+
+.chat-sidebar-body {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 16px;
+}
+
+.chat-messages { display: flex; flex-direction: column; gap: 12px; }
+.chat-message { padding: 10px 12px; border-radius: 12px; max-width: 75%; }
+.chat-message.bot { background: #f1f6ff; color: #0b74ff; align-self: flex-start; }
+
+.chat-sidebar-footer {
+  padding: 12px;
+  border-top: 1px solid #eee;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.chat-input {
+  flex: 1 1 auto;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+.chat-send {
+  background: #0b74ff;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* Resizer on left edge */
+.chat-resizer {
+  position: absolute;
+  left: -8px;
+  top: 0;
+  bottom: 0;
+  width: 16px;
+  cursor: ew-resize;
+}
+
+/* Make sure the floating button doesn't block the resizer on small widths */
+@media (max-width: 640px) {
+  .chat-widget-fab { right: 12px; bottom: 12px; }
+  .chat-fab-button { width: 48px; height: 48px; }
+}

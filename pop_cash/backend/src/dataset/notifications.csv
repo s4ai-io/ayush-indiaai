@@ -1,0 +1,397 @@
+notification_id,user_id,notification_type,title,message,sent_at,is_read,read_at,clicked,channel,priority
+NOTIF00000001,U000001,Challenge Update,Challenge Update,You're 67% through your challenge!,2025-12-01 10:10:40,True,2025-11-07 17:10:40,True,In-App,Medium
+NOTIF00000002,U000001,popCoin Expiring,popCoin Expiring,51 popCoins expiring in 3 days!,2025-11-17 11:10:40,False,2025-11-16 17:10:40,False,Push,Low
+NOTIF00000003,U000001,popCoin Expiring,popCoin Expiring,127 popCoins expiring in 3 days!,2025-11-14 05:10:40,True,2025-11-11 17:10:40,False,Push,Medium
+NOTIF00000004,U000001,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-13 04:10:40,True,2025-11-29 17:10:40,False,SMS,Low
+NOTIF00000005,U000001,Challenge Update,Challenge Update,You're 90% through your challenge!,2025-11-27 12:10:40,False,2025-11-07 17:10:40,True,SMS,High
+NOTIF00000006,U000001,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-13 08:10:40,False,,False,SMS,High
+NOTIF00000007,U000001,popCoin Expiring,popCoin Expiring,112 popCoins expiring in 4 days!,2025-11-26 19:10:40,False,2025-12-03 17:10:40,False,Push,Medium
+NOTIF00000008,U000001,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-05 06:10:40,True,2025-11-25 17:10:40,False,In-App,Low
+NOTIF00000009,U000001,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-23 13:10:40,False,,False,SMS,Medium
+NOTIF00000010,U000001,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-12-02 00:10:40,True,2025-11-30 17:10:40,False,In-App,High
+NOTIF00000011,U000001,popCoin Expiring,popCoin Expiring,105 popCoins expiring in 2 days!,2025-11-12 23:10:40,True,2025-11-04 17:10:40,True,In-App,High
+NOTIF00000012,U000002,Challenge Update,Challenge Update,You're 66% through your challenge!,2025-11-03 14:10:40,False,2025-11-23 17:10:40,False,SMS,High
+NOTIF00000013,U000002,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-22 21:10:40,True,2025-11-26 17:10:40,False,SMS,High
+NOTIF00000014,U000002,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-09 21:10:40,True,2025-11-05 17:10:40,False,Push,High
+NOTIF00000015,U000002,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-06 09:10:40,False,2025-11-09 17:10:40,False,SMS,Low
+NOTIF00000016,U000002,popCoin Expiring,popCoin Expiring,164 popCoins expiring in 5 days!,2025-12-03 12:10:40,False,,True,Push,High
+NOTIF00000017,U000002,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-27 02:10:40,False,2025-11-23 17:10:40,True,SMS,Low
+NOTIF00000018,U000002,New Deal,New Deal,New deals matching your interests!,2025-11-08 06:10:40,True,2025-11-10 17:10:40,True,SMS,High
+NOTIF00000019,U000002,Challenge Update,Challenge Update,You're 84% through your challenge!,2025-11-13 20:10:40,True,2025-11-17 17:10:40,False,In-App,Medium
+NOTIF00000020,U000002,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-25 21:10:40,False,2025-12-02 17:10:40,True,Push,High
+NOTIF00000021,U000002,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-05 23:10:40,True,,True,In-App,High
+NOTIF00000022,U000002,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-27 18:10:40,False,2025-11-12 17:10:40,True,Push,Medium
+NOTIF00000023,U000002,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-12-01 22:10:40,True,2025-11-15 17:10:40,False,In-App,High
+NOTIF00000024,U000002,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-21 16:10:40,False,,True,Push,High
+NOTIF00000025,U000002,Challenge Update,Challenge Update,You're 74% through your challenge!,2025-11-29 22:10:40,False,2025-11-30 17:10:40,True,In-App,Medium
+NOTIF00000026,U000002,popCoin Expiring,popCoin Expiring,96 popCoins expiring in 1 days!,2025-11-19 13:10:40,False,2025-11-10 17:10:40,False,In-App,High
+NOTIF00000027,U000003,Payment Success,Payment Success,Payment of ₹3634 successful!,2025-11-21 07:10:40,True,2025-11-12 17:10:40,True,In-App,Low
+NOTIF00000028,U000003,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-30 15:10:40,True,,False,SMS,Medium
+NOTIF00000029,U000003,New Deal,New Deal,New deals matching your interests!,2025-11-29 13:10:40,False,,True,Push,Low
+NOTIF00000030,U000003,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-07 18:10:40,False,2025-11-08 17:10:40,True,SMS,Low
+NOTIF00000031,U000003,Payment Success,Payment Success,Payment of ₹4167 successful!,2025-11-07 17:10:40,True,,False,Push,High
+NOTIF00000032,U000003,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-22 05:10:40,True,2025-11-29 17:10:40,True,Push,Medium
+NOTIF00000033,U000003,popCoin Expiring,popCoin Expiring,56 popCoins expiring in 2 days!,2025-11-30 06:10:40,False,,True,SMS,Medium
+NOTIF00000034,U000003,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-09 18:10:40,True,2025-11-06 17:10:40,False,Push,Medium
+NOTIF00000035,U000003,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-23 07:10:40,True,2025-11-28 17:10:40,False,SMS,Low
+NOTIF00000036,U000003,popCoin Earned,popCoin Earned,You earned 38 popCoins! 🎉,2025-12-02 22:10:40,True,2025-11-21 17:10:40,False,SMS,Low
+NOTIF00000037,U000003,Budget Alert,Budget Alert,You've used 94% of your monthly budget.,2025-11-22 03:10:40,False,2025-11-22 17:10:40,False,In-App,Medium
+NOTIF00000038,U000003,Challenge Update,Challenge Update,You're 86% through your challenge!,2025-11-07 09:10:40,True,2025-11-30 17:10:40,True,SMS,High
+NOTIF00000039,U000003,popCoin Expiring,popCoin Expiring,81 popCoins expiring in 1 days!,2025-11-16 10:10:40,True,2025-11-25 17:10:40,True,In-App,High
+NOTIF00000040,U000003,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-07 18:10:40,False,2025-11-30 17:10:40,True,SMS,High
+NOTIF00000041,U000003,popCoin Expiring,popCoin Expiring,65 popCoins expiring in 4 days!,2025-12-02 04:10:40,True,,True,In-App,Low
+NOTIF00000042,U000003,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-17 09:10:40,True,,False,Push,High
+NOTIF00000043,U000004,popCoin Earned,popCoin Earned,You earned 12 popCoins! 🎉,2025-11-06 01:10:40,False,2025-11-20 17:10:40,False,In-App,Low
+NOTIF00000044,U000004,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-23 11:10:40,False,2025-11-09 17:10:40,True,SMS,Medium
+NOTIF00000045,U000004,Challenge Update,Challenge Update,You're 73% through your challenge!,2025-11-07 13:10:40,True,2025-12-01 17:10:40,False,Push,High
+NOTIF00000046,U000004,Budget Alert,Budget Alert,You've used 87% of your monthly budget.,2025-11-20 14:10:40,True,2025-11-13 17:10:40,False,Push,High
+NOTIF00000047,U000004,popCoin Expiring,popCoin Expiring,164 popCoins expiring in 5 days!,2025-11-04 09:10:40,True,,False,In-App,Low
+NOTIF00000048,U000004,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-15 17:10:40,True,,False,Push,Medium
+NOTIF00000049,U000004,Challenge Update,Challenge Update,You're 79% through your challenge!,2025-11-07 23:10:40,True,2025-11-14 17:10:40,False,In-App,Low
+NOTIF00000050,U000004,New Deal,New Deal,New deals matching your interests!,2025-11-15 03:10:40,False,,False,In-App,Low
+NOTIF00000051,U000004,New Deal,New Deal,New deals matching your interests!,2025-11-29 11:10:40,True,,True,In-App,Medium
+NOTIF00000052,U000004,Payment Success,Payment Success,Payment of ₹2740 successful!,2025-11-20 12:10:40,True,2025-11-17 17:10:40,False,SMS,Low
+NOTIF00000053,U000004,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-30 19:10:40,True,,False,SMS,High
+NOTIF00000054,U000004,popCoin Earned,popCoin Earned,You earned 37 popCoins! 🎉,2025-11-06 12:10:40,True,,True,Push,Low
+NOTIF00000055,U000004,popCoin Earned,popCoin Earned,You earned 90 popCoins! 🎉,2025-11-26 06:10:40,False,2025-11-14 17:10:40,False,SMS,Low
+NOTIF00000056,U000004,New Deal,New Deal,New deals matching your interests!,2025-11-19 17:10:40,False,2025-11-17 17:10:40,False,SMS,Medium
+NOTIF00000057,U000004,New Deal,New Deal,New deals matching your interests!,2025-11-24 00:10:40,True,,True,In-App,Medium
+NOTIF00000058,U000004,New Deal,New Deal,New deals matching your interests!,2025-11-19 17:10:40,False,,True,In-App,Low
+NOTIF00000059,U000005,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-07 11:10:40,True,2025-11-24 17:10:40,False,In-App,High
+NOTIF00000060,U000005,popCoin Expiring,popCoin Expiring,180 popCoins expiring in 4 days!,2025-11-08 12:10:40,False,2025-11-16 17:10:40,False,Push,Medium
+NOTIF00000061,U000005,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-12-01 23:10:40,True,,True,In-App,High
+NOTIF00000062,U000005,Payment Success,Payment Success,Payment of ₹4149 successful!,2025-11-05 00:10:40,False,,False,In-App,Low
+NOTIF00000063,U000005,New Deal,New Deal,New deals matching your interests!,2025-11-30 03:10:40,False,2025-11-08 17:10:40,False,SMS,Low
+NOTIF00000064,U000005,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-10 21:10:40,True,2025-11-21 17:10:40,False,SMS,High
+NOTIF00000065,U000005,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-24 13:10:40,True,2025-11-29 17:10:40,False,In-App,High
+NOTIF00000066,U000005,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-25 00:10:40,False,,False,SMS,High
+NOTIF00000067,U000005,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-14 16:10:40,True,,False,In-App,Medium
+NOTIF00000068,U000005,Challenge Update,Challenge Update,You're 78% through your challenge!,2025-12-02 22:10:40,True,,True,Push,High
+NOTIF00000069,U000005,Payment Success,Payment Success,Payment of ₹1437 successful!,2025-11-07 11:10:40,False,2025-11-26 17:10:40,True,In-App,Low
+NOTIF00000070,U000006,popCoin Earned,popCoin Earned,You earned 53 popCoins! 🎉,2025-11-16 01:10:40,True,2025-11-09 17:10:40,False,Push,High
+NOTIF00000071,U000006,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-14 14:10:40,True,,True,Push,Low
+NOTIF00000072,U000006,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-06 15:10:40,True,2025-11-18 17:10:40,False,Push,Low
+NOTIF00000073,U000006,Challenge Update,Challenge Update,You're 77% through your challenge!,2025-11-13 16:10:40,False,2025-11-04 17:10:40,False,Push,Medium
+NOTIF00000074,U000006,Budget Alert,Budget Alert,You've used 77% of your monthly budget.,2025-11-25 04:10:40,False,2025-11-30 17:10:40,True,In-App,Low
+NOTIF00000075,U000006,Challenge Update,Challenge Update,You're 77% through your challenge!,2025-11-14 10:10:40,False,2025-11-21 17:10:40,False,SMS,Low
+NOTIF00000076,U000006,Budget Alert,Budget Alert,You've used 84% of your monthly budget.,2025-11-23 07:10:40,False,,False,SMS,High
+NOTIF00000077,U000006,popCoin Expiring,popCoin Expiring,84 popCoins expiring in 6 days!,2025-11-05 20:10:40,True,2025-11-26 17:10:40,False,In-App,Low
+NOTIF00000078,U000006,popCoin Earned,popCoin Earned,You earned 54 popCoins! 🎉,2025-11-11 18:10:40,True,,False,SMS,Low
+NOTIF00000079,U000006,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-30 01:10:40,False,,False,SMS,High
+NOTIF00000080,U000006,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-24 13:10:40,True,2025-11-15 17:10:40,False,Push,High
+NOTIF00000081,U000006,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-14 04:10:40,True,2025-12-02 17:10:40,False,In-App,Medium
+NOTIF00000082,U000006,Challenge Update,Challenge Update,You're 73% through your challenge!,2025-11-09 03:10:40,True,2025-12-03 17:10:40,False,In-App,Medium
+NOTIF00000083,U000006,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-20 13:10:40,True,2025-11-22 17:10:40,False,In-App,Medium
+NOTIF00000084,U000006,Challenge Update,Challenge Update,You're 73% through your challenge!,2025-12-02 14:10:40,True,2025-11-14 17:10:40,False,In-App,High
+NOTIF00000085,U000006,popCoin Earned,popCoin Earned,You earned 11 popCoins! 🎉,2025-11-28 13:10:40,True,,False,In-App,Medium
+NOTIF00000086,U000006,Budget Alert,Budget Alert,You've used 85% of your monthly budget.,2025-11-21 17:10:40,True,,False,SMS,High
+NOTIF00000087,U000006,popCoin Expiring,popCoin Expiring,178 popCoins expiring in 7 days!,2025-11-08 01:10:40,False,2025-12-02 17:10:40,True,SMS,High
+NOTIF00000088,U000006,popCoin Expiring,popCoin Expiring,200 popCoins expiring in 5 days!,2025-11-16 13:10:40,True,2025-11-28 17:10:40,False,SMS,Medium
+NOTIF00000089,U000006,Budget Alert,Budget Alert,You've used 88% of your monthly budget.,2025-11-06 12:10:40,False,2025-12-01 17:10:40,True,SMS,High
+NOTIF00000090,U000006,Challenge Update,Challenge Update,You're 68% through your challenge!,2025-11-23 10:10:40,True,2025-11-15 17:10:40,False,In-App,Low
+NOTIF00000091,U000006,popCoin Earned,popCoin Earned,You earned 69 popCoins! 🎉,2025-11-22 09:10:40,False,,True,Push,Low
+NOTIF00000092,U000006,New Deal,New Deal,New deals matching your interests!,2025-11-08 09:10:40,True,,False,In-App,Medium
+NOTIF00000093,U000007,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-06 15:10:40,True,,True,Push,Low
+NOTIF00000094,U000007,Budget Alert,Budget Alert,You've used 90% of your monthly budget.,2025-11-19 03:10:40,True,2025-11-26 17:10:40,False,In-App,Low
+NOTIF00000095,U000007,Challenge Update,Challenge Update,You're 66% through your challenge!,2025-11-20 20:10:40,True,2025-11-05 17:10:40,False,In-App,Low
+NOTIF00000096,U000007,popCoin Earned,popCoin Earned,You earned 93 popCoins! 🎉,2025-11-03 10:10:40,True,,False,SMS,High
+NOTIF00000097,U000007,popCoin Earned,popCoin Earned,You earned 59 popCoins! 🎉,2025-11-07 13:10:40,True,2025-11-26 17:10:40,False,Push,Medium
+NOTIF00000098,U000007,popCoin Earned,popCoin Earned,You earned 14 popCoins! 🎉,2025-11-18 01:10:40,True,2025-12-01 17:10:40,False,In-App,High
+NOTIF00000099,U000007,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-25 04:10:40,True,2025-11-27 17:10:40,False,In-App,Low
+NOTIF00000100,U000007,popCoin Expiring,popCoin Expiring,105 popCoins expiring in 4 days!,2025-12-02 21:10:40,False,2025-11-04 17:10:40,False,SMS,Medium
+NOTIF00000101,U000007,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-16 20:10:40,True,2025-11-10 17:10:40,False,SMS,Low
+NOTIF00000102,U000007,Payment Success,Payment Success,Payment of ₹599 successful!,2025-11-24 07:10:40,True,2025-11-29 17:10:40,False,Push,Medium
+NOTIF00000103,U000007,Budget Alert,Budget Alert,You've used 82% of your monthly budget.,2025-11-08 15:10:40,False,2025-11-16 17:10:40,False,In-App,Low
+NOTIF00000104,U000007,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-13 10:10:40,False,2025-11-17 17:10:40,True,Push,Low
+NOTIF00000105,U000007,popCoin Expiring,popCoin Expiring,78 popCoins expiring in 6 days!,2025-12-03 05:10:40,True,2025-11-15 17:10:40,True,Push,Low
+NOTIF00000106,U000007,New Deal,New Deal,New deals matching your interests!,2025-11-29 14:10:40,True,2025-12-03 17:10:40,True,Push,High
+NOTIF00000107,U000007,popCoin Earned,popCoin Earned,You earned 12 popCoins! 🎉,2025-11-20 05:10:40,True,,True,SMS,Low
+NOTIF00000108,U000007,Payment Success,Payment Success,Payment of ₹3264 successful!,2025-11-30 17:10:40,False,,False,Push,Medium
+NOTIF00000109,U000007,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-24 07:10:40,False,,True,SMS,Low
+NOTIF00000110,U000007,popCoin Earned,popCoin Earned,You earned 71 popCoins! 🎉,2025-11-27 07:10:40,True,2025-11-15 17:10:40,False,SMS,High
+NOTIF00000111,U000007,popCoin Earned,popCoin Earned,You earned 10 popCoins! 🎉,2025-11-07 05:10:40,True,,False,In-App,Low
+NOTIF00000112,U000007,Payment Success,Payment Success,Payment of ₹260 successful!,2025-11-04 19:10:40,True,2025-11-05 17:10:40,False,In-App,Medium
+NOTIF00000113,U000007,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-04 06:10:40,True,2025-11-11 17:10:40,True,SMS,High
+NOTIF00000114,U000007,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-13 23:10:40,True,2025-11-18 17:10:40,True,SMS,Low
+NOTIF00000115,U000007,popCoin Earned,popCoin Earned,You earned 57 popCoins! 🎉,2025-11-16 11:10:40,True,2025-11-21 17:10:40,False,SMS,Low
+NOTIF00000116,U000007,Payment Success,Payment Success,Payment of ₹3861 successful!,2025-11-08 17:10:40,False,,False,SMS,Low
+NOTIF00000117,U000007,New Deal,New Deal,New deals matching your interests!,2025-11-07 22:10:40,True,2025-11-22 17:10:40,False,In-App,High
+NOTIF00000118,U000007,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-10 22:10:40,True,,True,Push,Medium
+NOTIF00000119,U000007,Price Drop,Price Drop,Price dropped on item in your cart!,2025-12-03 08:10:40,True,2025-12-03 17:10:40,False,In-App,High
+NOTIF00000120,U000007,popCoin Expiring,popCoin Expiring,142 popCoins expiring in 3 days!,2025-11-19 02:10:40,True,,True,SMS,Low
+NOTIF00000121,U000007,Challenge Update,Challenge Update,You're 79% through your challenge!,2025-11-30 00:10:40,False,2025-11-13 17:10:40,False,Push,Medium
+NOTIF00000122,U000007,popCoin Expiring,popCoin Expiring,153 popCoins expiring in 2 days!,2025-11-28 13:10:40,False,2025-11-23 17:10:40,False,SMS,High
+NOTIF00000123,U000008,popCoin Earned,popCoin Earned,You earned 100 popCoins! 🎉,2025-11-04 13:10:40,True,2025-11-22 17:10:40,False,In-App,Medium
+NOTIF00000124,U000008,Budget Alert,Budget Alert,You've used 91% of your monthly budget.,2025-12-02 23:10:40,True,,False,In-App,High
+NOTIF00000125,U000008,Payment Success,Payment Success,Payment of ₹1898 successful!,2025-11-03 19:10:40,True,2025-12-02 17:10:40,False,Push,High
+NOTIF00000126,U000008,Challenge Update,Challenge Update,You're 76% through your challenge!,2025-11-14 07:10:40,False,2025-11-25 17:10:40,True,Push,High
+NOTIF00000127,U000008,Budget Alert,Budget Alert,You've used 83% of your monthly budget.,2025-11-26 15:10:40,True,2025-12-01 17:10:40,False,SMS,Medium
+NOTIF00000128,U000008,popCoin Earned,popCoin Earned,You earned 71 popCoins! 🎉,2025-11-12 19:10:40,True,,False,In-App,High
+NOTIF00000129,U000008,Payment Success,Payment Success,Payment of ₹2680 successful!,2025-11-28 04:10:40,True,2025-12-02 17:10:40,False,In-App,High
+NOTIF00000130,U000008,Budget Alert,Budget Alert,You've used 76% of your monthly budget.,2025-11-19 15:10:40,True,2025-11-12 17:10:40,True,Push,Medium
+NOTIF00000131,U000008,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-11 07:10:40,False,,False,Push,Low
+NOTIF00000132,U000008,New Deal,New Deal,New deals matching your interests!,2025-11-06 04:10:40,True,,False,In-App,Medium
+NOTIF00000133,U000008,popCoin Expiring,popCoin Expiring,72 popCoins expiring in 5 days!,2025-11-18 11:10:40,True,2025-12-01 17:10:40,True,SMS,High
+NOTIF00000134,U000008,popCoin Earned,popCoin Earned,You earned 43 popCoins! 🎉,2025-11-11 22:10:40,True,,True,Push,Medium
+NOTIF00000135,U000008,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-23 13:10:40,True,2025-11-21 17:10:40,False,SMS,Medium
+NOTIF00000136,U000008,popCoin Earned,popCoin Earned,You earned 64 popCoins! 🎉,2025-11-11 09:10:40,True,2025-11-17 17:10:40,True,SMS,Medium
+NOTIF00000137,U000008,Challenge Update,Challenge Update,You're 89% through your challenge!,2025-11-21 13:10:40,False,,False,Push,Medium
+NOTIF00000138,U000008,Budget Alert,Budget Alert,You've used 89% of your monthly budget.,2025-11-22 15:10:40,True,2025-11-28 17:10:40,True,SMS,High
+NOTIF00000139,U000008,popCoin Earned,popCoin Earned,You earned 86 popCoins! 🎉,2025-11-30 16:10:40,True,2025-11-24 17:10:40,False,Push,Low
+NOTIF00000140,U000008,Payment Success,Payment Success,Payment of ₹920 successful!,2025-11-19 01:10:40,True,,False,Push,High
+NOTIF00000141,U000008,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-27 21:10:40,True,2025-11-14 17:10:40,False,Push,Medium
+NOTIF00000142,U000008,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-12 13:10:40,True,2025-11-23 17:10:40,False,In-App,High
+NOTIF00000143,U000008,popCoin Earned,popCoin Earned,You earned 30 popCoins! 🎉,2025-11-23 14:10:40,True,,False,Push,Medium
+NOTIF00000144,U000008,Payment Success,Payment Success,Payment of ₹2883 successful!,2025-12-02 03:10:40,True,,False,Push,Medium
+NOTIF00000145,U000008,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-10 18:10:40,False,2025-11-13 17:10:40,True,Push,Low
+NOTIF00000146,U000008,popCoin Expiring,popCoin Expiring,52 popCoins expiring in 4 days!,2025-11-23 18:10:40,True,,False,Push,High
+NOTIF00000147,U000009,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-13 19:10:40,True,,False,In-App,Low
+NOTIF00000148,U000009,Payment Success,Payment Success,Payment of ₹1527 successful!,2025-11-03 00:10:40,True,2025-11-09 17:10:40,True,In-App,Low
+NOTIF00000149,U000009,Payment Success,Payment Success,Payment of ₹678 successful!,2025-12-02 16:10:40,True,2025-11-15 17:10:40,False,Push,Low
+NOTIF00000150,U000009,popCoin Earned,popCoin Earned,You earned 60 popCoins! 🎉,2025-12-01 00:10:40,True,2025-11-18 17:10:40,False,Push,Low
+NOTIF00000151,U000009,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-12 11:10:40,False,2025-11-24 17:10:40,False,SMS,Medium
+NOTIF00000152,U000009,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-09 12:10:40,True,,True,Push,Low
+NOTIF00000153,U000009,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-25 13:10:40,True,,True,In-App,Low
+NOTIF00000154,U000009,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-11 13:10:40,True,2025-11-24 17:10:40,False,Push,High
+NOTIF00000155,U000009,popCoin Earned,popCoin Earned,You earned 14 popCoins! 🎉,2025-11-22 10:10:40,True,2025-11-16 17:10:40,False,In-App,Low
+NOTIF00000156,U000009,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-21 05:10:40,True,,True,SMS,High
+NOTIF00000157,U000009,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-08 00:10:40,True,,False,Push,High
+NOTIF00000158,U000009,Challenge Update,Challenge Update,You're 65% through your challenge!,2025-11-26 10:10:40,True,2025-11-05 17:10:40,True,Push,Low
+NOTIF00000159,U000009,Challenge Update,Challenge Update,You're 76% through your challenge!,2025-11-25 03:10:40,True,2025-11-11 17:10:40,False,Push,High
+NOTIF00000160,U000009,Budget Alert,Budget Alert,You've used 80% of your monthly budget.,2025-11-11 00:10:40,True,,False,SMS,High
+NOTIF00000161,U000009,popCoin Expiring,popCoin Expiring,93 popCoins expiring in 1 days!,2025-11-16 23:10:40,True,2025-11-12 17:10:40,False,SMS,High
+NOTIF00000162,U000009,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-22 07:10:40,False,2025-11-10 17:10:40,False,In-App,Low
+NOTIF00000163,U000009,Budget Alert,Budget Alert,You've used 78% of your monthly budget.,2025-11-16 01:10:40,True,2025-11-09 17:10:40,False,Push,Medium
+NOTIF00000164,U000009,New Deal,New Deal,New deals matching your interests!,2025-11-16 23:10:40,True,2025-11-08 17:10:40,False,In-App,Medium
+NOTIF00000165,U000010,popCoin Earned,popCoin Earned,You earned 94 popCoins! 🎉,2025-11-28 17:10:40,True,,True,SMS,Medium
+NOTIF00000166,U000010,New Deal,New Deal,New deals matching your interests!,2025-11-25 15:10:40,True,,False,SMS,High
+NOTIF00000167,U000010,Challenge Update,Challenge Update,You're 73% through your challenge!,2025-11-13 19:10:40,True,2025-11-12 17:10:40,True,SMS,Low
+NOTIF00000168,U000010,popCoin Earned,popCoin Earned,You earned 26 popCoins! 🎉,2025-11-03 19:10:40,False,,True,Push,Low
+NOTIF00000169,U000010,Budget Alert,Budget Alert,You've used 79% of your monthly budget.,2025-11-26 06:10:40,False,,True,SMS,High
+NOTIF00000170,U000010,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-12-02 20:10:40,True,2025-11-08 17:10:40,False,Push,Medium
+NOTIF00000171,U000010,Budget Alert,Budget Alert,You've used 93% of your monthly budget.,2025-11-14 00:10:40,True,,True,SMS,High
+NOTIF00000172,U000010,Challenge Update,Challenge Update,You're 81% through your challenge!,2025-11-24 05:10:40,False,,True,SMS,Low
+NOTIF00000173,U000010,New Deal,New Deal,New deals matching your interests!,2025-11-06 18:10:40,False,2025-12-01 17:10:40,False,In-App,Medium
+NOTIF00000174,U000010,Challenge Update,Challenge Update,You're 85% through your challenge!,2025-11-20 02:10:40,True,2025-11-22 17:10:40,False,SMS,Medium
+NOTIF00000175,U000010,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-25 19:10:40,True,2025-12-01 17:10:40,False,SMS,Medium
+NOTIF00000176,U000010,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-23 21:10:40,True,2025-11-20 17:10:40,False,Push,Low
+NOTIF00000177,U000010,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-22 17:10:40,True,2025-11-21 17:10:40,True,In-App,High
+NOTIF00000178,U000010,Challenge Update,Challenge Update,You're 73% through your challenge!,2025-11-24 13:10:40,True,,False,SMS,High
+NOTIF00000179,U000010,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-29 20:10:40,False,2025-11-13 17:10:40,True,SMS,Low
+NOTIF00000180,U000010,Budget Alert,Budget Alert,You've used 88% of your monthly budget.,2025-11-13 10:10:40,False,,False,Push,Low
+NOTIF00000181,U000010,Payment Success,Payment Success,Payment of ₹4685 successful!,2025-11-23 10:10:40,True,2025-11-24 17:10:40,False,Push,Medium
+NOTIF00000182,U000010,popCoin Earned,popCoin Earned,You earned 56 popCoins! 🎉,2025-11-03 11:10:40,True,2025-11-26 17:10:40,True,Push,Low
+NOTIF00000183,U000010,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-10 09:10:40,True,2025-11-09 17:10:40,False,In-App,Low
+NOTIF00000184,U000011,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-10 18:10:40,True,2025-11-05 17:10:40,False,In-App,High
+NOTIF00000185,U000011,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-21 05:10:40,False,2025-11-17 17:10:40,False,Push,Medium
+NOTIF00000186,U000011,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-22 17:10:40,False,2025-12-03 17:10:40,False,In-App,Low
+NOTIF00000187,U000011,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-14 13:10:40,True,2025-11-22 17:10:40,False,In-App,Medium
+NOTIF00000188,U000011,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-19 09:10:40,True,,False,SMS,High
+NOTIF00000189,U000011,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-12 09:10:40,False,2025-11-27 17:10:40,True,Push,Medium
+NOTIF00000190,U000011,popCoin Expiring,popCoin Expiring,131 popCoins expiring in 3 days!,2025-11-15 04:10:40,True,2025-11-19 17:10:40,True,Push,Low
+NOTIF00000191,U000011,popCoin Earned,popCoin Earned,You earned 13 popCoins! 🎉,2025-11-03 01:10:40,True,2025-11-29 17:10:40,True,Push,Medium
+NOTIF00000192,U000011,New Deal,New Deal,New deals matching your interests!,2025-11-27 06:10:40,False,,True,In-App,Low
+NOTIF00000193,U000011,Budget Alert,Budget Alert,You've used 95% of your monthly budget.,2025-12-02 14:10:40,True,,True,SMS,Low
+NOTIF00000194,U000011,popCoin Earned,popCoin Earned,You earned 98 popCoins! 🎉,2025-11-26 03:10:40,True,2025-11-15 17:10:40,False,In-App,Low
+NOTIF00000195,U000011,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-25 16:10:40,False,2025-11-04 17:10:40,False,SMS,Medium
+NOTIF00000196,U000011,Challenge Update,Challenge Update,You're 60% through your challenge!,2025-11-13 01:10:40,False,2025-12-02 17:10:40,True,Push,Medium
+NOTIF00000197,U000011,Challenge Update,Challenge Update,You're 65% through your challenge!,2025-11-12 11:10:40,True,2025-11-14 17:10:40,False,Push,Low
+NOTIF00000198,U000011,popCoin Expiring,popCoin Expiring,151 popCoins expiring in 5 days!,2025-11-18 12:10:40,True,,True,In-App,Low
+NOTIF00000199,U000011,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-03 18:10:40,True,2025-11-28 17:10:40,False,SMS,Low
+NOTIF00000200,U000011,Budget Alert,Budget Alert,You've used 86% of your monthly budget.,2025-11-06 20:10:40,False,,True,Push,High
+NOTIF00000201,U000011,Challenge Update,Challenge Update,You're 82% through your challenge!,2025-11-05 01:10:40,False,2025-12-03 17:10:40,False,In-App,Medium
+NOTIF00000202,U000011,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-12-01 01:10:40,True,2025-11-18 17:10:40,False,Push,High
+NOTIF00000203,U000011,New Deal,New Deal,New deals matching your interests!,2025-11-08 14:10:40,False,2025-11-07 17:10:40,True,In-App,High
+NOTIF00000204,U000011,popCoin Expiring,popCoin Expiring,175 popCoins expiring in 1 days!,2025-11-21 21:10:40,False,,False,SMS,Low
+NOTIF00000205,U000011,Challenge Update,Challenge Update,You're 75% through your challenge!,2025-11-03 19:10:40,True,2025-11-25 17:10:40,False,In-App,High
+NOTIF00000206,U000011,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-11 13:10:40,True,2025-11-04 17:10:40,False,SMS,High
+NOTIF00000207,U000011,popCoin Expiring,popCoin Expiring,124 popCoins expiring in 3 days!,2025-11-11 18:10:40,False,,False,SMS,Low
+NOTIF00000208,U000011,Challenge Update,Challenge Update,You're 61% through your challenge!,2025-11-06 22:10:40,True,,False,Push,Medium
+NOTIF00000209,U000011,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-05 21:10:40,True,2025-11-25 17:10:40,False,SMS,Medium
+NOTIF00000210,U000011,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-06 00:10:40,True,2025-11-13 17:10:40,False,In-App,High
+NOTIF00000211,U000011,popCoin Earned,popCoin Earned,You earned 94 popCoins! 🎉,2025-11-20 20:10:40,True,2025-11-24 17:10:40,False,In-App,High
+NOTIF00000212,U000012,Budget Alert,Budget Alert,You've used 85% of your monthly budget.,2025-11-08 02:10:40,True,2025-11-25 17:10:40,False,Push,High
+NOTIF00000213,U000012,popCoin Expiring,popCoin Expiring,72 popCoins expiring in 4 days!,2025-11-30 23:10:40,False,2025-11-20 17:10:40,False,Push,Low
+NOTIF00000214,U000012,popCoin Expiring,popCoin Expiring,146 popCoins expiring in 5 days!,2025-11-19 00:10:40,True,2025-11-28 17:10:40,True,In-App,High
+NOTIF00000215,U000012,Challenge Update,Challenge Update,You're 73% through your challenge!,2025-11-30 22:10:40,False,2025-11-29 17:10:40,False,SMS,High
+NOTIF00000216,U000012,Challenge Update,Challenge Update,You're 78% through your challenge!,2025-11-04 22:10:40,True,2025-11-15 17:10:40,False,In-App,Medium
+NOTIF00000217,U000012,popCoin Earned,popCoin Earned,You earned 82 popCoins! 🎉,2025-11-20 02:10:40,True,,False,Push,High
+NOTIF00000218,U000012,Budget Alert,Budget Alert,You've used 75% of your monthly budget.,2025-11-03 07:10:40,False,2025-11-17 17:10:40,False,SMS,Medium
+NOTIF00000219,U000012,New Deal,New Deal,New deals matching your interests!,2025-11-02 21:10:40,False,2025-11-04 17:10:40,False,SMS,Medium
+NOTIF00000220,U000012,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-24 11:10:40,True,2025-11-12 17:10:40,False,SMS,Low
+NOTIF00000221,U000012,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-29 23:10:40,True,2025-12-03 17:10:40,False,In-App,Medium
+NOTIF00000222,U000012,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-12-02 19:10:40,True,,False,SMS,Medium
+NOTIF00000223,U000012,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-21 08:10:40,False,2025-11-19 17:10:40,False,Push,Medium
+NOTIF00000224,U000012,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-06 07:10:40,True,,True,In-App,Medium
+NOTIF00000225,U000012,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-15 04:10:40,False,,False,In-App,High
+NOTIF00000226,U000012,popCoin Expiring,popCoin Expiring,194 popCoins expiring in 6 days!,2025-11-11 05:10:40,True,,True,SMS,Medium
+NOTIF00000227,U000012,Payment Success,Payment Success,Payment of ₹1002 successful!,2025-11-28 01:10:40,True,2025-11-12 17:10:40,True,In-App,Medium
+NOTIF00000228,U000012,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-06 23:10:40,True,2025-11-22 17:10:40,False,In-App,Low
+NOTIF00000229,U000012,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-10 10:10:40,True,2025-11-08 17:10:40,True,In-App,Low
+NOTIF00000230,U000012,popCoin Expiring,popCoin Expiring,195 popCoins expiring in 5 days!,2025-11-06 19:10:40,True,,False,In-App,High
+NOTIF00000231,U000012,Payment Success,Payment Success,Payment of ₹4698 successful!,2025-11-28 13:10:40,True,,False,SMS,Medium
+NOTIF00000232,U000012,Challenge Update,Challenge Update,You're 89% through your challenge!,2025-11-12 00:10:40,False,2025-11-17 17:10:40,False,In-App,High
+NOTIF00000233,U000012,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-29 16:10:40,False,,False,Push,Medium
+NOTIF00000234,U000012,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-22 07:10:40,True,2025-11-29 17:10:40,True,Push,High
+NOTIF00000235,U000012,popCoin Earned,popCoin Earned,You earned 15 popCoins! 🎉,2025-11-21 15:10:40,True,2025-11-26 17:10:40,False,Push,High
+NOTIF00000236,U000012,Challenge Update,Challenge Update,You're 84% through your challenge!,2025-11-10 03:10:40,True,2025-11-06 17:10:40,False,SMS,Low
+NOTIF00000237,U000012,Payment Success,Payment Success,Payment of ₹3961 successful!,2025-11-03 17:10:40,False,2025-11-08 17:10:40,True,SMS,Low
+NOTIF00000238,U000012,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-27 09:10:40,False,,False,Push,High
+NOTIF00000239,U000012,popCoin Expiring,popCoin Expiring,188 popCoins expiring in 5 days!,2025-11-24 12:10:40,True,2025-11-28 17:10:40,False,SMS,High
+NOTIF00000240,U000013,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-20 11:10:40,False,,False,Push,Low
+NOTIF00000241,U000013,Budget Alert,Budget Alert,You've used 87% of your monthly budget.,2025-11-07 17:10:40,True,2025-11-05 17:10:40,False,In-App,Low
+NOTIF00000242,U000013,Challenge Update,Challenge Update,You're 84% through your challenge!,2025-11-28 21:10:40,True,2025-11-18 17:10:40,False,In-App,High
+NOTIF00000243,U000013,Budget Alert,Budget Alert,You've used 81% of your monthly budget.,2025-12-02 13:10:40,True,2025-11-08 17:10:40,False,Push,High
+NOTIF00000244,U000013,Challenge Update,Challenge Update,You're 72% through your challenge!,2025-11-19 07:10:40,False,2025-11-04 17:10:40,True,Push,High
+NOTIF00000245,U000013,Challenge Update,Challenge Update,You're 85% through your challenge!,2025-11-29 17:10:40,True,2025-11-15 17:10:40,True,Push,High
+NOTIF00000246,U000013,popCoin Earned,popCoin Earned,You earned 39 popCoins! 🎉,2025-11-19 03:10:40,True,2025-11-30 17:10:40,False,In-App,Medium
+NOTIF00000247,U000013,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-13 22:10:40,True,2025-11-23 17:10:40,True,SMS,High
+NOTIF00000248,U000013,Challenge Update,Challenge Update,You're 61% through your challenge!,2025-11-04 10:10:40,False,2025-11-09 17:10:40,False,In-App,High
+NOTIF00000249,U000013,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-29 00:10:40,True,2025-11-08 17:10:40,False,SMS,High
+NOTIF00000250,U000013,popCoin Expiring,popCoin Expiring,91 popCoins expiring in 2 days!,2025-12-02 06:10:40,True,2025-11-05 17:10:40,False,In-App,Medium
+NOTIF00000251,U000014,Budget Alert,Budget Alert,You've used 90% of your monthly budget.,2025-11-07 09:10:40,True,,False,Push,Medium
+NOTIF00000252,U000014,popCoin Earned,popCoin Earned,You earned 59 popCoins! 🎉,2025-11-06 03:10:40,True,2025-11-18 17:10:40,False,Push,Medium
+NOTIF00000253,U000014,New Deal,New Deal,New deals matching your interests!,2025-11-07 23:10:40,False,2025-11-21 17:10:40,False,In-App,Low
+NOTIF00000254,U000014,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-18 23:10:40,True,2025-11-30 17:10:40,True,Push,High
+NOTIF00000255,U000014,popCoin Earned,popCoin Earned,You earned 25 popCoins! 🎉,2025-11-25 19:10:40,True,2025-11-16 17:10:40,False,SMS,Low
+NOTIF00000256,U000014,popCoin Earned,popCoin Earned,You earned 95 popCoins! 🎉,2025-11-23 19:10:40,True,2025-11-04 17:10:40,True,SMS,High
+NOTIF00000257,U000014,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-27 22:10:40,True,2025-11-05 17:10:40,True,In-App,High
+NOTIF00000258,U000014,Challenge Update,Challenge Update,You're 90% through your challenge!,2025-11-26 10:10:40,False,2025-11-28 17:10:40,True,In-App,Medium
+NOTIF00000259,U000014,Challenge Update,Challenge Update,You're 65% through your challenge!,2025-11-12 09:10:40,False,2025-11-21 17:10:40,True,Push,Low
+NOTIF00000260,U000014,popCoin Earned,popCoin Earned,You earned 98 popCoins! 🎉,2025-11-24 08:10:40,True,2025-11-07 17:10:40,True,In-App,Low
+NOTIF00000261,U000014,New Deal,New Deal,New deals matching your interests!,2025-11-25 03:10:40,True,2025-12-03 17:10:40,False,SMS,Low
+NOTIF00000262,U000014,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-07 20:10:40,True,2025-11-14 17:10:40,False,Push,Medium
+NOTIF00000263,U000014,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-20 10:10:40,True,,False,In-App,Medium
+NOTIF00000264,U000014,Challenge Update,Challenge Update,You're 64% through your challenge!,2025-12-01 05:10:40,True,2025-11-29 17:10:40,False,Push,High
+NOTIF00000265,U000014,Price Drop,Price Drop,Price dropped on item in your cart!,2025-12-01 07:10:40,True,,True,SMS,Medium
+NOTIF00000266,U000014,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-18 20:10:40,False,2025-11-13 17:10:40,False,Push,Low
+NOTIF00000267,U000014,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-22 20:10:40,True,2025-12-03 17:10:40,False,SMS,Low
+NOTIF00000268,U000014,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-13 00:10:40,True,,False,SMS,High
+NOTIF00000269,U000014,Challenge Update,Challenge Update,You're 87% through your challenge!,2025-11-03 12:10:40,True,2025-11-24 17:10:40,False,SMS,High
+NOTIF00000270,U000014,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-16 02:10:40,True,,True,Push,Low
+NOTIF00000271,U000014,popCoin Expiring,popCoin Expiring,133 popCoins expiring in 3 days!,2025-11-21 08:10:40,True,2025-11-07 17:10:40,False,Push,High
+NOTIF00000272,U000014,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-13 01:10:40,True,,False,SMS,Medium
+NOTIF00000273,U000014,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-08 18:10:40,True,2025-11-10 17:10:40,True,Push,Medium
+NOTIF00000274,U000014,Challenge Update,Challenge Update,You're 89% through your challenge!,2025-11-28 15:10:40,True,,False,SMS,High
+NOTIF00000275,U000014,popCoin Earned,popCoin Earned,You earned 46 popCoins! 🎉,2025-11-08 14:10:40,True,2025-11-17 17:10:40,False,SMS,High
+NOTIF00000276,U000014,popCoin Expiring,popCoin Expiring,164 popCoins expiring in 2 days!,2025-11-13 22:10:40,False,,False,SMS,High
+NOTIF00000277,U000014,Challenge Update,Challenge Update,You're 83% through your challenge!,2025-12-02 10:10:40,True,2025-12-03 17:10:40,False,SMS,Low
+NOTIF00000278,U000015,popCoin Earned,popCoin Earned,You earned 17 popCoins! 🎉,2025-11-16 07:10:40,True,2025-11-27 17:10:40,True,Push,Medium
+NOTIF00000279,U000015,popCoin Earned,popCoin Earned,You earned 51 popCoins! 🎉,2025-11-15 19:10:40,True,2025-11-16 17:10:40,False,Push,Medium
+NOTIF00000280,U000015,Payment Success,Payment Success,Payment of ₹588 successful!,2025-11-19 05:10:40,False,2025-11-28 17:10:40,False,In-App,High
+NOTIF00000281,U000015,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-12 11:10:40,True,2025-11-20 17:10:40,False,Push,Low
+NOTIF00000282,U000015,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-28 05:10:40,True,,False,SMS,Medium
+NOTIF00000283,U000015,popCoin Expiring,popCoin Expiring,69 popCoins expiring in 2 days!,2025-11-27 10:10:40,False,2025-11-30 17:10:40,False,SMS,Low
+NOTIF00000284,U000015,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-17 02:10:40,True,2025-11-09 17:10:40,False,SMS,High
+NOTIF00000285,U000015,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-19 21:10:40,False,2025-11-15 17:10:40,True,Push,Low
+NOTIF00000286,U000015,New Deal,New Deal,New deals matching your interests!,2025-11-09 15:10:40,False,,False,In-App,Medium
+NOTIF00000287,U000015,popCoin Expiring,popCoin Expiring,178 popCoins expiring in 6 days!,2025-11-19 23:10:40,False,2025-11-16 17:10:40,False,In-App,Medium
+NOTIF00000288,U000015,Budget Alert,Budget Alert,You've used 79% of your monthly budget.,2025-11-21 06:10:40,False,2025-11-21 17:10:40,False,In-App,High
+NOTIF00000289,U000015,Payment Success,Payment Success,Payment of ₹2751 successful!,2025-11-19 11:10:40,True,2025-11-15 17:10:40,False,Push,Medium
+NOTIF00000290,U000015,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-09 03:10:40,False,,True,SMS,Low
+NOTIF00000291,U000015,popCoin Earned,popCoin Earned,You earned 66 popCoins! 🎉,2025-11-19 23:10:40,True,,False,SMS,Low
+NOTIF00000292,U000015,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-19 08:10:40,False,2025-11-25 17:10:40,False,In-App,Low
+NOTIF00000293,U000016,Payment Success,Payment Success,Payment of ₹1685 successful!,2025-11-07 22:10:40,False,2025-11-30 17:10:40,False,In-App,High
+NOTIF00000294,U000016,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-09 23:10:40,False,2025-11-30 17:10:40,False,In-App,Low
+NOTIF00000295,U000016,New Deal,New Deal,New deals matching your interests!,2025-11-11 21:10:40,False,2025-11-05 17:10:40,True,In-App,High
+NOTIF00000296,U000016,popCoin Expiring,popCoin Expiring,91 popCoins expiring in 4 days!,2025-11-21 05:10:40,True,2025-11-05 17:10:40,True,Push,Low
+NOTIF00000297,U000016,Challenge Update,Challenge Update,You're 68% through your challenge!,2025-11-30 10:10:40,True,2025-11-16 17:10:40,False,SMS,High
+NOTIF00000298,U000016,popCoin Earned,popCoin Earned,You earned 52 popCoins! 🎉,2025-11-25 22:10:40,False,2025-11-25 17:10:40,False,Push,Low
+NOTIF00000299,U000016,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-04 17:10:40,True,,True,SMS,Medium
+NOTIF00000300,U000016,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-13 11:10:40,True,2025-11-22 17:10:40,False,In-App,High
+NOTIF00000301,U000016,New Deal,New Deal,New deals matching your interests!,2025-11-12 08:10:40,True,2025-12-02 17:10:40,False,In-App,Low
+NOTIF00000302,U000016,popCoin Earned,popCoin Earned,You earned 93 popCoins! 🎉,2025-11-04 21:10:40,True,,False,Push,Medium
+NOTIF00000303,U000016,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-24 09:10:40,True,2025-12-02 17:10:40,False,In-App,Medium
+NOTIF00000304,U000016,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-24 16:10:40,True,,True,Push,Medium
+NOTIF00000305,U000016,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-04 04:10:40,True,,True,Push,Low
+NOTIF00000306,U000016,popCoin Earned,popCoin Earned,You earned 52 popCoins! 🎉,2025-11-19 17:10:40,True,2025-11-18 17:10:40,False,In-App,Low
+NOTIF00000307,U000016,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-23 12:10:40,True,2025-11-07 17:10:40,True,SMS,High
+NOTIF00000308,U000016,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-22 18:10:40,True,,True,SMS,Low
+NOTIF00000309,U000016,popCoin Earned,popCoin Earned,You earned 10 popCoins! 🎉,2025-11-04 15:10:40,False,2025-11-26 17:10:40,False,Push,Low
+NOTIF00000310,U000016,Budget Alert,Budget Alert,You've used 83% of your monthly budget.,2025-11-13 00:10:40,False,,False,SMS,Medium
+NOTIF00000311,U000016,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-27 20:10:40,True,,False,Push,Medium
+NOTIF00000312,U000016,popCoin Expiring,popCoin Expiring,133 popCoins expiring in 4 days!,2025-11-19 15:10:40,True,2025-12-02 17:10:40,False,SMS,High
+NOTIF00000313,U000016,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-25 02:10:40,True,2025-11-13 17:10:40,True,In-App,High
+NOTIF00000314,U000016,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-07 03:10:40,True,2025-11-24 17:10:40,False,SMS,Medium
+NOTIF00000315,U000016,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-12-02 07:10:40,True,2025-11-16 17:10:40,True,Push,High
+NOTIF00000316,U000016,popCoin Expiring,popCoin Expiring,105 popCoins expiring in 4 days!,2025-11-25 21:10:40,False,2025-11-28 17:10:40,False,Push,Low
+NOTIF00000317,U000016,Budget Alert,Budget Alert,You've used 92% of your monthly budget.,2025-11-22 12:10:40,True,2025-11-27 17:10:40,True,In-App,Low
+NOTIF00000318,U000016,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-30 03:10:40,False,,False,SMS,High
+NOTIF00000319,U000016,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-30 01:10:40,False,2025-11-22 17:10:40,False,SMS,Medium
+NOTIF00000320,U000016,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-10 02:10:40,True,2025-11-04 17:10:40,True,SMS,Medium
+NOTIF00000321,U000016,Payment Success,Payment Success,Payment of ₹1218 successful!,2025-11-14 22:10:40,False,,False,SMS,Medium
+NOTIF00000322,U000017,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-30 16:10:40,False,2025-11-23 17:10:40,False,Push,Low
+NOTIF00000323,U000017,popCoin Earned,popCoin Earned,You earned 78 popCoins! 🎉,2025-11-29 19:10:40,True,2025-11-20 17:10:40,False,SMS,Medium
+NOTIF00000324,U000017,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-23 22:10:40,False,2025-11-19 17:10:40,False,In-App,Medium
+NOTIF00000325,U000017,Challenge Update,Challenge Update,You're 84% through your challenge!,2025-11-12 19:10:40,False,2025-11-17 17:10:40,True,SMS,Low
+NOTIF00000326,U000017,popCoin Expiring,popCoin Expiring,63 popCoins expiring in 2 days!,2025-11-09 23:10:40,True,2025-11-14 17:10:40,False,SMS,Low
+NOTIF00000327,U000017,popCoin Expiring,popCoin Expiring,126 popCoins expiring in 5 days!,2025-11-05 15:10:40,True,,False,SMS,Low
+NOTIF00000328,U000017,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-20 02:10:40,True,2025-11-21 17:10:40,False,Push,High
+NOTIF00000329,U000017,Challenge Update,Challenge Update,You're 76% through your challenge!,2025-11-09 04:10:40,False,,True,SMS,High
+NOTIF00000330,U000017,Payment Success,Payment Success,Payment of ₹4822 successful!,2025-12-03 17:10:40,False,2025-11-12 17:10:40,False,SMS,Low
+NOTIF00000331,U000017,Challenge Update,Challenge Update,You're 78% through your challenge!,2025-11-23 13:10:40,False,2025-11-04 17:10:40,False,SMS,High
+NOTIF00000332,U000017,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-16 17:10:40,False,2025-11-10 17:10:40,True,SMS,Medium
+NOTIF00000333,U000017,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-15 10:10:40,False,,True,SMS,High
+NOTIF00000334,U000017,Payment Success,Payment Success,Payment of ₹2963 successful!,2025-11-30 10:10:40,False,2025-11-15 17:10:40,True,SMS,Low
+NOTIF00000335,U000017,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-24 07:10:40,True,2025-11-24 17:10:40,True,SMS,Medium
+NOTIF00000336,U000017,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-27 05:10:40,True,,False,Push,High
+NOTIF00000337,U000017,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-25 22:10:40,True,2025-11-13 17:10:40,False,SMS,Medium
+NOTIF00000338,U000017,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-12 10:10:40,True,2025-11-06 17:10:40,False,In-App,High
+NOTIF00000339,U000017,Payment Success,Payment Success,Payment of ₹1047 successful!,2025-11-30 05:10:40,True,,False,SMS,High
+NOTIF00000340,U000018,New Deal,New Deal,New deals matching your interests!,2025-11-06 12:10:40,False,2025-11-09 17:10:40,False,In-App,Medium
+NOTIF00000341,U000018,popCoin Earned,popCoin Earned,You earned 53 popCoins! 🎉,2025-11-21 09:10:40,True,,False,SMS,Medium
+NOTIF00000342,U000018,popCoin Expiring,popCoin Expiring,76 popCoins expiring in 5 days!,2025-11-13 11:10:40,True,2025-11-07 17:10:40,False,In-App,Medium
+NOTIF00000343,U000018,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-16 17:10:40,True,2025-11-27 17:10:40,True,In-App,High
+NOTIF00000344,U000018,Budget Alert,Budget Alert,You've used 91% of your monthly budget.,2025-11-24 21:10:40,True,2025-11-19 17:10:40,True,SMS,Low
+NOTIF00000345,U000018,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-19 23:10:40,True,2025-11-21 17:10:40,False,SMS,Low
+NOTIF00000346,U000018,Payment Success,Payment Success,Payment of ₹4242 successful!,2025-11-16 09:10:40,False,2025-11-09 17:10:40,False,In-App,Medium
+NOTIF00000347,U000018,popCoin Expiring,popCoin Expiring,110 popCoins expiring in 7 days!,2025-11-10 03:10:40,True,2025-11-30 17:10:40,False,In-App,High
+NOTIF00000348,U000018,popCoin Earned,popCoin Earned,You earned 92 popCoins! 🎉,2025-11-08 14:10:40,True,2025-11-07 17:10:40,False,SMS,High
+NOTIF00000349,U000018,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-17 02:10:40,True,2025-11-19 17:10:40,False,SMS,Medium
+NOTIF00000350,U000018,New Deal,New Deal,New deals matching your interests!,2025-11-19 17:10:40,True,,False,Push,Low
+NOTIF00000351,U000018,popCoin Earned,popCoin Earned,You earned 89 popCoins! 🎉,2025-12-03 12:10:40,False,,True,In-App,Medium
+NOTIF00000352,U000018,Challenge Update,Challenge Update,You're 80% through your challenge!,2025-11-05 15:10:40,False,,False,In-App,Medium
+NOTIF00000353,U000018,Budget Alert,Budget Alert,You've used 83% of your monthly budget.,2025-12-03 16:10:40,False,2025-11-11 17:10:40,False,SMS,Medium
+NOTIF00000354,U000019,Payment Success,Payment Success,Payment of ₹4612 successful!,2025-11-13 15:10:40,True,2025-11-11 17:10:40,False,In-App,High
+NOTIF00000355,U000019,Challenge Update,Challenge Update,You're 90% through your challenge!,2025-11-14 18:10:40,False,2025-11-29 17:10:40,False,In-App,Medium
+NOTIF00000356,U000019,Payment Success,Payment Success,Payment of ₹740 successful!,2025-11-18 08:10:40,True,,True,In-App,Low
+NOTIF00000357,U000019,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-12-02 11:10:40,True,2025-11-20 17:10:40,True,SMS,Medium
+NOTIF00000358,U000019,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-18 19:10:40,False,,True,Push,High
+NOTIF00000359,U000019,Payment Success,Payment Success,Payment of ₹1210 successful!,2025-11-30 23:10:40,True,,False,SMS,High
+NOTIF00000360,U000019,popCoin Earned,popCoin Earned,You earned 53 popCoins! 🎉,2025-12-02 14:10:40,True,,False,SMS,High
+NOTIF00000361,U000019,popCoin Earned,popCoin Earned,You earned 69 popCoins! 🎉,2025-11-09 16:10:40,False,2025-11-28 17:10:40,True,Push,High
+NOTIF00000362,U000019,New Deal,New Deal,New deals matching your interests!,2025-11-05 15:10:40,False,2025-11-29 17:10:40,True,Push,High
+NOTIF00000363,U000019,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-29 23:10:40,True,2025-12-01 17:10:40,False,Push,Medium
+NOTIF00000364,U000019,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-09 08:10:40,True,2025-11-04 17:10:40,True,Push,Medium
+NOTIF00000365,U000019,Challenge Update,Challenge Update,You're 64% through your challenge!,2025-11-26 23:10:40,True,2025-11-29 17:10:40,False,SMS,Low
+NOTIF00000366,U000019,popCoin Earned,popCoin Earned,You earned 84 popCoins! 🎉,2025-11-05 12:10:40,True,2025-11-27 17:10:40,False,Push,Medium
+NOTIF00000367,U000020,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-20 15:10:40,False,2025-11-07 17:10:40,False,SMS,Low
+NOTIF00000368,U000020,popCoin Earned,popCoin Earned,You earned 96 popCoins! 🎉,2025-11-15 00:10:40,True,,True,Push,High
+NOTIF00000369,U000020,popCoin Expiring,popCoin Expiring,78 popCoins expiring in 3 days!,2025-11-04 15:10:40,True,2025-11-16 17:10:40,False,SMS,Medium
+NOTIF00000370,U000020,Payment Success,Payment Success,Payment of ₹3605 successful!,2025-11-08 01:10:40,False,2025-11-27 17:10:40,False,In-App,High
+NOTIF00000371,U000020,popCoin Earned,popCoin Earned,You earned 74 popCoins! 🎉,2025-12-03 01:10:40,False,,False,SMS,High
+NOTIF00000372,U000020,Payment Success,Payment Success,Payment of ₹4746 successful!,2025-11-29 15:10:40,True,,True,In-App,Low
+NOTIF00000373,U000020,New Deal,New Deal,New deals matching your interests!,2025-11-07 11:10:40,True,2025-11-25 17:10:40,False,In-App,Low
+NOTIF00000374,U000020,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-25 23:10:40,False,2025-11-25 17:10:40,False,Push,High
+NOTIF00000375,U000020,popCoin Earned,popCoin Earned,You earned 31 popCoins! 🎉,2025-11-06 17:10:40,True,2025-12-03 17:10:40,True,Push,High
+NOTIF00000376,U000020,popCoin Earned,popCoin Earned,You earned 12 popCoins! 🎉,2025-11-08 08:10:40,False,2025-11-21 17:10:40,False,Push,Low
+NOTIF00000377,U000020,popCoin Expiring,popCoin Expiring,51 popCoins expiring in 1 days!,2025-11-08 23:10:40,True,,True,In-App,High
+NOTIF00000378,U000020,popCoin Earned,popCoin Earned,You earned 84 popCoins! 🎉,2025-11-07 10:10:40,True,2025-11-27 17:10:40,False,SMS,Low
+NOTIF00000379,U000020,New Deal,New Deal,New deals matching your interests!,2025-11-21 17:10:40,False,2025-11-23 17:10:40,False,SMS,High
+NOTIF00000380,U000020,New Deal,New Deal,New deals matching your interests!,2025-12-02 17:10:40,False,2025-11-15 17:10:40,False,In-App,Low
+NOTIF00000381,U000020,Goal Progress,Goal Progress,Only 500 popCoins away from your goal!,2025-11-03 03:10:40,True,2025-11-17 17:10:40,True,In-App,High
+NOTIF00000382,U000020,Payment Success,Payment Success,Payment of ₹4206 successful!,2025-11-28 23:10:40,True,,True,Push,Low
+NOTIF00000383,U000020,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-09 10:10:40,True,2025-12-03 17:10:40,False,In-App,Medium
+NOTIF00000384,U000020,Payment Success,Payment Success,Payment of ₹3413 successful!,2025-11-20 03:10:40,True,2025-11-30 17:10:40,True,SMS,High
+NOTIF00000385,U000020,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-11 01:10:40,True,2025-11-13 17:10:40,True,SMS,Medium
+NOTIF00000386,U000020,Payment Success,Payment Success,Payment of ₹1252 successful!,2025-12-02 01:10:40,True,2025-12-01 17:10:40,False,In-App,Low
+NOTIF00000387,U000020,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-20 08:10:40,True,2025-11-26 17:10:40,False,In-App,High
+NOTIF00000388,U000020,popCoin Earned,popCoin Earned,You earned 47 popCoins! 🎉,2025-11-03 13:10:40,False,2025-11-30 17:10:40,False,Push,Low
+NOTIF00000389,U000020,Referral Reward,Referral Reward,Your friend joined! You earned 200 popCoins.,2025-11-15 17:10:40,True,2025-11-05 17:10:40,False,Push,High
+NOTIF00000390,U000020,popCoin Earned,popCoin Earned,You earned 69 popCoins! 🎉,2025-11-20 17:10:40,True,,False,Push,Low
+NOTIF00000391,U000020,Challenge Update,Challenge Update,You're 62% through your challenge!,2025-11-05 13:10:40,False,2025-11-04 17:10:40,False,In-App,High
+NOTIF00000392,U000020,Price Drop,Price Drop,Price dropped on item in your cart!,2025-11-11 06:10:40,True,2025-11-20 17:10:40,False,In-App,High
+NOTIF00000393,U000020,Cart Reminder,Cart Reminder,You left items in your cart. Complete checkout now!,2025-11-05 13:10:40,True,2025-11-26 17:10:40,False,In-App,Medium
+NOTIF00000394,U000020,popCoin Earned,popCoin Earned,You earned 23 popCoins! 🎉,2025-11-17 18:10:40,False,2025-11-27 17:10:40,False,In-App,Medium
+NOTIF00000395,U000020,Challenge Update,Challenge Update,You're 77% through your challenge!,2025-11-18 04:10:40,False,,False,Push,Low
+NOTIF00000396,U000020,Challenge Update,Challenge Update,You're 74% through your challenge!,2025-11-21 04:10:40,False,2025-11-04 17:10:40,False,SMS,Medium

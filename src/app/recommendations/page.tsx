@@ -1,6 +1,13 @@
 import { ConsultationForm } from "@/components/forms/ConsultationForm";
 
-export default function RecommendationsPage() {
+type Props = {
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+export default async function RecommendationsPage(props: Props) {
+    const searchParams = await props.searchParams;
+    const condition = typeof searchParams.condition === 'string' ? searchParams.condition : undefined;
+
     return (
         <div className="space-y-6">
             <div>
@@ -8,7 +15,7 @@ export default function RecommendationsPage() {
                 <p className="text-muted-foreground">AI-driven holistic health recommendations based on AYUSH principles.</p>
             </div>
 
-            <ConsultationForm />
+            <ConsultationForm initialCondition={decodeURIComponent(condition || '') || undefined} />
         </div>
     );
 }

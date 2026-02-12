@@ -1,0 +1,36 @@
+goal_id,user_id,product_id,product_title,target_popcoins,current_popcoins,popcoins_needed,target_price,estimated_days,created_at,target_date,status,notification_enabled
+GOAL00000001,U000001,41030,Roasted & Lightly Salted California Pistachio - 250gm,35,536,0,347.0,29,2025-11-04,2025-12-27,Active,True
+GOAL00000002,U000002,134472,Organic Cotton Stretch Chino In Beige- Slim Fit,100,667,0,1000.0,14,2025-11-17,2026-01-11,Achieved,True
+GOAL00000003,U000002,1053733,I Love You Dad Design Mug 9.5 X 7.5 X 1 Cm,140,667,0,699.0,41,2025-11-18,2025-12-21,Active,True
+GOAL00000004,U000003,949012,"Timeless Glass Designs For Every Occasion, 350 Ml, Capacity, Pack Of 6, Size: 12 X 7 X 7 Cm",130,322,0,1295.0,37,2025-11-04,2025-12-29,Active,True
+GOAL00000005,U000003,818766,Women's Blue Don't Talk To Me Graphic Printed Relaxed Fit T-shirt,100,322,0,1000.0,41,2025-11-21,2026-01-21,Active,True
+GOAL00000006,U000004,949012,"Timeless Glass Designs For Every Occasion, 350 Ml, Capacity, Pack Of 6, Size: 12 X 7 X 7 Cm",130,329,0,1295.0,43,2025-11-26,2025-12-21,Active,True
+GOAL00000007,U000004,949038,"Timeless Glass Designs For Every Occasion, 300 Ml, Capacity, Pack Of 9, Size: 14 X 7.5 X 7.5 Cm",241,329,0,2408.0,15,2025-11-07,2025-12-22,Active,True
+GOAL00000008,U000005,134472,Organic Cotton Stretch Chino In Beige- Slim Fit,100,393,0,1000.0,13,2025-11-10,2026-01-07,Active,True
+GOAL00000009,U000005,950140,"Timeless Glass Designs For Every Occasion, 200 Ml, Capacity, Pack Of 12, Size: 12 X 6.5 X 6.5 Cm",245,393,0,2448.0,13,2025-11-25,2025-12-27,Active,True
+GOAL00000010,U000005,496872,Lavender & Red Cotton Round Neck Half Sleeve Printed Oversized T-shirt - Pack Of 2,100,393,0,1000.0,26,2025-11-22,2026-01-27,Achieved,True
+GOAL00000011,U000006,949860,"Celebrate Special Times With Party Perfect Whisky Glasses! Cheers To Fun Moments, Clear, Capacity - 250 Ml, Pack Of 11, Size - 8.5 X 8.5 X 9.5 Cm",576,642,0,5763.0,40,2025-11-16,2026-01-18,Active,True
+GOAL00000012,U000006,1044302,"Eau De Parfum - Eclipse, 100ml",130,642,0,1299.0,15,2025-11-22,2026-01-09,Active,True
+GOAL00000013,U000006,1012775,Lifestyle Shri Shivay Namastubhayam Wall Hanging For Home Decoration Wall Decor Items (multicolor ),100,642,0,499.0,16,2025-11-14,2026-01-29,Active,True
+GOAL00000014,U000007,1053248,Unisex Off White Captain America Embroidered Baseball Cap,325,201,124,1299.0,31,2025-11-12,2025-12-16,Active,True
+GOAL00000015,U000007,496872,Lavender & Red Cotton Round Neck Half Sleeve Printed Oversized T-shirt - Pack Of 2,100,201,0,1000.0,7,2025-11-28,2026-01-22,Active,True
+GOAL00000016,U000007,1053640,"Bring Your Own Mug Illustration Printed Ceramic Coffee Mug 350 Ml, White 9.5 X 7.5 X 1 Cm",70,201,0,699.0,22,2025-11-27,2026-01-07,Active,True
+GOAL00000017,U000008,949860,"Celebrate Special Times With Party Perfect Whisky Glasses! Cheers To Fun Moments, Clear, Capacity - 250 Ml, Pack Of 11, Size - 8.5 X 8.5 X 9.5 Cm",576,482,94,5763.0,37,2025-11-17,2026-01-04,Active,True
+GOAL00000018,U000009,1053733,I Love You Dad Design Mug 9.5 X 7.5 X 1 Cm,140,379,0,699.0,43,2025-11-20,2026-01-10,Active,True
+GOAL00000019,U000009,948892,"Party Perfect Handle Beer Glasses & Mugs: Making Every Moment, Transparent, Clear, Size -13.5 X 12.5 X 9.5 Cm, Pack Of 5, Capacity - 550 Ml",409,379,30,4089.0,23,2025-11-15,2026-01-10,Active,True
+GOAL00000020,U000009,1040453,Men Anya Forger Blue Oversized Graphic T-shirt,100,379,0,1000.0,24,2025-11-12,2026-01-31,Active,True
+GOAL00000021,U000010,496872,Lavender & Red Cotton Round Neck Half Sleeve Printed Oversized T-shirt - Pack Of 2,100,261,0,1000.0,23,2025-11-22,2026-01-13,Achieved,True
+GOAL00000022,U000010,1012775,Lifestyle Shri Shivay Namastubhayam Wall Hanging For Home Decoration Wall Decor Items (multicolor ),100,261,0,499.0,13,2025-11-11,2026-01-03,Active,True
+GOAL00000023,U000011,1053248,Unisex Off White Captain America Embroidered Baseball Cap,325,935,0,1299.0,30,2025-11-19,2026-01-23,Active,True
+GOAL00000024,U000012,428848,Men's Pink Heathered Korean Oversized Shirt,100,145,0,1000.0,13,2025-11-25,2026-01-11,Active,True
+GOAL00000025,U000012,243944,Men Originals White Block Collar Neck Printed T-shirts,100,145,0,1000.0,42,2025-11-10,2025-12-31,Active,True
+GOAL00000026,U000012,1053733,I Love You Dad Design Mug 9.5 X 7.5 X 1 Cm,140,145,0,699.0,29,2025-11-23,2026-01-10,Achieved,True
+GOAL00000027,U000013,134472,Organic Cotton Stretch Chino In Beige- Slim Fit,100,325,0,1000.0,39,2025-11-27,2026-01-07,Active,True
+GOAL00000028,U000013,428848,Men's Pink Heathered Korean Oversized Shirt,100,325,0,1000.0,21,2025-11-08,2025-12-14,Active,True
+GOAL00000029,U000013,1040453,Men Anya Forger Blue Oversized Graphic T-shirt,100,325,0,1000.0,29,2025-11-16,2026-01-20,Active,True
+GOAL00000030,U000014,1053733,I Love You Dad Design Mug 9.5 X 7.5 X 1 Cm,140,159,0,699.0,40,2025-11-16,2025-12-16,Active,True
+GOAL00000031,U000014,949854,"Timeless Glass Designs For Every Occasion, 270 Ml, Capacity, Pack Of 12, Size: 7 X 7 X 10 Cm",245,159,86,2448.0,21,2025-11-10,2026-01-15,Active,True
+GOAL00000032,U000014,896118,Men's Waffle Polo Plain Maroon T-shirt With Plain Waffle Maroon Shorts Co-ords,100,159,0,1000.0,17,2025-11-29,2026-01-25,Active,True
+GOAL00000033,U000015,950618,"Beautiful Wine Glasses For Memorable Moments, 150 Ml, Capacity, Pack Of 12, Size: 16.5 X 8 X 8 Cm",327,424,0,3273.0,21,2025-11-06,2026-01-30,Active,True
+GOAL00000034,U000015,949854,"Timeless Glass Designs For Every Occasion, 270 Ml, Capacity, Pack Of 12, Size: 7 X 7 X 10 Cm",245,424,0,2448.0,34,2025-11-05,2025-12-25,Active,True
+GOAL00000035,U000015,134466,Organic Cotton Stretch Chino In Slate Grey- Slim Fit,100,424,0,1000.0,32,2025-11-23,2026-01-06,Achieved,True

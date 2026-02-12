@@ -1,0 +1,37 @@
+cart_id,user_id,product_id,title,category,brand,quantity,price,mrp,popcoins_required,added_at,is_available,price_changed
+CART00000001,U000002,134466,Organic Cotton Stretch Chino In Slate Grey- Slim Fit,Trousers,SUBTRACT,1,500.0,1000.0,0,2025-12-02 21:09:25,True,False
+CART00000002,U000002,949854,"Timeless Glass Designs For Every Occasion, 270 Ml, Capacity, Pack Of 12, Size: 7 X 7 X 10 Cm",Bar Necessities,Afast,2,2448.0,2448.0,245,2025-11-26 08:09:25,True,False
+CART00000003,U000002,428848,Men's Pink Heathered Korean Oversized Shirt,Casuals,Campus Sutra,3,500.0,1000.0,0,2025-12-02 07:09:25,False,True
+CART00000004,U000002,1053733,I Love You Dad Design Mug 9.5 X 7.5 X 1 Cm,Dinnerware,Ethnic Darzi,1,699.0,699.0,140,2025-11-28 23:09:25,True,True
+CART00000005,U000003,949860,"Celebrate Special Times With Party Perfect Whisky Glasses! Cheers To Fun Moments, Clear, Capacity - 250 Ml, Pack Of 11, Size - 8.5 X 8.5 X 9.5 Cm",Bar Necessities,Afast,3,5763.0,5763.0,576,2025-11-29 00:09:25,True,True
+CART00000006,U000003,428848,Men's Pink Heathered Korean Oversized Shirt,Casuals,Campus Sutra,1,500.0,1000.0,0,2025-11-28 06:09:25,False,True
+CART00000007,U000003,496872,Lavender & Red Cotton Round Neck Half Sleeve Printed Oversized T-shirt - Pack Of 2,Oversized Tees,BULLMER,2,500.0,1000.0,0,2025-11-26 10:09:25,False,False
+CART00000008,U000004,787062,Womens Boxy Regular Embroidery Crew Neck Tshirt,Tees,DILLINGER,3,500.0,1000.0,0,2025-12-03 13:09:25,True,False
+CART00000009,U000004,899608,Cool Glass Ash Tray: Sleek Design For Ashes With Style 10.5 X 10.5 X 3.5 Cm,Serveware,Afast,2,532.0,532.0,53,2025-11-26 16:09:25,True,False
+CART00000010,U000004,41030,Roasted & Lightly Salted California Pistachio - 250gm,Snack Time,Ambrosia,3,347.0,525.0,35,2025-11-27 16:09:25,True,False
+CART00000011,U000006,1040453,Men Anya Forger Blue Oversized Graphic T-shirt,Oversized Tees,Crazymonk,1,500.0,1000.0,0,2025-12-02 00:09:25,True,True
+CART00000012,U000007,949860,"Celebrate Special Times With Party Perfect Whisky Glasses! Cheers To Fun Moments, Clear, Capacity - 250 Ml, Pack Of 11, Size - 8.5 X 8.5 X 9.5 Cm",Bar Necessities,Afast,2,5763.0,5763.0,576,2025-11-30 15:09:25,False,False
+CART00000013,U000008,950618,"Beautiful Wine Glasses For Memorable Moments, 150 Ml, Capacity, Pack Of 12, Size: 16.5 X 8 X 8 Cm",Bar Necessities,Afast,2,3273.0,3273.0,327,2025-12-02 12:09:25,True,False
+CART00000014,U000008,949038,"Timeless Glass Designs For Every Occasion, 300 Ml, Capacity, Pack Of 9, Size: 14 X 7.5 X 7.5 Cm",Bar Necessities,Afast,3,2408.0,2408.0,241,2025-11-27 17:09:25,False,False
+CART00000015,U000010,41030,Roasted & Lightly Salted California Pistachio - 250gm,Snack Time,Ambrosia,1,347.0,525.0,35,2025-11-28 04:09:25,True,False
+CART00000016,U000011,1012775,Lifestyle Shri Shivay Namastubhayam Wall Hanging For Home Decoration Wall Decor Items (multicolor ),Wall Accents,PRAKRITI,2,499.0,499.0,100,2025-11-25 21:09:25,True,False
+CART00000017,U000011,1038399,Women's Yellow Rayon Blend Bandhani Embroidered Anarkali Kurta Trouser With Dupatta,The Perfect Sets,AHIKA,3,500.0,1000.0,0,2025-12-01 11:09:25,True,True
+CART00000018,U000011,792468,Auto Sight Wi-fi Dash Camera - Grey,Security,Gizmore,1,4999.0,4999.0,1000,2025-12-02 17:09:25,True,True
+CART00000019,U000011,949854,"Timeless Glass Designs For Every Occasion, 270 Ml, Capacity, Pack Of 12, Size: 7 X 7 X 10 Cm",Bar Necessities,Afast,2,2448.0,2448.0,245,2025-12-02 07:09:25,True,True
+CART00000020,U000011,1012775,Lifestyle Shri Shivay Namastubhayam Wall Hanging For Home Decoration Wall Decor Items (multicolor ),Wall Accents,PRAKRITI,1,499.0,499.0,100,2025-11-30 08:09:25,True,False
+CART00000021,U000012,612530,"Reed Diffuser Set Elite-essence Fragrance 120ml Glass Bottle, Aromatic Diffuser, Gift Set With 5 Black Fiber Sticks",Diffusers,Global Aroma,2,359.0,1499.0,36,2025-12-03 13:09:25,False,True
+CART00000022,U000012,1053640,"Bring Your Own Mug Illustration Printed Ceramic Coffee Mug 350 Ml, White 9.5 X 7.5 X 1 Cm",Dinnerware,Ethnic Darzi,2,699.0,699.0,70,2025-12-03 03:09:25,True,False
+CART00000023,U000014,612530,"Reed Diffuser Set Elite-essence Fragrance 120ml Glass Bottle, Aromatic Diffuser, Gift Set With 5 Black Fiber Sticks",Diffusers,Global Aroma,2,359.0,1499.0,36,2025-12-02 15:09:25,True,True
+CART00000024,U000014,496872,Lavender & Red Cotton Round Neck Half Sleeve Printed Oversized T-shirt - Pack Of 2,Oversized Tees,BULLMER,1,500.0,1000.0,0,2025-12-02 02:09:25,True,False
+CART00000025,U000015,134472,Organic Cotton Stretch Chino In Beige- Slim Fit,Trousers,SUBTRACT,3,500.0,1000.0,0,2025-11-28 02:09:25,True,True
+CART00000026,U000015,948892,"Party Perfect Handle Beer Glasses & Mugs: Making Every Moment, Transparent, Clear, Size -13.5 X 12.5 X 9.5 Cm, Pack Of 5, Capacity - 550 Ml",Bar Necessities,Afast,1,4089.0,4089.0,409,2025-12-03 05:09:25,False,False
+CART00000027,U000016,896118,Men's Waffle Polo Plain Maroon T-shirt With Plain Waffle Maroon Shorts Co-ords,Co-ord Sets,TRIPR,2,500.0,1000.0,0,2025-11-29 15:09:25,False,False
+CART00000028,U000018,949012,"Timeless Glass Designs For Every Occasion, 350 Ml, Capacity, Pack Of 6, Size: 12 X 7 X 7 Cm",Bar Necessities,Afast,1,1295.0,1295.0,130,2025-11-28 18:09:25,True,True
+CART00000029,U000018,428848,Men's Pink Heathered Korean Oversized Shirt,Casuals,Campus Sutra,1,500.0,1000.0,0,2025-11-30 23:09:25,True,True
+CART00000030,U000018,949038,"Timeless Glass Designs For Every Occasion, 300 Ml, Capacity, Pack Of 9, Size: 14 X 7.5 X 7.5 Cm",Bar Necessities,Afast,1,2408.0,2408.0,241,2025-11-30 19:09:25,False,True
+CART00000031,U000018,134466,Organic Cotton Stretch Chino In Slate Grey- Slim Fit,Trousers,SUBTRACT,3,500.0,1000.0,0,2025-11-29 18:09:25,True,False
+CART00000032,U000019,899608,Cool Glass Ash Tray: Sleek Design For Ashes With Style 10.5 X 10.5 X 3.5 Cm,Serveware,Afast,1,532.0,532.0,53,2025-12-01 01:09:25,True,True
+CART00000033,U000019,896118,Men's Waffle Polo Plain Maroon T-shirt With Plain Waffle Maroon Shorts Co-ords,Co-ord Sets,TRIPR,1,500.0,1000.0,0,2025-12-01 17:09:25,False,True
+CART00000034,U000020,1053640,"Bring Your Own Mug Illustration Printed Ceramic Coffee Mug 350 Ml, White 9.5 X 7.5 X 1 Cm",Dinnerware,Ethnic Darzi,2,699.0,699.0,70,2025-11-28 17:09:25,True,False
+CART00000035,U000020,41030,Roasted & Lightly Salted California Pistachio - 250gm,Snack Time,Ambrosia,2,347.0,525.0,35,2025-12-02 18:09:25,True,False
+CART00000036,U000020,134466,Organic Cotton Stretch Chino In Slate Grey- Slim Fit,Trousers,SUBTRACT,3,500.0,1000.0,0,2025-11-26 22:09:25,True,True

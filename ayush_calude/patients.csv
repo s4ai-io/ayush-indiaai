@@ -1,0 +1,501 @@
+patient_id,age,gender,prakriti,vikriti,bmi,city,occupation
+P00001,56,Male,Pitta-Kapha,Pitta,27.2,Jaipur,Manual Labor
+P00002,38,Male,Pitta,Vata,22.5,Chennai,Teacher
+P00003,28,Male,Kapha,Pitta,26.6,Ghaziabad,Office Worker
+P00004,70,Female,Tridosha,Vata-Pitta,21.3,Delhi,Office Worker
+P00005,55,Male,Vata,Vata-Kapha,30.8,Pune,Manual Labor
+P00006,78,Male,Kapha,Pitta,31.2,Ghaziabad,Manual Labor
+P00007,76,Female,Kapha,Vata,25.9,Ahmedabad,Retired
+P00008,61,Female,Vata-Pitta,Vata,21.9,Kolkata,Teacher
+P00009,74,Female,Vata,Kapha,22.6,Kanpur,Student
+P00010,70,Male,Pitta,Vata,28.8,Pune,Student
+P00011,77,Male,Vata,Pitta,28.3,Bangalore,Retired
+P00012,19,Male,Kapha,Vata,20.1,Nagpur,Student
+P00013,21,Female,Pitta,Vata-Kapha,25.9,Delhi,Teacher
+P00014,65,Female,Pitta,Kapha,28.5,Ghaziabad,Office Worker
+P00015,77,Female,Vata,Pitta,19.1,Bangalore,Healthcare
+P00016,70,Female,Vata-Pitta,Vata-Pitta,22.1,Nagpur,Healthcare
+P00017,42,Male,Pitta,Kapha,26.3,Bangalore,Office Worker
+P00018,18,Male,Vata,Pitta,23.5,Lucknow,Office Worker
+P00019,18,Male,Pitta,Vata,27.3,Hyderabad,Retired
+P00020,52,Female,Pitta-Kapha,Kapha,28.6,Nagpur,Manual Labor
+P00021,76,Female,Vata,Pitta,19.0,Nagpur,Manual Labor
+P00022,65,Female,Kapha,Kapha,29.4,Bangalore,Healthcare
+P00023,54,Male,Pitta-Kapha,Pitta-Kapha,28.3,Ahmedabad,Manual Labor
+P00024,18,Female,Kapha,Vata-Kapha,26.2,Indore,Student
+P00025,20,Male,Pitta-Kapha,Pitta-Kapha,31.0,Kanpur,Office Worker
+P00026,56,Male,Vata,Kapha,26.4,Delhi,Student
+P00027,43,Female,Vata,Vata,25.3,Jaipur,Office Worker
+P00028,69,Male,Vata-Pitta,Vata-Pitta,23.8,Kanpur,Manual Labor
+P00029,21,Female,Vata-Kapha,Kapha,22.9,Visakhapatnam,Manual Labor
+P00030,60,Female,Pitta,Vata-Kapha,19.0,Chennai,Manual Labor
+P00031,24,Female,Pitta,Vata,28.7,Bhopal,Healthcare
+P00032,45,Female,Pitta,Pitta,26.3,Nagpur,Manual Labor
+P00033,79,Male,Vata-Pitta,Vata-Pitta,22.2,Patna,Office Worker
+P00034,74,Male,Vata-Pitta,Vata,23.7,Chennai,Teacher
+P00035,74,Male,Pitta-Kapha,Pitta-Kapha,14.4,Bhopal,Healthcare
+P00036,54,Male,Vata-Pitta,Pitta,26.4,Indore,Healthcare
+P00037,59,Female,Pitta,Vata-Kapha,25.9,Vadodara,Student
+P00038,58,Male,Kapha,Vata,16.9,Hyderabad,Teacher
+P00039,75,Female,Tridosha,Pitta,17.3,Kanpur,Office Worker
+P00040,66,Female,Tridosha,Pitta,24.9,Bhopal,Manual Labor
+P00041,19,Female,Vata-Pitta,Vata,24.2,Jaipur,Healthcare
+P00042,19,Male,Vata-Pitta,Vata-Pitta,26.2,Hyderabad,Teacher
+P00043,43,Female,Tridosha,Vata,29.6,Vadodara,Healthcare
+P00044,76,Male,Pitta,Vata-Pitta,28.0,Chennai,Student
+P00045,22,Male,Vata-Pitta,Vata-Pitta,27.3,Vadodara,Office Worker
+P00046,65,Female,Pitta-Kapha,Kapha,33.8,Mumbai,Office Worker
+P00047,26,Female,Pitta,Vata,25.4,Lucknow,Manual Labor
+P00048,76,Male,Pitta,Kapha,23.0,Ahmedabad,Healthcare
+P00049,36,Male,Pitta,Vata,24.4,Bangalore,Teacher
+P00050,56,Female,Vata-Kapha,Vata,27.5,Ghaziabad,Manual Labor
+P00051,18,Male,Vata-Pitta,Vata-Pitta,21.6,Patna,Healthcare
+P00052,48,Male,Vata-Kapha,Kapha,27.7,Vadodara,Healthcare
+P00053,52,Female,Pitta,Vata,25.1,Pune,Healthcare
+P00054,66,Male,Pitta,Vata,26.5,Lucknow,Retired
+P00055,29,Female,Vata-Pitta,Pitta,24.4,Vadodara,Retired
+P00056,58,Male,Pitta,Kapha,25.7,Ahmedabad,Manual Labor
+P00057,20,Male,Vata-Kapha,Kapha,28.7,Mumbai,Healthcare
+P00058,69,Male,Vata,Vata,24.1,Ahmedabad,Office Worker
+P00059,55,Male,Vata-Pitta,Vata-Pitta,17.6,Delhi,Manual Labor
+P00060,42,Male,Vata-Pitta,Vata,29.7,Kanpur,Office Worker
+P00061,46,Male,Pitta,Pitta,13.5,Jaipur,Teacher
+P00062,78,Female,Pitta,Kapha,21.8,Pune,Healthcare
+P00063,50,Male,Kapha,Vata,30.4,Patna,Manual Labor
+P00064,20,Female,Vata-Pitta,Pitta,22.1,Pune,Office Worker
+P00065,50,Male,Vata-Pitta,Vata-Pitta,34.1,Bhopal,Student
+P00066,39,Female,Pitta,Vata-Kapha,25.6,Bhopal,Retired
+P00067,62,Male,Kapha,Pitta-Kapha,17.3,Hyderabad,Office Worker
+P00068,50,Female,Vata-Pitta,Vata-Pitta,21.6,Kanpur,Office Worker
+P00069,50,Male,Pitta,Kapha,20.7,Pune,Manual Labor
+P00070,45,Female,Kapha,Pitta,26.9,Chennai,Retired
+P00071,23,Male,Kapha,Vata,24.5,Jaipur,Retired
+P00072,70,Male,Vata-Pitta,Vata,28.0,Visakhapatnam,Healthcare
+P00073,77,Male,Vata-Kapha,Vata,21.6,Ghaziabad,Office Worker
+P00074,40,Male,Pitta,Pitta,18.9,Ahmedabad,Manual Labor
+P00075,35,Female,Vata-Pitta,Pitta,25.7,Patna,Manual Labor
+P00076,57,Female,Vata,Vata,26.5,Delhi,Manual Labor
+P00077,64,Female,Tridosha,Vata,29.2,Mumbai,Retired
+P00078,34,Female,Pitta-Kapha,Kapha,25.2,Lucknow,Retired
+P00079,26,Female,Pitta-Kapha,Pitta,19.5,Pune,Student
+P00080,72,Male,Kapha,Pitta,21.2,Delhi,Healthcare
+P00081,41,Male,Vata-Kapha,Vata-Kapha,27.1,Kanpur,Office Worker
+P00082,62,Male,Pitta,Vata,40.4,Patna,Healthcare
+P00083,63,Male,Pitta-Kapha,Pitta,23.7,Vadodara,Office Worker
+P00084,45,Male,Vata-Pitta,Vata,28.0,Bangalore,Teacher
+P00085,49,Male,Vata-Pitta,Pitta,24.8,Hyderabad,Healthcare
+P00086,79,Male,Pitta,Kapha,22.9,Delhi,Healthcare
+P00087,39,Male,Pitta,Vata,26.4,Bhopal,Teacher
+P00088,54,Female,Vata-Pitta,Pitta,17.5,Pune,Teacher
+P00089,70,Female,Pitta,Vata-Kapha,29.8,Ahmedabad,Student
+P00090,49,Female,Vata-Pitta,Vata,24.4,Lucknow,Retired
+P00091,64,Female,Vata-Pitta,Vata,24.6,Mumbai,Retired
+P00092,36,Male,Kapha,Vata,23.1,Bangalore,Healthcare
+P00093,54,Male,Pitta,Vata,32.1,Vadodara,Student
+P00094,18,Male,Pitta,Vata,22.3,Nagpur,Office Worker
+P00095,51,Male,Pitta,Vata,26.1,Nagpur,Student
+P00096,22,Male,Vata-Pitta,Pitta,34.0,Ghaziabad,Teacher
+P00097,72,Female,Vata,Kapha,22.3,Vadodara,Office Worker
+P00098,64,Female,Vata,Pitta-Kapha,23.9,Hyderabad,Manual Labor
+P00099,69,Female,Pitta,Vata,27.8,Hyderabad,Office Worker
+P00100,53,Male,Pitta,Pitta,27.4,Jaipur,Student
+P00101,40,Male,Vata,Vata-Kapha,23.7,Kanpur,Manual Labor
+P00102,27,Female,Vata-Pitta,Vata-Pitta,27.1,Patna,Student
+P00103,75,Male,Vata-Pitta,Vata,32.7,Bhopal,Student
+P00104,33,Male,Vata,Kapha,26.7,Mumbai,Student
+P00105,66,Male,Vata-Kapha,Vata-Kapha,29.7,Jaipur,Manual Labor
+P00106,29,Female,Kapha,Kapha,27.1,Ghaziabad,Teacher
+P00107,50,Female,Pitta-Kapha,Pitta-Kapha,26.8,Mumbai,Office Worker
+P00108,18,Male,Tridosha,Pitta-Kapha,29.5,Chennai,Healthcare
+P00109,61,Male,Pitta,Vata,23.3,Nagpur,Healthcare
+P00110,67,Male,Vata-Pitta,Pitta,24.6,Chennai,Office Worker
+P00111,34,Female,Vata-Pitta,Pitta,31.2,Delhi,Student
+P00112,79,Male,Pitta-Kapha,Pitta-Kapha,21.1,Ahmedabad,Teacher
+P00113,58,Male,Kapha,Kapha,27.1,Nagpur,Healthcare
+P00114,73,Female,Pitta-Kapha,Pitta-Kapha,24.3,Chennai,Manual Labor
+P00115,38,Male,Tridosha,Kapha,31.7,Kolkata,Retired
+P00116,52,Male,Tridosha,Pitta,17.5,Kolkata,Teacher
+P00117,35,Female,Pitta,Kapha,25.7,Bhopal,Teacher
+P00118,29,Male,Kapha,Vata-Pitta,29.3,Jaipur,Manual Labor
+P00119,42,Male,Pitta,Pitta,23.7,Indore,Office Worker
+P00120,42,Female,Pitta,Pitta-Kapha,38.0,Ahmedabad,Manual Labor
+P00121,66,Female,Vata,Vata-Kapha,23.4,Nagpur,Student
+P00122,45,Male,Tridosha,Vata-Kapha,28.9,Ahmedabad,Office Worker
+P00123,36,Male,Kapha,Vata,25.8,Indore,Student
+P00124,69,Female,Vata-Pitta,Vata,21.8,Jaipur,Student
+P00125,53,Female,Vata-Kapha,Vata-Kapha,23.6,Ghaziabad,Student
+P00126,70,Male,Kapha,Vata,26.0,Hyderabad,Student
+P00127,48,Male,Vata,Kapha,32.3,Jaipur,Office Worker
+P00128,64,Male,Vata,Vata-Pitta,26.6,Bhopal,Student
+P00129,61,Female,Vata-Kapha,Kapha,24.0,Vadodara,Office Worker
+P00130,57,Female,Vata,Vata-Pitta,29.7,Pune,Student
+P00131,75,Male,Vata,Kapha,26.8,Bhopal,Office Worker
+P00132,62,Male,Kapha,Vata-Pitta,19.2,Nagpur,Retired
+P00133,24,Male,Tridosha,Vata-Pitta,22.1,Kanpur,Healthcare
+P00134,78,Female,Kapha,Kapha,24.1,Hyderabad,Teacher
+P00135,27,Female,Vata-Kapha,Vata-Kapha,24.9,Lucknow,Teacher
+P00136,30,Female,Kapha,Kapha,21.0,Kanpur,Retired
+P00137,37,Female,Vata,Vata,30.1,Ghaziabad,Manual Labor
+P00138,30,Male,Pitta,Pitta,28.1,Bhopal,Teacher
+P00139,77,Female,Pitta,Pitta-Kapha,25.9,Kolkata,Healthcare
+P00140,54,Female,Pitta,Kapha,25.1,Indore,Healthcare
+P00141,74,Male,Vata-Pitta,Pitta,30.8,Lucknow,Manual Labor
+P00142,48,Female,Tridosha,Kapha,28.8,Kanpur,Retired
+P00143,20,Female,Vata-Kapha,Kapha,33.8,Pune,Healthcare
+P00144,25,Female,Pitta,Kapha,21.8,Kolkata,Teacher
+P00145,25,Male,Kapha,Kapha,17.3,Lucknow,Healthcare
+P00146,37,Female,Vata-Pitta,Vata,26.4,Ahmedabad,Teacher
+P00147,65,Female,Pitta,Pitta-Kapha,28.0,Ahmedabad,Manual Labor
+P00148,19,Male,Vata,Pitta-Kapha,30.9,Mumbai,Office Worker
+P00149,76,Male,Vata,Vata,29.7,Patna,Healthcare
+P00150,49,Male,Tridosha,Pitta,23.1,Visakhapatnam,Retired
+P00151,43,Male,Kapha,Vata-Kapha,26.1,Indore,Retired
+P00152,51,Female,Vata,Vata,26.1,Ahmedabad,Manual Labor
+P00153,38,Male,Vata,Pitta-Kapha,25.0,Hyderabad,Retired
+P00154,54,Male,Pitta-Kapha,Pitta,25.2,Vadodara,Retired
+P00155,27,Male,Pitta-Kapha,Pitta-Kapha,23.7,Ahmedabad,Office Worker
+P00156,63,Female,Pitta,Pitta,18.6,Chennai,Retired
+P00157,21,Female,Pitta,Kapha,18.9,Visakhapatnam,Healthcare
+P00158,25,Female,Vata,Pitta,30.1,Ghaziabad,Retired
+P00159,71,Male,Pitta-Kapha,Pitta-Kapha,29.7,Patna,Retired
+P00160,71,Female,Tridosha,Vata,25.3,Ahmedabad,Teacher
+P00161,76,Female,Kapha,Vata,31.0,Vadodara,Retired
+P00162,68,Male,Vata-Kapha,Kapha,28.5,Visakhapatnam,Office Worker
+P00163,77,Female,Tridosha,Kapha,28.3,Ahmedabad,Student
+P00164,68,Female,Vata-Kapha,Kapha,33.2,Ghaziabad,Office Worker
+P00165,69,Male,Vata-Pitta,Vata,28.5,Ahmedabad,Retired
+P00166,47,Male,Vata-Pitta,Vata-Pitta,24.6,Pune,Office Worker
+P00167,68,Female,Vata-Pitta,Pitta,24.2,Kanpur,Healthcare
+P00168,34,Female,Kapha,Pitta,30.7,Bhopal,Office Worker
+P00169,41,Male,Vata,Kapha,20.4,Bhopal,Retired
+P00170,60,Male,Pitta,Vata,22.6,Indore,Retired
+P00171,74,Male,Kapha,Kapha,31.4,Nagpur,Student
+P00172,21,Female,Pitta,Pitta,21.7,Bhopal,Healthcare
+P00173,20,Male,Vata-Kapha,Kapha,26.9,Ahmedabad,Student
+P00174,78,Female,Pitta,Vata,25.1,Patna,Office Worker
+P00175,22,Female,Pitta,Pitta,25.2,Kanpur,Teacher
+P00176,22,Female,Kapha,Vata,23.0,Kolkata,Retired
+P00177,51,Male,Vata,Pitta,22.5,Ghaziabad,Office Worker
+P00178,64,Female,Vata-Pitta,Vata-Pitta,23.9,Mumbai,Office Worker
+P00179,64,Female,Vata-Pitta,Vata,23.5,Visakhapatnam,Manual Labor
+P00180,34,Male,Pitta,Vata-Pitta,20.8,Jaipur,Retired
+P00181,66,Female,Vata-Pitta,Vata,25.1,Visakhapatnam,Student
+P00182,73,Female,Kapha,Kapha,26.3,Indore,Student
+P00183,40,Female,Vata-Pitta,Pitta,24.0,Bangalore,Retired
+P00184,76,Male,Pitta,Kapha,25.5,Ghaziabad,Office Worker
+P00185,64,Female,Pitta-Kapha,Pitta,23.6,Bangalore,Teacher
+P00186,68,Male,Pitta,Pitta,28.6,Mumbai,Manual Labor
+P00187,54,Male,Pitta,Kapha,18.8,Mumbai,Healthcare
+P00188,30,Male,Vata-Pitta,Vata,25.8,Chennai,Retired
+P00189,21,Male,Kapha,Kapha,35.3,Pune,Retired
+P00190,39,Female,Vata-Pitta,Pitta,22.5,Kolkata,Healthcare
+P00191,25,Male,Vata-Pitta,Vata,17.0,Lucknow,Office Worker
+P00192,54,Male,Kapha,Kapha,29.3,Lucknow,Healthcare
+P00193,51,Female,Pitta,Pitta,27.0,Indore,Teacher
+P00194,70,Male,Vata,Vata,24.2,Bangalore,Healthcare
+P00195,72,Male,Kapha,Pitta-Kapha,25.7,Hyderabad,Teacher
+P00196,28,Female,Vata-Kapha,Vata-Kapha,28.6,Hyderabad,Healthcare
+P00197,23,Male,Tridosha,Pitta,28.3,Nagpur,Healthcare
+P00198,19,Female,Vata-Pitta,Vata-Pitta,27.3,Nagpur,Office Worker
+P00199,25,Female,Kapha,Vata-Pitta,21.4,Mumbai,Retired
+P00200,37,Female,Pitta,Vata,27.6,Hyderabad,Retired
+P00201,43,Female,Pitta-Kapha,Pitta-Kapha,25.1,Visakhapatnam,Teacher
+P00202,53,Male,Pitta,Kapha,21.5,Bhopal,Manual Labor
+P00203,23,Female,Pitta,Vata,29.0,Ghaziabad,Retired
+P00204,18,Female,Vata,Vata,22.7,Bhopal,Teacher
+P00205,26,Female,Vata-Pitta,Pitta,15.1,Ahmedabad,Office Worker
+P00206,47,Female,Vata,Pitta-Kapha,21.8,Visakhapatnam,Manual Labor
+P00207,77,Female,Tridosha,Vata,25.7,Indore,Student
+P00208,29,Male,Kapha,Pitta-Kapha,25.4,Patna,Student
+P00209,39,Male,Vata,Vata-Pitta,27.1,Patna,Manual Labor
+P00210,77,Female,Pitta,Vata,27.8,Jaipur,Student
+P00211,22,Female,Pitta,Kapha,23.9,Jaipur,Healthcare
+P00212,59,Male,Kapha,Vata-Pitta,27.4,Vadodara,Manual Labor
+P00213,56,Male,Pitta-Kapha,Pitta,26.0,Bhopal,Retired
+P00214,50,Male,Pitta-Kapha,Pitta-Kapha,28.2,Patna,Teacher
+P00215,32,Female,Vata-Pitta,Pitta,20.2,Mumbai,Office Worker
+P00216,19,Female,Vata-Pitta,Vata,18.5,Indore,Teacher
+P00217,57,Male,Pitta,Kapha,17.5,Lucknow,Teacher
+P00218,68,Female,Pitta,Vata,21.9,Patna,Healthcare
+P00219,32,Female,Vata-Kapha,Kapha,31.8,Ghaziabad,Student
+P00220,44,Female,Pitta-Kapha,Pitta-Kapha,24.9,Visakhapatnam,Student
+P00221,55,Female,Pitta-Kapha,Kapha,28.9,Ahmedabad,Office Worker
+P00222,50,Male,Vata,Kapha,27.9,Kanpur,Office Worker
+P00223,27,Male,Kapha,Vata-Pitta,25.3,Pune,Manual Labor
+P00224,64,Female,Pitta-Kapha,Kapha,21.2,Vadodara,Healthcare
+P00225,41,Female,Vata-Pitta,Vata,37.7,Pune,Student
+P00226,46,Male,Pitta,Kapha,25.7,Nagpur,Manual Labor
+P00227,19,Female,Vata,Kapha,31.8,Mumbai,Teacher
+P00228,44,Male,Pitta,Vata,27.1,Jaipur,Office Worker
+P00229,27,Male,Pitta,Vata,18.3,Ghaziabad,Student
+P00230,60,Male,Pitta,Kapha,22.6,Patna,Office Worker
+P00231,79,Male,Vata,Pitta,27.6,Lucknow,Retired
+P00232,61,Female,Vata-Pitta,Pitta,31.3,Kanpur,Manual Labor
+P00233,21,Male,Pitta-Kapha,Kapha,22.6,Patna,Office Worker
+P00234,26,Male,Kapha,Kapha,30.2,Indore,Retired
+P00235,57,Male,Pitta-Kapha,Pitta-Kapha,22.5,Delhi,Manual Labor
+P00236,53,Male,Vata,Pitta-Kapha,23.0,Lucknow,Office Worker
+P00237,71,Male,Vata-Pitta,Vata,18.2,Ghaziabad,Retired
+P00238,26,Male,Pitta-Kapha,Pitta-Kapha,31.1,Indore,Retired
+P00239,27,Female,Pitta-Kapha,Kapha,28.4,Bhopal,Student
+P00240,28,Male,Vata-Kapha,Vata-Kapha,15.7,Hyderabad,Manual Labor
+P00241,24,Male,Pitta,Kapha,19.0,Jaipur,Teacher
+P00242,61,Male,Vata-Kapha,Vata,24.0,Ahmedabad,Manual Labor
+P00243,71,Male,Pitta,Pitta,28.2,Kolkata,Office Worker
+P00244,66,Female,Pitta-Kapha,Kapha,24.4,Patna,Student
+P00245,60,Male,Vata-Pitta,Vata,23.9,Lucknow,Teacher
+P00246,45,Female,Vata-Pitta,Vata-Pitta,20.6,Visakhapatnam,Office Worker
+P00247,57,Male,Vata-Pitta,Pitta,22.3,Pune,Retired
+P00248,40,Male,Kapha,Vata-Pitta,25.6,Ghaziabad,Manual Labor
+P00249,79,Male,Pitta,Vata,24.9,Jaipur,Manual Labor
+P00250,57,Male,Vata-Pitta,Vata,22.8,Kolkata,Student
+P00251,18,Female,Pitta-Kapha,Kapha,30.6,Hyderabad,Retired
+P00252,45,Female,Kapha,Pitta,14.4,Indore,Student
+P00253,68,Female,Pitta,Vata,19.4,Visakhapatnam,Office Worker
+P00254,63,Male,Vata-Pitta,Pitta,21.9,Kanpur,Healthcare
+P00255,50,Female,Vata,Vata,28.7,Mumbai,Office Worker
+P00256,18,Male,Vata-Pitta,Vata-Pitta,30.1,Mumbai,Teacher
+P00257,20,Female,Pitta,Kapha,22.9,Delhi,Manual Labor
+P00258,50,Female,Vata-Pitta,Vata-Pitta,27.0,Visakhapatnam,Student
+P00259,25,Male,Vata,Vata,27.8,Bhopal,Teacher
+P00260,60,Female,Tridosha,Vata-Kapha,26.8,Bangalore,Retired
+P00261,71,Female,Pitta,Pitta,18.3,Bhopal,Student
+P00262,19,Female,Vata-Kapha,Vata-Kapha,32.1,Hyderabad,Manual Labor
+P00263,22,Female,Pitta,Pitta,30.3,Bhopal,Teacher
+P00264,29,Female,Pitta-Kapha,Kapha,18.0,Indore,Healthcare
+P00265,54,Male,Kapha,Kapha,18.0,Visakhapatnam,Office Worker
+P00266,69,Female,Tridosha,Vata-Pitta,22.8,Jaipur,Student
+P00267,34,Male,Vata-Kapha,Kapha,28.9,Vadodara,Office Worker
+P00268,49,Female,Kapha,Vata,24.9,Bhopal,Office Worker
+P00269,31,Male,Pitta-Kapha,Pitta-Kapha,21.8,Nagpur,Healthcare
+P00270,26,Female,Vata,Vata-Pitta,31.5,Visakhapatnam,Office Worker
+P00271,21,Male,Vata,Pitta-Kapha,29.4,Jaipur,Healthcare
+P00272,23,Male,Vata-Kapha,Kapha,29.6,Visakhapatnam,Teacher
+P00273,38,Female,Pitta-Kapha,Pitta,22.0,Mumbai,Teacher
+P00274,54,Male,Vata-Pitta,Vata-Pitta,25.0,Kolkata,Student
+P00275,75,Male,Pitta-Kapha,Pitta-Kapha,21.4,Bhopal,Office Worker
+P00276,44,Male,Vata-Pitta,Vata,21.4,Visakhapatnam,Office Worker
+P00277,29,Male,Vata-Pitta,Pitta,36.0,Lucknow,Healthcare
+P00278,34,Female,Kapha,Pitta,24.1,Bhopal,Retired
+P00279,75,Female,Kapha,Pitta,25.6,Ahmedabad,Retired
+P00280,46,Male,Kapha,Pitta,24.1,Indore,Manual Labor
+P00281,53,Male,Pitta-Kapha,Pitta,27.3,Jaipur,Retired
+P00282,51,Female,Kapha,Vata-Kapha,18.0,Vadodara,Student
+P00283,39,Male,Pitta-Kapha,Kapha,27.4,Lucknow,Healthcare
+P00284,60,Female,Pitta-Kapha,Pitta,18.9,Visakhapatnam,Healthcare
+P00285,76,Female,Vata-Pitta,Pitta,29.6,Kanpur,Healthcare
+P00286,70,Female,Pitta,Pitta,22.2,Visakhapatnam,Student
+P00287,18,Male,Kapha,Kapha,18.8,Ahmedabad,Healthcare
+P00288,20,Female,Vata,Vata,23.4,Ahmedabad,Retired
+P00289,68,Male,Pitta,Kapha,22.1,Kanpur,Teacher
+P00290,76,Female,Tridosha,Vata-Pitta,24.0,Indore,Retired
+P00291,74,Male,Kapha,Vata,29.3,Patna,Office Worker
+P00292,25,Male,Vata-Pitta,Vata-Pitta,25.5,Kanpur,Office Worker
+P00293,34,Female,Vata-Pitta,Vata,28.3,Vadodara,Retired
+P00294,42,Male,Vata-Kapha,Vata-Kapha,26.8,Chennai,Retired
+P00295,29,Male,Pitta,Vata-Kapha,26.7,Bangalore,Retired
+P00296,40,Female,Vata-Pitta,Pitta,25.8,Indore,Teacher
+P00297,39,Male,Vata-Kapha,Kapha,26.8,Ghaziabad,Retired
+P00298,67,Female,Kapha,Vata-Pitta,24.1,Patna,Healthcare
+P00299,48,Male,Vata-Kapha,Vata-Kapha,23.1,Bangalore,Manual Labor
+P00300,59,Female,Vata-Pitta,Vata,28.5,Bangalore,Retired
+P00301,31,Male,Vata-Pitta,Vata-Pitta,23.3,Hyderabad,Retired
+P00302,51,Male,Vata-Kapha,Vata-Kapha,23.8,Lucknow,Office Worker
+P00303,60,Male,Pitta,Kapha,24.3,Kanpur,Office Worker
+P00304,66,Female,Vata-Pitta,Pitta,23.2,Nagpur,Retired
+P00305,39,Male,Pitta,Kapha,26.1,Ahmedabad,Healthcare
+P00306,79,Female,Kapha,Pitta,28.6,Kolkata,Manual Labor
+P00307,51,Male,Vata,Pitta-Kapha,27.9,Bangalore,Healthcare
+P00308,52,Female,Vata,Vata,25.2,Ahmedabad,Retired
+P00309,46,Male,Pitta-Kapha,Pitta,23.0,Visakhapatnam,Teacher
+P00310,74,Female,Vata-Pitta,Pitta,15.1,Jaipur,Teacher
+P00311,61,Male,Tridosha,Vata-Pitta,18.3,Visakhapatnam,Student
+P00312,22,Male,Pitta-Kapha,Pitta,18.0,Visakhapatnam,Student
+P00313,66,Female,Vata,Pitta,21.0,Bhopal,Teacher
+P00314,79,Female,Vata-Pitta,Pitta,20.8,Lucknow,Manual Labor
+P00315,65,Female,Vata,Vata-Kapha,17.3,Patna,Office Worker
+P00316,41,Male,Vata,Vata-Kapha,20.2,Indore,Healthcare
+P00317,54,Female,Pitta-Kapha,Pitta-Kapha,24.3,Lucknow,Teacher
+P00318,73,Female,Vata-Kapha,Vata,21.7,Indore,Student
+P00319,41,Male,Kapha,Kapha,29.7,Delhi,Healthcare
+P00320,62,Female,Vata,Vata,31.5,Lucknow,Manual Labor
+P00321,74,Female,Pitta,Vata,22.5,Ahmedabad,Teacher
+P00322,22,Male,Vata-Pitta,Vata-Pitta,29.8,Jaipur,Teacher
+P00323,40,Male,Vata-Kapha,Vata-Kapha,23.5,Hyderabad,Teacher
+P00324,67,Male,Kapha,Vata-Kapha,20.3,Lucknow,Retired
+P00325,20,Male,Pitta-Kapha,Pitta-Kapha,22.2,Nagpur,Teacher
+P00326,64,Male,Vata,Pitta-Kapha,22.2,Bangalore,Student
+P00327,54,Female,Vata,Pitta-Kapha,22.5,Bhopal,Manual Labor
+P00328,26,Male,Vata,Pitta-Kapha,23.4,Chennai,Healthcare
+P00329,59,Female,Pitta-Kapha,Pitta-Kapha,27.6,Vadodara,Student
+P00330,76,Male,Pitta,Pitta,33.0,Jaipur,Retired
+P00331,55,Female,Pitta,Kapha,21.6,Kanpur,Office Worker
+P00332,77,Female,Vata,Pitta-Kapha,25.0,Bangalore,Manual Labor
+P00333,30,Male,Vata-Kapha,Vata-Kapha,11.1,Indore,Healthcare
+P00334,46,Female,Vata-Kapha,Vata,21.5,Indore,Office Worker
+P00335,20,Female,Pitta,Kapha,18.4,Ghaziabad,Office Worker
+P00336,23,Female,Vata-Pitta,Pitta,26.9,Jaipur,Healthcare
+P00337,33,Female,Vata-Pitta,Vata-Pitta,28.3,Nagpur,Office Worker
+P00338,42,Male,Vata-Kapha,Kapha,27.0,Mumbai,Healthcare
+P00339,53,Female,Vata-Pitta,Vata-Pitta,22.4,Ahmedabad,Teacher
+P00340,60,Male,Tridosha,Pitta,26.9,Visakhapatnam,Teacher
+P00341,48,Female,Pitta-Kapha,Pitta-Kapha,23.5,Bhopal,Office Worker
+P00342,47,Male,Vata-Kapha,Vata,21.7,Delhi,Student
+P00343,35,Female,Pitta-Kapha,Pitta,25.1,Hyderabad,Manual Labor
+P00344,56,Male,Pitta,Vata,30.1,Indore,Retired
+P00345,44,Female,Tridosha,Kapha,28.0,Ghaziabad,Retired
+P00346,41,Male,Pitta-Kapha,Kapha,19.6,Hyderabad,Retired
+P00347,65,Female,Vata,Vata-Pitta,27.2,Jaipur,Office Worker
+P00348,45,Female,Vata-Pitta,Vata,25.2,Visakhapatnam,Retired
+P00349,47,Male,Pitta-Kapha,Kapha,22.8,Hyderabad,Teacher
+P00350,53,Female,Vata,Pitta,27.0,Ghaziabad,Teacher
+P00351,34,Female,Pitta-Kapha,Pitta,24.1,Indore,Student
+P00352,39,Male,Vata-Pitta,Vata,32.4,Visakhapatnam,Office Worker
+P00353,76,Male,Vata-Kapha,Vata-Kapha,33.1,Mumbai,Office Worker
+P00354,69,Female,Pitta-Kapha,Pitta,22.0,Chennai,Healthcare
+P00355,24,Male,Vata,Vata-Pitta,29.5,Bangalore,Healthcare
+P00356,28,Male,Vata-Pitta,Vata-Pitta,23.2,Pune,Manual Labor
+P00357,43,Female,Pitta,Pitta,25.4,Chennai,Healthcare
+P00358,46,Male,Vata-Pitta,Pitta,29.7,Chennai,Manual Labor
+P00359,69,Female,Pitta-Kapha,Pitta,22.1,Hyderabad,Teacher
+P00360,28,Male,Pitta,Vata-Kapha,27.9,Chennai,Office Worker
+P00361,61,Female,Vata,Kapha,17.6,Ahmedabad,Healthcare
+P00362,75,Female,Vata-Kapha,Vata,22.7,Kolkata,Student
+P00363,32,Male,Pitta-Kapha,Pitta,26.4,Bhopal,Healthcare
+P00364,41,Male,Kapha,Pitta-Kapha,23.8,Bangalore,Retired
+P00365,33,Female,Vata-Pitta,Pitta,23.3,Vadodara,Healthcare
+P00366,46,Male,Pitta-Kapha,Kapha,23.1,Vadodara,Manual Labor
+P00367,32,Male,Kapha,Kapha,27.1,Vadodara,Student
+P00368,75,Female,Vata-Pitta,Vata-Pitta,24.0,Mumbai,Office Worker
+P00369,63,Female,Kapha,Vata,31.6,Indore,Retired
+P00370,37,Male,Kapha,Vata,31.0,Patna,Teacher
+P00371,74,Female,Pitta,Kapha,28.6,Bangalore,Office Worker
+P00372,25,Female,Pitta,Pitta,18.1,Chennai,Office Worker
+P00373,25,Male,Kapha,Kapha,26.3,Jaipur,Healthcare
+P00374,55,Female,Pitta,Kapha,24.7,Indore,Healthcare
+P00375,50,Female,Tridosha,Pitta-Kapha,28.8,Visakhapatnam,Healthcare
+P00376,58,Female,Pitta,Vata-Kapha,28.4,Hyderabad,Teacher
+P00377,49,Male,Vata,Pitta,22.6,Ghaziabad,Teacher
+P00378,57,Male,Vata,Pitta,20.4,Bhopal,Retired
+P00379,19,Male,Vata-Pitta,Pitta,23.1,Kanpur,Retired
+P00380,56,Female,Vata,Kapha,29.3,Bhopal,Teacher
+P00381,63,Male,Vata-Pitta,Pitta,26.4,Bhopal,Student
+P00382,78,Female,Pitta-Kapha,Kapha,25.5,Chennai,Teacher
+P00383,23,Female,Vata-Pitta,Vata,30.9,Bangalore,Office Worker
+P00384,58,Male,Pitta-Kapha,Kapha,31.1,Hyderabad,Teacher
+P00385,25,Female,Vata-Kapha,Vata,30.1,Ghaziabad,Office Worker
+P00386,64,Female,Pitta-Kapha,Pitta-Kapha,27.2,Hyderabad,Retired
+P00387,24,Female,Vata-Pitta,Vata-Pitta,33.6,Bhopal,Teacher
+P00388,39,Male,Kapha,Kapha,29.7,Lucknow,Healthcare
+P00389,58,Female,Pitta,Pitta,27.6,Nagpur,Office Worker
+P00390,29,Male,Pitta,Pitta-Kapha,31.3,Chennai,Teacher
+P00391,75,Female,Pitta,Pitta,27.3,Ahmedabad,Office Worker
+P00392,70,Female,Vata-Pitta,Vata-Pitta,26.5,Nagpur,Office Worker
+P00393,68,Female,Pitta,Vata,19.8,Ahmedabad,Retired
+P00394,73,Male,Tridosha,Kapha,29.8,Jaipur,Office Worker
+P00395,27,Male,Kapha,Vata,19.6,Jaipur,Teacher
+P00396,24,Female,Kapha,Pitta-Kapha,23.5,Kanpur,Student
+P00397,48,Male,Kapha,Vata-Pitta,30.5,Kolkata,Manual Labor
+P00398,79,Female,Tridosha,Vata,28.0,Bangalore,Manual Labor
+P00399,66,Male,Vata-Pitta,Vata,23.4,Vadodara,Manual Labor
+P00400,51,Female,Kapha,Pitta-Kapha,25.3,Bhopal,Retired
+P00401,51,Female,Pitta-Kapha,Pitta,21.4,Nagpur,Student
+P00402,20,Female,Vata-Pitta,Vata-Pitta,19.5,Bangalore,Office Worker
+P00403,57,Male,Pitta-Kapha,Pitta,28.0,Delhi,Teacher
+P00404,53,Male,Vata-Kapha,Kapha,22.1,Visakhapatnam,Teacher
+P00405,40,Female,Vata-Pitta,Pitta,25.9,Visakhapatnam,Retired
+P00406,54,Female,Vata-Kapha,Vata,15.7,Vadodara,Office Worker
+P00407,62,Female,Kapha,Vata,31.4,Bhopal,Office Worker
+P00408,56,Female,Kapha,Kapha,18.4,Patna,Healthcare
+P00409,23,Female,Vata-Pitta,Vata,21.5,Ahmedabad,Retired
+P00410,52,Male,Vata-Pitta,Vata,18.5,Pune,Student
+P00411,18,Male,Pitta-Kapha,Pitta,18.8,Jaipur,Student
+P00412,20,Female,Kapha,Pitta,23.9,Hyderabad,Office Worker
+P00413,46,Female,Pitta,Vata-Pitta,18.8,Bhopal,Manual Labor
+P00414,60,Male,Vata-Kapha,Kapha,23.3,Ghaziabad,Teacher
+P00415,74,Male,Pitta,Vata,23.7,Vadodara,Healthcare
+P00416,66,Female,Pitta-Kapha,Pitta,33.3,Indore,Teacher
+P00417,73,Male,Vata-Pitta,Pitta,23.8,Mumbai,Retired
+P00418,78,Male,Vata,Vata-Kapha,26.5,Kanpur,Healthcare
+P00419,26,Female,Vata-Pitta,Vata-Pitta,24.5,Indore,Teacher
+P00420,70,Female,Vata,Vata,20.9,Lucknow,Office Worker
+P00421,68,Female,Vata,Vata,28.7,Mumbai,Student
+P00422,48,Male,Pitta,Kapha,26.4,Visakhapatnam,Teacher
+P00423,40,Female,Vata-Pitta,Vata,29.4,Bhopal,Office Worker
+P00424,59,Male,Pitta-Kapha,Kapha,20.8,Indore,Healthcare
+P00425,25,Male,Tridosha,Vata,22.5,Indore,Student
+P00426,22,Female,Tridosha,Pitta,32.7,Ahmedabad,Student
+P00427,18,Male,Pitta-Kapha,Pitta,25.6,Vadodara,Teacher
+P00428,67,Male,Pitta,Vata-Pitta,26.5,Vadodara,Healthcare
+P00429,64,Male,Vata-Pitta,Pitta,29.4,Nagpur,Teacher
+P00430,36,Male,Vata-Kapha,Vata,29.7,Hyderabad,Manual Labor
+P00431,31,Female,Kapha,Kapha,26.2,Pune,Manual Labor
+P00432,67,Male,Vata-Pitta,Vata-Pitta,22.0,Bangalore,Manual Labor
+P00433,26,Female,Vata-Kapha,Kapha,24.0,Visakhapatnam,Teacher
+P00434,28,Female,Vata-Kapha,Vata-Kapha,23.0,Kanpur,Manual Labor
+P00435,78,Female,Pitta-Kapha,Pitta,24.6,Patna,Retired
+P00436,51,Female,Pitta-Kapha,Kapha,28.1,Delhi,Student
+P00437,58,Male,Pitta,Pitta-Kapha,19.1,Lucknow,Retired
+P00438,24,Female,Vata,Pitta,21.4,Delhi,Office Worker
+P00439,29,Female,Vata-Pitta,Pitta,16.9,Bangalore,Teacher
+P00440,46,Male,Kapha,Vata,29.3,Vadodara,Retired
+P00441,66,Female,Kapha,Vata,20.2,Ghaziabad,Teacher
+P00442,31,Male,Vata-Pitta,Pitta,26.2,Pune,Student
+P00443,63,Female,Vata-Pitta,Vata-Pitta,27.5,Chennai,Office Worker
+P00444,19,Female,Kapha,Vata,25.2,Hyderabad,Student
+P00445,43,Male,Vata,Vata,18.5,Vadodara,Teacher
+P00446,53,Male,Vata-Pitta,Vata,25.7,Ahmedabad,Teacher
+P00447,65,Female,Vata-Pitta,Pitta,28.4,Vadodara,Healthcare
+P00448,60,Male,Vata,Vata,28.9,Nagpur,Student
+P00449,72,Female,Vata-Kapha,Kapha,20.3,Bhopal,Student
+P00450,21,Male,Vata-Kapha,Vata-Kapha,31.1,Kanpur,Office Worker
+P00451,39,Female,Pitta,Vata,26.8,Hyderabad,Healthcare
+P00452,63,Female,Pitta,Vata-Pitta,34.4,Lucknow,Student
+P00453,52,Male,Vata-Pitta,Pitta,26.0,Bangalore,Healthcare
+P00454,19,Male,Pitta,Pitta,23.1,Nagpur,Student
+P00455,42,Female,Vata-Pitta,Vata,22.8,Bangalore,Student
+P00456,73,Female,Pitta-Kapha,Pitta-Kapha,27.1,Kanpur,Manual Labor
+P00457,78,Male,Pitta,Vata-Kapha,30.6,Bhopal,Healthcare
+P00458,18,Female,Kapha,Kapha,24.7,Mumbai,Student
+P00459,64,Female,Tridosha,Kapha,25.2,Kolkata,Manual Labor
+P00460,26,Female,Pitta-Kapha,Kapha,25.2,Pune,Manual Labor
+P00461,32,Male,Vata-Pitta,Vata,29.6,Bangalore,Student
+P00462,25,Male,Pitta-Kapha,Pitta-Kapha,23.8,Ghaziabad,Teacher
+P00463,66,Male,Pitta,Vata-Pitta,28.2,Kanpur,Healthcare
+P00464,77,Male,Vata-Pitta,Vata-Pitta,22.8,Indore,Manual Labor
+P00465,42,Male,Vata,Kapha,33.9,Kolkata,Teacher
+P00466,64,Male,Pitta,Pitta-Kapha,20.0,Visakhapatnam,Office Worker
+P00467,50,Female,Pitta,Vata,25.2,Nagpur,Teacher
+P00468,45,Male,Pitta,Kapha,24.4,Visakhapatnam,Healthcare
+P00469,26,Female,Kapha,Kapha,26.3,Visakhapatnam,Manual Labor
+P00470,52,Male,Vata-Pitta,Pitta,25.0,Patna,Manual Labor
+P00471,35,Female,Kapha,Pitta,28.9,Visakhapatnam,Retired
+P00472,56,Female,Pitta,Vata-Pitta,29.4,Indore,Healthcare
+P00473,21,Female,Pitta-Kapha,Pitta,18.5,Pune,Healthcare
+P00474,63,Male,Pitta,Kapha,27.3,Jaipur,Office Worker
+P00475,53,Female,Pitta,Pitta,22.4,Nagpur,Healthcare
+P00476,21,Male,Kapha,Vata-Pitta,20.1,Vadodara,Office Worker
+P00477,77,Female,Pitta-Kapha,Pitta,25.9,Kolkata,Student
+P00478,55,Female,Vata-Pitta,Vata-Pitta,18.8,Chennai,Retired
+P00479,20,Male,Vata-Pitta,Vata,20.3,Visakhapatnam,Student
+P00480,23,Male,Vata,Pitta,20.1,Bhopal,Office Worker
+P00481,55,Female,Vata-Pitta,Vata-Pitta,24.0,Nagpur,Manual Labor
+P00482,25,Female,Vata-Pitta,Vata,31.9,Nagpur,Manual Labor
+P00483,75,Male,Tridosha,Vata,21.0,Kanpur,Office Worker
+P00484,33,Female,Kapha,Pitta,27.5,Chennai,Manual Labor
+P00485,72,Male,Pitta-Kapha,Kapha,30.3,Patna,Teacher
+P00486,37,Male,Kapha,Pitta,20.1,Patna,Retired
+P00487,40,Male,Kapha,Vata,29.9,Bangalore,Office Worker
+P00488,38,Female,Vata,Pitta,25.6,Pune,Manual Labor
+P00489,25,Female,Pitta-Kapha,Pitta,25.5,Lucknow,Manual Labor
+P00490,55,Female,Pitta,Vata,24.4,Hyderabad,Office Worker
+P00491,53,Male,Pitta,Pitta,22.2,Bhopal,Teacher
+P00492,44,Female,Pitta,Kapha,24.0,Bangalore,Office Worker
+P00493,20,Female,Kapha,Pitta,26.6,Ghaziabad,Office Worker
+P00494,52,Male,Pitta-Kapha,Pitta-Kapha,35.0,Chennai,Student
+P00495,32,Female,Tridosha,Pitta-Kapha,25.3,Mumbai,Healthcare
+P00496,52,Female,Vata-Pitta,Vata,24.6,Bhopal,Manual Labor
+P00497,59,Male,Vata-Kapha,Vata-Kapha,27.3,Nagpur,Office Worker
+P00498,69,Male,Pitta-Kapha,Kapha,27.4,Patna,Office Worker
+P00499,32,Female,Kapha,Vata,20.9,Nagpur,Student
+P00500,37,Male,Vata-Pitta,Pitta,30.3,Bangalore,Student
