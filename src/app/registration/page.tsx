@@ -118,8 +118,10 @@ function RegistrationForm() {
     const [isContactExpanded, setIsContactExpanded] = useState(true);
     const [isOtherInfoExpanded, setIsOtherInfoExpanded] = useState(true);
     const [voiceError, setVoiceError] = useState<string | null>(null);
+    const [isListening, setIsListening] = useState(false);
 
     const handleVoiceTranscript = (transcript: string) => {
+        setVoiceError(null); // Clear error on new input
         const textarea = document.querySelector('.copilotKitInput textarea') as HTMLTextAreaElement;
 
         if (textarea) {
@@ -135,6 +137,7 @@ function RegistrationForm() {
             textarea.focus();
         } else {
             console.warn("CopilotKit chat textarea not found. Voice input ignored.");
+            setVoiceError("Chat window not found. Please open the assistant.");
         }
     };
 
@@ -271,15 +274,15 @@ function RegistrationForm() {
             {/* Basic Info Section */}
             <Section title="Basic Info" isExpanded={isBasicInfoExpanded} onToggle={() => setIsBasicInfoExpanded(!isBasicInfoExpanded)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormInput label="First Name" required value={formData.basicInfo.firstName} onChange={(v) => handleChange("basicInfo", "firstName", v)} placeholder="First Name" />
-                    <FormInput label="Last Name" value={formData.basicInfo.lastName} onChange={(v) => handleChange("basicInfo", "lastName", v)} placeholder="Last Name" />
+                    <FormInput label="First Name" required value={formData.basicInfo.firstName} onChange={(v: string) => handleChange("basicInfo", "firstName", v)} placeholder="First Name" />
+                    <FormInput label="Last Name" value={formData.basicInfo.lastName} onChange={(v: string) => handleChange("basicInfo", "lastName", v)} placeholder="Last Name" />
 
                     <FormRadioGroup
                         label="Gender"
                         required
                         options={["Male", "Female", "Transgender"]}
                         value={formData.basicInfo.gender}
-                        onChange={(v) => handleChange("basicInfo", "gender", v)}
+                        onChange={(v: string) => handleChange("basicInfo", "gender", v)}
                     />
 
                     <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -319,9 +322,9 @@ function RegistrationForm() {
                             required
                             options={["Father", "Guardian", "Spouse"]}
                             value={formData.basicInfo.relationshipType}
-                            onChange={(v) => handleChange("basicInfo", "relationshipType", v)}
+                            onChange={(v: string) => handleChange("basicInfo", "relationshipType", v)}
                         />
-                        <FormInput label="Relation Name" value={formData.basicInfo.relationName} onChange={(v) => handleChange("basicInfo", "relationName", v)} placeholder="Full Name of Relation" />
+                        <FormInput label="Relation Name" value={formData.basicInfo.relationName} onChange={(v: string) => handleChange("basicInfo", "relationName", v)} placeholder="Full Name of Relation" />
                     </div>
 
                     <FormRadioGroup
@@ -329,7 +332,7 @@ function RegistrationForm() {
                         required
                         options={["Indian", "Others"]}
                         value={formData.basicInfo.nationality}
-                        onChange={(v) => handleChange("basicInfo", "nationality", v)}
+                        onChange={(v: string) => handleChange("basicInfo", "nationality", v)}
                     />
 
                     <FormRadioGroup
@@ -337,19 +340,19 @@ function RegistrationForm() {
                         required
                         options={["Married", "Unmarried", "Divorcee", "Widow"]}
                         value={formData.basicInfo.maritalStatus}
-                        onChange={(v) => handleChange("basicInfo", "maritalStatus", v)}
+                        onChange={(v: string) => handleChange("basicInfo", "maritalStatus", v)}
                     />
 
-                    <FormInput label="ABHA ID" value={formData.basicInfo.abhaId} onChange={(v) => handleChange("basicInfo", "abhaId", v)} placeholder="XX-XXXX-XXXX-XXXX" helperText="Ayushman Bharat Health Account ID" />
-                    <FormInput label="Insurance Provider" value={formData.basicInfo.insuranceProvider} onChange={(v) => handleChange("basicInfo", "insuranceProvider", v)} placeholder="e.g. LIC, Star Health" />
+                    <FormInput label="ABHA ID" value={formData.basicInfo.abhaId} onChange={(v: string) => handleChange("basicInfo", "abhaId", v)} placeholder="XX-XXXX-XXXX-XXXX" helperText="Ayushman Bharat Health Account ID" />
+                    <FormInput label="Insurance Provider" value={formData.basicInfo.insuranceProvider} onChange={(v: string) => handleChange("basicInfo", "insuranceProvider", v)} placeholder="e.g. LIC, Star Health" />
                 </div>
             </Section>
 
             {/* Contact Info Section */}
             <Section title="Contact Info" isExpanded={isContactExpanded} onToggle={() => setIsContactExpanded(!isContactExpanded)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormInput label="Mobile Number" required value={formData.contactInfo.mobileNumber} onChange={(v) => handleChange("contactInfo", "mobileNumber", v)} placeholder="10-digit Mobile Number" />
-                    <FormInput label="Email ID" type="email" value={formData.contactInfo.emailId} onChange={(v) => handleChange("contactInfo", "emailId", v)} placeholder="example@email.com" />
+                    <FormInput label="Mobile Number" required value={formData.contactInfo.mobileNumber} onChange={(v: string) => handleChange("contactInfo", "mobileNumber", v)} placeholder="10-digit Mobile Number" />
+                    <FormInput label="Email ID" type="email" value={formData.contactInfo.emailId} onChange={(v: string) => handleChange("contactInfo", "emailId", v)} placeholder="example@email.com" />
 
                     <div className="col-span-1 md:col-span-2 border-t border-gray-100 my-2"></div>
 
@@ -357,12 +360,12 @@ function RegistrationForm() {
                         <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">Correspondence Address</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="md:col-span-2">
-                                <FormTextArea label="Address" value={formData.contactInfo.correspondenceAddress} onChange={(v) => handleChange("contactInfo", "correspondenceAddress", v)} placeholder="Street, Sector, Landmark" />
+                                <FormTextArea label="Address" value={formData.contactInfo.correspondenceAddress} onChange={(v: string) => handleChange("contactInfo", "correspondenceAddress", v)} placeholder="Street, Sector, Landmark" />
                             </div>
-                            <FormSelect label="Country" required options={["India", "USA", "UK"]} value={formData.contactInfo.correspondenceCountry} onChange={(v) => handleChange("contactInfo", "correspondenceCountry", v)} />
-                            <FormSelect label="State" required options={["Delhi", "Maharashtra", "Karnataka", "Gujarat"]} value={formData.contactInfo.correspondenceState} onChange={(v) => handleChange("contactInfo", "correspondenceState", v)} />
-                            <FormSelect label="City" required options={["New Delhi", "Mumbai", "Bangalore", "Ahmedabad"]} value={formData.contactInfo.correspondenceCity} onChange={(v) => handleChange("contactInfo", "correspondenceCity", v)} />
-                            <FormInput label="Pincode" value={formData.contactInfo.correspondencePincode} onChange={(v) => handleChange("contactInfo", "correspondencePincode", v)} placeholder="6-digit Pincode" />
+                            <FormSelect label="Country" required options={["India", "USA", "UK"]} value={formData.contactInfo.correspondenceCountry} onChange={(v: string) => handleChange("contactInfo", "correspondenceCountry", v)} />
+                            <FormSelect label="State" required options={["Delhi", "Maharashtra", "Karnataka", "Gujarat"]} value={formData.contactInfo.correspondenceState} onChange={(v: string) => handleChange("contactInfo", "correspondenceState", v)} />
+                            <FormSelect label="City" required options={["New Delhi", "Mumbai", "Bangalore", "Ahmedabad"]} value={formData.contactInfo.correspondenceCity} onChange={(v: string) => handleChange("contactInfo", "correspondenceCity", v)} />
+                            <FormInput label="Pincode" value={formData.contactInfo.correspondencePincode} onChange={(v: string) => handleChange("contactInfo", "correspondencePincode", v)} placeholder="6-digit Pincode" />
                         </div>
                     </div>
 
@@ -381,12 +384,12 @@ function RegistrationForm() {
                         <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">Permanent Address</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="md:col-span-2">
-                                <FormTextArea label="Address" disabled={formData.contactInfo.isPermanentSame} value={formData.contactInfo.permanentAddress} onChange={(v) => handleChange("contactInfo", "permanentAddress", v)} placeholder="Street, Sector, Landmark" />
+                                <FormTextArea label="Address" disabled={formData.contactInfo.isPermanentSame} value={formData.contactInfo.permanentAddress} onChange={(v: string) => handleChange("contactInfo", "permanentAddress", v)} placeholder="Street, Sector, Landmark" />
                             </div>
-                            <FormSelect label="Country" required disabled={formData.contactInfo.isPermanentSame} options={["India", "USA", "UK"]} value={formData.contactInfo.permanentCountry} onChange={(v) => handleChange("contactInfo", "permanentCountry", v)} />
-                            <FormSelect label="State" required disabled={formData.contactInfo.isPermanentSame} options={["Delhi", "Maharashtra", "Karnataka", "Gujarat"]} value={formData.contactInfo.permanentState} onChange={(v) => handleChange("contactInfo", "permanentState", v)} />
-                            <FormSelect label="City" required disabled={formData.contactInfo.isPermanentSame} options={["New Delhi", "Mumbai", "Bangalore", "Ahmedabad"]} value={formData.contactInfo.permanentCity} onChange={(v) => handleChange("contactInfo", "permanentCity", v)} />
-                            <FormInput label="Pincode" disabled={formData.contactInfo.isPermanentSame} value={formData.contactInfo.permanentPincode} onChange={(v) => handleChange("contactInfo", "permanentPincode", v)} placeholder="6-digit Pincode" />
+                            <FormSelect label="Country" required disabled={formData.contactInfo.isPermanentSame} options={["India", "USA", "UK"]} value={formData.contactInfo.permanentCountry} onChange={(v: string) => handleChange("contactInfo", "permanentCountry", v)} />
+                            <FormSelect label="State" required disabled={formData.contactInfo.isPermanentSame} options={["Delhi", "Maharashtra", "Karnataka", "Gujarat"]} value={formData.contactInfo.permanentState} onChange={(v: string) => handleChange("contactInfo", "permanentState", v)} />
+                            <FormSelect label="City" required disabled={formData.contactInfo.isPermanentSame} options={["New Delhi", "Mumbai", "Bangalore", "Ahmedabad"]} value={formData.contactInfo.permanentCity} onChange={(v: string) => handleChange("contactInfo", "permanentCity", v)} />
+                            <FormInput label="Pincode" disabled={formData.contactInfo.isPermanentSame} value={formData.contactInfo.permanentPincode} onChange={(v: string) => handleChange("contactInfo", "permanentPincode", v)} placeholder="6-digit Pincode" />
                         </div>
                     </div>
 
@@ -397,8 +400,8 @@ function RegistrationForm() {
                             Emergency Contact
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FormInput label="Contact Name" value={formData.contactInfo.emergencyContactName} onChange={(v) => handleChange("contactInfo", "emergencyContactName", v)} placeholder="Name of relative/friend" />
-                            <FormInput label="Contact Number" value={formData.contactInfo.emergencyContactNumber} onChange={(v) => handleChange("contactInfo", "emergencyContactNumber", v)} placeholder="Emergency Contact Number" />
+                            <FormInput label="Contact Name" value={formData.contactInfo.emergencyContactName} onChange={(v: string) => handleChange("contactInfo", "emergencyContactName", v)} placeholder="Name of relative/friend" />
+                            <FormInput label="Contact Number" value={formData.contactInfo.emergencyContactNumber} onChange={(v: string) => handleChange("contactInfo", "emergencyContactNumber", v)} placeholder="Emergency Contact Number" />
                         </div>
                     </div>
                 </div>
@@ -407,13 +410,13 @@ function RegistrationForm() {
             {/* Other Info Section */}
             <Section title="Other Info" isExpanded={isOtherInfoExpanded} onToggle={() => setIsOtherInfoExpanded(!isOtherInfoExpanded)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormSelect label="Qualification" options={["High School", "Bachelor", "Master", "PhD"]} value={formData.otherInfo.qualification} onChange={(v) => handleChange("otherInfo", "qualification", v)} />
-                    <FormInput label="Occupation" value={formData.otherInfo.occupation} onChange={(v) => handleChange("otherInfo", "occupation", v)} placeholder="Current Occupation" />
-                    <FormSelect label="Blood Group" options={["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]} value={formData.otherInfo.bloodGroup} onChange={(v) => handleChange("otherInfo", "bloodGroup", v)} />
+                    <FormSelect label="Qualification" options={["High School", "Bachelor", "Master", "PhD"]} value={formData.otherInfo.qualification} onChange={(v: string) => handleChange("otherInfo", "qualification", v)} />
+                    <FormInput label="Occupation" value={formData.otherInfo.occupation} onChange={(v: string) => handleChange("otherInfo", "occupation", v)} placeholder="Current Occupation" />
+                    <FormSelect label="Blood Group" options={["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]} value={formData.otherInfo.bloodGroup} onChange={(v: string) => handleChange("otherInfo", "bloodGroup", v)} />
 
                     <div className="grid grid-cols-2 gap-4">
-                        <FormSelect label="ID Type" options={["Aadhar", "Passport", "Driving License"]} value={formData.otherInfo.idType} onChange={(v) => handleChange("otherInfo", "idType", v)} />
-                        <FormInput label="ID Number" value={formData.otherInfo.idNumber} onChange={(v) => handleChange("otherInfo", "idNumber", v)} placeholder="ID Number" />
+                        <FormSelect label="ID Type" options={["Aadhar", "Passport", "Driving License"]} value={formData.otherInfo.idType} onChange={(v: string) => handleChange("otherInfo", "idType", v)} />
+                        <FormInput label="ID Number" value={formData.otherInfo.idNumber} onChange={(v: string) => handleChange("otherInfo", "idNumber", v)} placeholder="ID Number" />
                     </div>
                 </div>
             </Section>
@@ -429,11 +432,24 @@ function RegistrationForm() {
             </div>
 
             {/* Voice Input Button Overlay */}
-            <div className="fixed bottom-24 right-6 z-[1000]">
-                <VoiceInputButton
-                    onTranscript={handleVoiceTranscript}
-                    onError={(err) => alert(err)}
-                />
+            <div className="fixed bottom-24 right-6 z-[1000] flex flex-col items-end gap-2">
+                {voiceError && (
+                    <div className="bg-red-50 text-red-600 px-4 py-2 rounded-lg border border-red-200 shadow-sm text-sm animate-in fade-in slide-in-from-right-4">
+                        {voiceError}
+                    </div>
+                )}
+                <div className="flex items-center gap-3">
+                    {isListening && (
+                        <div className="bg-black/75 text-white px-3 py-1 rounded-full text-sm font-medium backdrop-blur-sm animate-pulse">
+                            Listening...
+                        </div>
+                    )}
+                    <VoiceInputButton
+                        onTranscript={handleVoiceTranscript}
+                        onError={(err) => setVoiceError(err)}
+                        onStateChange={setIsListening}
+                    />
+                </div>
             </div>
         </form>
     );

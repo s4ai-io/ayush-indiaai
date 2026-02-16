@@ -6,15 +6,22 @@ import { Mic, MicOff, AlertCircle } from 'lucide-react';
 interface VoiceInputButtonProps {
     onTranscript: (text: string) => void;
     onError?: (error: string) => void;
+    onStateChange?: (isListening: boolean) => void;
 }
 
-export function VoiceInputButton({ onTranscript, onError }: VoiceInputButtonProps) {
+export function VoiceInputButton({ onTranscript, onError, onStateChange }: VoiceInputButtonProps) {
     const [isListening, setIsListening] = useState(false);
     const [isSupported, setIsSupported] = useState(false);
     const [permissionState, setPermissionState] = useState<PermissionState | 'unknown'>('unknown');
     const recognitionRef = useRef<any>(null);
     const transcriptRef = useRef<string>('');
     const isRecognitionActiveRef = useRef<boolean>(false);
+
+    useEffect(() => {
+        if (onStateChange) {
+            onStateChange(isListening);
+        }
+    }, [isListening, onStateChange]);
 
     useEffect(() => {
         // Check if browser supports Speech Recognition
