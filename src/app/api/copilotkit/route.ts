@@ -12,10 +12,13 @@ export async function POST(request: NextRequest) {
         agents: {
             ehr_agent: new LlamaIndexAgent({
                 url: "http://127.0.0.1:8000/api/copilot/ehr/run",
-            }),
+            }) as any,
             registration_agent: new LlamaIndexAgent({
                 url: "http://127.0.0.1:8000/api/copilot/registration/run",
-            }),
+            }) as any,
+            doctor_agent: new LlamaIndexAgent({
+                url: "http://127.0.0.1:8000/api/copilot/doctor/run",
+            }) as any,
         },
     });
 

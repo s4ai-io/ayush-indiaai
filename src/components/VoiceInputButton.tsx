@@ -1,18 +1,20 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, AlertCircle } from 'lucide-react';
+import { Mic, MicOff } from 'lucide-react';
 
 interface VoiceInputButtonProps {
     onTranscript: (text: string) => void;
     onError?: (error: string) => void;
     onStateChange?: (isListening: boolean) => void;
+    language?: string;
 }
 
-export function VoiceInputButton({ onTranscript, onError, onStateChange }: VoiceInputButtonProps) {
+export function VoiceInputButton({ onTranscript, onError, onStateChange, language = 'en-US' }: VoiceInputButtonProps) {
     const [isListening, setIsListening] = useState(false);
     const [isSupported, setIsSupported] = useState(false);
     const [permissionState, setPermissionState] = useState<PermissionState | 'unknown'>('unknown');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recognitionRef = useRef<any>(null);
     const transcriptRef = useRef<string>('');
     const isRecognitionActiveRef = useRef<boolean>(false);
@@ -24,7 +26,25 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange }: Voice
     }, [isListening, onStateChange]);
 
     useEffect(() => {
+        // Update language on the fly if recognition is inactive, 
+        // or just let the next startListening pick it up.
+        if (recognitionRef.current) {
+            recognitionRef.current.lang = language;
+        }
+    }, [language]);
+
+    // Use refs to keep latest callbacks without triggering re-effects
+    const onTranscriptRef = useRef(onTranscript);
+    const onErrorRef = useRef(onError);
+
+    useEffect(() => {
+        onTranscriptRef.current = onTranscript;
+        onErrorRef.current = onError;
+    }, [onTranscript, onError]);
+
+    useEffect(() => {
         // Check if browser supports Speech Recognition
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
         if (SpeechRecognition) {
@@ -34,7 +54,7 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange }: Voice
             const recognition = new SpeechRecognition();
             recognition.continuous = true;
             recognition.interimResults = true;
-            recognition.lang = 'en-US';
+            recognition.lang = language;
 
             recognition.onstart = () => {
                 console.log('Speech recognition started');
@@ -42,6 +62,7 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange }: Voice
                 setIsListening(true);
             };
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             recognition.onresult = (event: any) => {
                 let finalTranscript = '';
 
@@ -56,10 +77,13 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange }: Voice
                 if (finalTranscript) {
                     transcriptRef.current += finalTranscript;
                     // Send immediately for better responsiveness
-                    onTranscript(finalTranscript);
+                    if (onTranscriptRef.current) {
+                        onTranscriptRef.current(finalTranscript);
+                    }
                 }
             };
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             recognition.onerror = (event: any) => {
                 console.error('Speech recognition error:', event.error);
 
@@ -81,9 +105,9 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange }: Voice
                         return;
                 }
 
-                if (onError) onError(errorMessage);
+                if (onErrorRef.current) onErrorRef.current(errorMessage);
                 if (event.error !== 'no-speech') {
-                    stopListening();
+                    try { recognition.stop(); } catch (e) { /* ignore */ }
                 }
             };
 
@@ -100,6 +124,7 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange }: Voice
 
         // Check permission status if API is available
         if (navigator.permissions && navigator.permissions.query) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             navigator.permissions.query({ name: 'microphone' as any }).then((permissionStatus) => {
                 setPermissionState(permissionStatus.state);
                 permissionStatus.onchange = () => {
@@ -110,10 +135,11 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange }: Voice
 
         return () => {
             if (recognitionRef.current) {
-                try { recognitionRef.current.stop(); } catch (e) { }
+                try { recognitionRef.current.stop(); } catch (e) { /* ignore */ }
             }
         };
-    }, [onTranscript, onError]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Empty dependency array to init once!
 
     const requestMicrophoneAccess = async () => {
         try {
@@ -141,7 +167,12 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange }: Voice
 
         try {
             transcriptRef.current = '';
+            // Ensure language is set before starting
+            if (recognitionRef.current) {
+                recognitionRef.current.lang = language;
+            }
             recognitionRef.current.start();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
             console.error('Error starting recognition:', e);
         }

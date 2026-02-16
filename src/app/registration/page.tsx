@@ -1,13 +1,16 @@
 "use client";
 
-import { CopilotKit } from "@copilotkit/react-core";
+import { CopilotKit, useCopilotChat } from "@copilotkit/react-core";
 import { CopilotSidebar } from "@copilotkit/react-ui";
 import { useCopilotReadable, useCopilotAction } from "@copilotkit/react-core";
+import { TextMessage, MessageRole } from "@copilotkit/runtime-client-gql";
 import { useState } from "react";
 import "@copilotkit/react-ui/styles.css";
 import { saveRegistration } from "../actions/saveRegistration";
 import { Minus, Plus, ChevronDown } from "lucide-react";
 import { VoiceInputButton } from "@/components/VoiceInputButton";
+import { LanguageSelector, INDIAN_LANGUAGES } from "@/components/LanguageSelector";
+
 
 interface RegistrationData {
     contactInfo: {
@@ -47,6 +50,7 @@ interface RegistrationData {
         idType: string;
         idNumber: string;
     };
+    [key: string]: any;
 }
 
 const INITIAL_DATA: RegistrationData = {
@@ -119,26 +123,20 @@ function RegistrationForm() {
     const [isOtherInfoExpanded, setIsOtherInfoExpanded] = useState(true);
     const [voiceError, setVoiceError] = useState<string | null>(null);
     const [isListening, setIsListening] = useState(false);
+    const [selectedLanguage, setSelectedLanguage] = useState("en-US");
 
-    const handleVoiceTranscript = (transcript: string) => {
+    const { appendMessage } = useCopilotChat();
+
+    const handleVoiceTranscript = async (transcript: string) => {
         setVoiceError(null); // Clear error on new input
-        const textarea = document.querySelector('.copilotKitInput textarea') as HTMLTextAreaElement;
 
-        if (textarea) {
-            const currentValue = textarea.value;
-            const newValue = currentValue ? `${currentValue} ${transcript}` : transcript;
-
-            const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
-            if (nativeTextAreaValueSetter) {
-                nativeTextAreaValueSetter.call(textarea, newValue);
-            }
-
-            textarea.dispatchEvent(new Event('input', { bubbles: true }));
-            textarea.focus();
-        } else {
-            console.warn("CopilotKit chat textarea not found. Voice input ignored.");
-            setVoiceError("Chat window not found. Please open the assistant.");
-        }
+        // Auto-submit the transcript to Copilot
+        await appendMessage(
+            new TextMessage({
+                role: MessageRole.User,
+                content: transcript
+            })
+        );
     };
 
     useCopilotReadable({
@@ -201,6 +199,8 @@ function RegistrationForm() {
             },
         ],
         handler: async (args: Partial<RegistrationData>) => {
+            console.log("Fill registration form called with:", args);
+            setStatus("Auto-filling form...");
             setFormData((prev) => {
                 const newData = { ...prev };
                 if (args.contactInfo) {
@@ -217,6 +217,7 @@ function RegistrationForm() {
                 }
                 return newData;
             });
+            setTimeout(() => setStatus(null), 2000); // Clear status after 2 seconds
             return "Form updated.";
         },
     });
@@ -259,7 +260,7 @@ function RegistrationForm() {
         parameters: [],
         handler: async () => {
             const result = await submitForm();
-            return `Registration submitted. Status: ${result}`;
+            return `Registration submitted.Status: ${result} `;
         },
     });
 
@@ -380,7 +381,7 @@ function RegistrationForm() {
                         <label htmlFor="sameAddress" className="text-sm font-medium text-gray-700 cursor-pointer select-none">Permanent Address is same as Correspondence Address</label>
                     </div>
 
-                    <div className={`col-span-1 md:col-span-2 transition-opacity duration-200 ${formData.contactInfo.isPermanentSame ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <div className={`col - span - 1 md: col - span - 2 transition - opacity duration - 200 ${formData.contactInfo.isPermanentSame ? 'opacity-50 pointer-events-none' : ''} `}>
                         <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">Permanent Address</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="md:col-span-2">
@@ -441,13 +442,18 @@ function RegistrationForm() {
                 <div className="flex items-center gap-3">
                     {isListening && (
                         <div className="bg-black/75 text-white px-3 py-1 rounded-full text-sm font-medium backdrop-blur-sm animate-pulse">
-                            Listening...
+                            Listening ({INDIAN_LANGUAGES.find(l => l.code === selectedLanguage)?.name || 'English'})...
                         </div>
                     )}
+                    <LanguageSelector
+                        selectedLanguage={selectedLanguage}
+                        onLanguageChange={setSelectedLanguage}
+                    />
                     <VoiceInputButton
                         onTranscript={handleVoiceTranscript}
                         onError={(err) => setVoiceError(err)}
                         onStateChange={setIsListening}
+                        language={selectedLanguage}
                     />
                 </div>
             </div>
@@ -461,12 +467,12 @@ function Section({ title, isExpanded, onToggle, children }: { title: string; isE
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-shadow hover:shadow-md">
             <div
-                className={`px-8 py-5 flex justify-between items-center cursor-pointer select-none transition-colors duration-200 ${isExpanded ? 'bg-white border-b border-gray-100' : 'bg-gray-50 hover:bg-gray-100'}`}
+                className={`px - 8 py - 5 flex justify - between items - center cursor - pointer select - none transition - colors duration - 200 ${isExpanded ? 'bg-white border-b border-gray-100' : 'bg-gray-50 hover:bg-gray-100'} `}
                 onClick={onToggle}
             >
                 <div className="flex items-center gap-3">
-                    <div className={`w-1 h-6 rounded-full ${isExpanded ? 'bg-[#00A9B4]' : 'bg-gray-300'}`}></div>
-                    <h2 className={`font-bold uppercase tracking-wide text-sm ${isExpanded ? 'text-gray-900' : 'text-gray-500'}`}>{title}</h2>
+                    <div className={`w - 1 h - 6 rounded - full ${isExpanded ? 'bg-[#00A9B4]' : 'bg-gray-300'} `}></div>
+                    <h2 className={`font - bold uppercase tracking - wide text - sm ${isExpanded ? 'text-gray-900' : 'text-gray-500'} `}>{title}</h2>
                 </div>
                 {isExpanded ? <Minus className="text-[#00A9B4] w-5 h-5" /> : <Plus className="text-gray-400 w-5 h-5" />}
             </div>
@@ -484,7 +490,7 @@ function FormInput({ label, value, onChange, placeholder, type = "text", require
             <input
                 type={type}
                 placeholder={placeholder}
-                className={`w-full h-12 px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#00A9B4]/20 focus:border-[#00A9B4] outline-none transition-all text-gray-700 bg-white placeholder-gray-400 shadow-sm ${className} ${disabled ? 'bg-gray-100 text-gray-500' : ''}`}
+                className={`w - full h - 12 px - 4 border border - gray - 200 rounded - lg focus: ring - 2 focus: ring - [#00A9B4] / 20 focus: border - [#00A9B4] outline - none transition - all text - gray - 700 bg - white placeholder - gray - 400 shadow - sm ${className} ${disabled ? 'bg-gray-100 text-gray-500' : ''} `}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 disabled={disabled}
@@ -502,7 +508,7 @@ function FormTextArea({ label, value, onChange, placeholder, disabled }: any) {
             <textarea
                 placeholder={placeholder}
                 rows={3}
-                className={`w-full p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#00A9B4]/20 focus:border-[#00A9B4] outline-none transition-all text-gray-700 bg-white placeholder-gray-400 shadow-sm resize-none ${disabled ? 'bg-gray-100 text-gray-500' : ''}`}
+                className={`w - full p - 4 border border - gray - 200 rounded - lg focus: ring - 2 focus: ring - [#00A9B4] / 20 focus: border - [#00A9B4] outline - none transition - all text - gray - 700 bg - white placeholder - gray - 400 shadow - sm resize - none ${disabled ? 'bg-gray-100 text-gray-500' : ''} `}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 disabled={disabled}
@@ -517,7 +523,7 @@ function FormSelect({ label, value, onChange, options, required, disabled }: any
             <label className="text-sm font-semibold text-gray-700">{label} {required && <span className="text-red-500">*</span>}</label>
             <div className="relative">
                 <select
-                    className={`w-full h-12 px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#00A9B4]/20 focus:border-[#00A9B4] outline-none transition-all text-gray-700 bg-white shadow-sm appearance-none cursor-pointer ${disabled ? 'bg-gray-100 text-gray-500' : ''}`}
+                    className={`w - full h - 12 px - 4 border border - gray - 200 rounded - lg focus: ring - 2 focus: ring - [#00A9B4] / 20 focus: border - [#00A9B4] outline - none transition - all text - gray - 700 bg - white shadow - sm appearance - none cursor - pointer ${disabled ? 'bg-gray-100 text-gray-500' : ''} `}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     disabled={disabled}
@@ -542,12 +548,12 @@ function FormRadioGroup({ label, value, onChange, options, required }: any) {
                     <label
                         key={opt}
                         className={`
-                            flex items-center gap-2 px-4 py-2.5 rounded-lg border cursor-pointer transition-all select-none text-sm font-medium
+                            flex items - center gap - 2 px - 4 py - 2.5 rounded - lg border cursor - pointer transition - all select - none text - sm font - medium
                             ${value === opt
                                 ? 'bg-teal-50 border-[#00A9B4] text-[#00A9B4] shadow-sm ring-1 ring-[#00A9B4]'
                                 : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300'
                             }
-                        `}
+`}
                     >
                         <input
                             type="radio"
@@ -558,7 +564,7 @@ function FormRadioGroup({ label, value, onChange, options, required }: any) {
                             className="hidden" // hide default radio
                         />
                         {/* Custom radio indicator */}
-                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${value === opt ? 'border-[#00A9B4]' : 'border-gray-400'}`}>
+                        <div className={`w - 4 h - 4 rounded - full border flex items - center justify - center ${value === opt ? 'border-[#00A9B4]' : 'border-gray-400'} `}>
                             {value === opt && <div className="w-2 h-2 rounded-full bg-[#00A9B4]"></div>}
                         </div>
                         {opt}

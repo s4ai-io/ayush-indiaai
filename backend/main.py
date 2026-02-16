@@ -173,6 +173,9 @@ app.include_router(ehr_agent_router, prefix="/api/copilot/ehr", tags=["Copilot A
 from services.registration_agent import registration_agent_router
 app.include_router(registration_agent_router, prefix="/api/copilot/registration", tags=["Copilot Agent"])
 
+from services.doctor_agent import doctor_agent_router
+app.include_router(doctor_agent_router, prefix="/api/copilot/doctor", tags=["Copilot Agent"])
+
 
 if __name__ == "__main__":
     uvicorn.run(

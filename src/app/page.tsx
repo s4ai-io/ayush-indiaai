@@ -1,9 +1,21 @@
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { Activity, Users, AlertTriangle } from "lucide-react";
+import { Activity, Users, AlertTriangle, UserPlus, Stethoscope } from "lucide-react";
+import Link from "next/link";
 
 export default function DashboardPage() {
     return (
         <div className="space-y-8">
+            <div className="flex gap-4">
+                <Link href="/registration" className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90">
+                    <UserPlus className="h-4 w-4" />
+                    New Registration
+                </Link>
+                <Link href="/doctor" className="flex items-center gap-2 bg-secondary text-secondary-foreground px-4 py-2 rounded-md hover:bg-secondary/80">
+                    <Stethoscope className="h-4 w-4" />
+                    Doctor Dashboard
+                </Link>
+            </div>
+
             <div>
                 <h2 className="text-3xl font-bold tracking-tight">Dashboard Overview</h2>
                 <p className="text-muted-foreground">Real-time health monitoring and AYUSH insights.</p>

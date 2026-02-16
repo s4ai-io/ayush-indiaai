@@ -38,6 +38,22 @@
       "idNumber": ""
     },
     "id": "49e2bbb3-1015-423c-bb32-e6a0f898c5c2",
-    "timestamp": "2026-02-16T13:28:40.656Z"
+    "timestamp": "2026-02-16T13:28:40.656Z",
+    "medicalRecords": [
+      {
+        "symptoms": "Severe headache, Nausea, Fever",
+        "diagnosis": "Migraine",
+        "prescription": [
+          {
+            "medicine": "Paracetamol",
+            "dosage": "500mg",
+            "frequency": "BID",
+            "duration": "3 days"
+          }
+        ],
+        "notes": "",
+        "timestamp": "2026-02-16T19:23:32.450Z"
+      }
+    ]
   }
 ]
