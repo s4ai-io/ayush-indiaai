@@ -166,8 +166,12 @@ async def get_emerging_trends():
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
+
 # Register CopilotKit Agent Router
 app.include_router(ehr_agent_router, prefix="/api/copilot/ehr", tags=["Copilot Agent"])
+
+from services.registration_agent import registration_agent_router
+app.include_router(registration_agent_router, prefix="/api/copilot/registration", tags=["Copilot Agent"])
 
 
 if __name__ == "__main__":

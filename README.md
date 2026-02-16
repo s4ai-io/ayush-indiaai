@@ -341,3 +341,38 @@ This integration bridges Python ML with Next.js frontend. Key principles:
 ---
 
 **Built with:** FastAPI, Next.js, scikit-learn, pandas, TypeScript, React
+
+
+
+Registration Form Verification and Debugging
+The registration form is implemented with Copilot integration. We fixed an INCOMPLETE_STREAM error caused by a library compatibility issue by patching the backend workflow.
+
+Prerequisites
+Backend Environment:
+
+The new backend at /Users/utsav/Ayush-AI/ayush-indiaai/backend requires an API key.
+We copied the .env file from pop_cash/backend to this directory. Ensure it exists.
+Dependencies:
+
+Ensure all dependencies are installed (should be handled by uv or venv).
+Steps to Verify
+Start the New Backend (Port 8000):
+
+bash
+cd /Users/utsav/Ayush-AI/ayush-indiaai/backend
+# Ensure venv is active or use uv
+uv run python main.py
+Note: If you are already running it, it should auto-reload with the patch. If not, restart it.
+Start the Frontend (Port 3000):
+
+bash
+cd /Users/utsav/Ayush-AI/ayush-indiaai
+npm run dev
+Navigate to Registration Page:
+
+Open http://localhost:3000/registration
+Test Copilot:
+
+Open Copilot Sidebar.
+Type: "Fill the form for John Doe, mobile 9876543210".
+Expected Result: The form fields (Mobile Number) should auto-fill. The "Agent not found" or "RUN_ERROR" should be gone.

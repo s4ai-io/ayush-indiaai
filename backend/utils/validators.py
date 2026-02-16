@@ -92,8 +92,55 @@ class TrendsResponse(BaseModel):
     generated_at: str
 
 
+
 class HealthCheckResponse(BaseModel):
     """Health check response"""
     status: str
     models_loaded: bool
     version: str
+
+
+# --- Registration Agent Models ---
+
+
+class BasicInfo(BaseModel):
+    firstName: str = ""
+    lastName: str = ""
+    gender: str = ""
+    dateOfBirth: str = ""
+    onlyYearOfBirth: bool = False
+    relationshipType: str = ""
+    relationName: str = ""
+    nationality: str = "Indian"
+    maritalStatus: str = ""
+    abhaId: str = ""
+    insuranceProvider: str = ""
+
+class ContactInfo(BaseModel):
+    mobileNumber: str = ""
+    emailId: str = ""
+    correspondenceAddress: str = ""
+    correspondenceCountry: str = "India"
+    correspondenceState: str = ""
+    correspondenceCity: str = ""
+    correspondencePincode: str = ""
+    isPermanentSame: bool = False
+    permanentAddress: str = ""
+    permanentCountry: str = "India"
+    permanentState: str = ""
+    permanentCity: str = ""
+    permanentPincode: str = ""
+    emergencyContactName: str = ""
+    emergencyContactNumber: str = ""
+
+class OtherInfo(BaseModel):
+    qualification: str = ""
+    occupation: str = ""
+    bloodGroup: str = ""
+    idType: str = ""
+    idNumber: str = ""
+
+class RegistrationData(BaseModel):
+    basicInfo: BasicInfo = BasicInfo()
+    contactInfo: ContactInfo = ContactInfo()
+    otherInfo: OtherInfo = OtherInfo()

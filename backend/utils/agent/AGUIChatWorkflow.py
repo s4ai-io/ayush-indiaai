@@ -25,6 +25,20 @@ from llama_index.protocols.ag_ui.utils import (
     timestamp,
     validate_tool,
 )
+from ag_ui.core.types import UserMessage, TextInputContent
+
+def sanitize_message_content(msg):
+    if isinstance(msg, UserMessage) and isinstance(msg.content, list):
+        # Convert list of TextInputContent to string if possible, or leave it for LlamaIndex to handle if it supports it
+        # But LlamaIndex < 0.15 seems to have issues with TextInputContent directly as blocks
+        text_parts = []
+        for part in msg.content:
+            if isinstance(part, TextInputContent):
+                text_parts.append(part.text)
+            # Binary content logic could be added here if needed
+        if text_parts:
+             msg.content = "\n".join(text_parts)
+    return msg
 
 DEFAULT_STATE_PROMPT = """<state>
 {state}
@@ -123,8 +137,11 @@ class AGUIChatWorkflow(Workflow):
     ) -> Optional[Union[StopEvent, ToolCallEvent]]:
         if isinstance(ev, InputEvent):
             ag_ui_messages = ev.input_data.messages
+            # Sanitize messages to handle TextInputContent
+            sanitized_messages = [sanitize_message_content(m) for m in ag_ui_messages]
+            
             chat_history = [
-                ag_ui_message_to_llama_index_message(m) for m in ag_ui_messages
+                ag_ui_message_to_llama_index_message(m) for m in sanitized_messages
             ]
 
             # State sometimes has unused messages, so we need to remove them

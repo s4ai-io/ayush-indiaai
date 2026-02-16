@@ -1,0 +1,43 @@
+[
+  {
+    "contactInfo": {
+      "mobileNumber": "",
+      "emailId": "",
+      "correspondenceAddress": "",
+      "correspondenceCountry": "India",
+      "correspondenceState": "",
+      "correspondenceCity": "",
+      "correspondencePincode": "",
+      "isPermanentSame": false,
+      "permanentAddress": "",
+      "permanentCountry": "India",
+      "permanentState": "",
+      "permanentCity": "",
+      "permanentPincode": "",
+      "emergencyContactName": "Jane Roe",
+      "emergencyContactNumber": "555-0000"
+    },
+    "basicInfo": {
+      "firstName": "John",
+      "lastName": "Doe",
+      "gender": "",
+      "dateOfBirth": "1990-01-01",
+      "onlyYearOfBirth": false,
+      "relationshipType": "",
+      "relationName": "",
+      "nationality": "Indian",
+      "maritalStatus": "",
+      "abhaId": "",
+      "insuranceProvider": ""
+    },
+    "otherInfo": {
+      "qualification": "",
+      "occupation": "",
+      "bloodGroup": "",
+      "idType": "",
+      "idNumber": ""
+    },
+    "id": "49e2bbb3-1015-423c-bb32-e6a0f898c5c2",
+    "timestamp": "2026-02-16T13:28:40.656Z"
+  }
+]

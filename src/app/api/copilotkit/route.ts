@@ -13,6 +13,9 @@ export async function POST(request: NextRequest) {
             ehr_agent: new LlamaIndexAgent({
                 url: "http://127.0.0.1:8000/api/copilot/ehr/run",
             }),
+            registration_agent: new LlamaIndexAgent({
+                url: "http://127.0.0.1:8000/api/copilot/registration/run",
+            }),
         },
     });
 
