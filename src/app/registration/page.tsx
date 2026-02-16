@@ -120,7 +120,7 @@ function RegistrationForm() {
     const [voiceError, setVoiceError] = useState<string | null>(null);
 
     const handleVoiceTranscript = (transcript: string) => {
-        const textarea = document.querySelector('textarea.copilotkit-chat-textarea') as HTMLTextAreaElement || document.querySelector('textarea') as HTMLTextAreaElement;
+        const textarea = document.querySelector('.copilotKitInput textarea') as HTMLTextAreaElement;
 
         if (textarea) {
             const currentValue = textarea.value;
@@ -133,6 +133,8 @@ function RegistrationForm() {
 
             textarea.dispatchEvent(new Event('input', { bubbles: true }));
             textarea.focus();
+        } else {
+            console.warn("CopilotKit chat textarea not found. Voice input ignored.");
         }
     };
 
