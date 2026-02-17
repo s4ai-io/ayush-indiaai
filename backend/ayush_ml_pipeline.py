@@ -11,6 +11,7 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingRegressor
+from sklearn.cluster import KMeans
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.metrics import classification_report, accuracy_score, mean_absolute_error, r2_score
 import joblib
@@ -47,6 +48,7 @@ class AYUSHRecommendationSystem:
         self.improvement_model = None
         self.label_encoders = {}
         self.scaler = StandardScaler()
+        self.kmeans_model = None
         self.feature_importance = None
         self.models_loaded = False
         
@@ -57,8 +59,14 @@ class AYUSHRecommendationSystem:
             self.outcome_model = joblib.load(os.path.join(self.models_dir, 'outcome_model.pkl'))
             self.improvement_model = joblib.load(os.path.join(self.models_dir, 'improvement_model.pkl'))
             self.scaler = joblib.load(os.path.join(self.models_dir, 'scaler.pkl'))
+            self.scaler = joblib.load(os.path.join(self.models_dir, 'scaler.pkl'))
             self.label_encoders = joblib.load(os.path.join(self.models_dir, 'label_encoders.pkl'))
+            self.kmeans_model = joblib.load(os.path.join(self.models_dir, 'kmeans_model.pkl'))
             self.models_loaded = True
+            
+            # Load AyurGenix Models
+            self.load_ayurgenix_models()
+            
             print("✓ Models loaded successfully!")
             return True
         except FileNotFoundError as e:
@@ -67,6 +75,22 @@ class AYUSHRecommendationSystem:
             return False
         except Exception as e:
             print(f"❌ Error loading models: {e}")
+            return False
+
+    def load_ayurgenix_models(self):
+        """Load AyurGenix specific models"""
+        try:
+            print("Loading AyurGenix models...")
+            self.kmeans_model = joblib.load(os.path.join(self.models_dir, 'ayurgenix_kmeans.pkl'))
+            self.rf_herbs = joblib.load(os.path.join(self.models_dir, 'ayurgenix_rf_herbs.pkl'))
+            self.rf_yoga = joblib.load(os.path.join(self.models_dir, 'ayurgenix_rf_yoga.pkl'))
+            self.rf_diet = joblib.load(os.path.join(self.models_dir, 'ayurgenix_rf_diet.pkl'))
+            self.encoders = joblib.load(os.path.join(self.models_dir, 'ayurgenix_encoders.pkl'))
+            self.models_loaded = True
+            print("✓ AyurGenix models loaded successfully!")
+            return True
+        except Exception as e:
+            print(f"⚠️  AyurGenix models not found: {e}")
             return False
     
     def load_data(self):
@@ -271,12 +295,51 @@ class AYUSHRecommendationSystem:
         
         return mae, r2
     
+    def train_patient_clusters(self, n_clusters=5):
+        """
+        Cluster patients based on demographics and health profile
+        This enables finding 'similar patients' for collaborative filtering
+        """
+        print("\n" + "="*60)
+        print(f"TRAINING PATIENT CLUSTERING MODEL (K={n_clusters})")
+        print("="*60)
+        
+        df = self.encode_categorical_features(self.df_features)
+        
+        # Features for clustering (Static + Health Profile)
+        cluster_features = [
+            'age', 'bmi', 'gender_encoded', 
+            'prakriti_encoded', 'vikriti_encoded',
+            'disease_category_encoded', 'lifestyle_score',
+            'dosha_balance'
+        ]
+        
+        X = df[cluster_features].copy()
+        
+        # Scale features
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+        
+        # Train KMeans
+        self.kmeans_model = KMeans(n_clusters=n_clusters, random_state=42)
+        clusters = self.kmeans_model.fit_predict(X_scaled)
+        
+        # Add cluster labels to dataframe
+        self.df_features['cluster'] = clusters
+        
+        print(f"\n✓ Created {n_clusters} patient clusters")
+        
+        # Analyze clusters
+        print("\nCluster Profiles:")
+        for i in range(n_clusters):
+            cluster_size = len(df[clusters == i])
+            print(f"  Cluster {i}: {cluster_size} patients")
+            
+        return clusters
+    
     def recommend_treatment(self, patient_profile):
         """
         Generate personalized treatment recommendations for a new patient
-        
-        Args:
-            patient_profile: dict with patient information
         """
         print("\n" + "="*60)
         print("PERSONALIZED TREATMENT RECOMMENDATION")
@@ -291,57 +354,95 @@ class AYUSHRecommendationSystem:
         severity = patient_profile['severity']
         bmi = patient_profile.get('bmi', 25)
         
-        print(f"\nPatient Profile:")
-        print(f"  Age: {age} | Gender: {gender}")
-        print(f"  Constitution (Prakriti): {prakriti}")
-        print(f"  Current Imbalance (Vikriti): {vikriti}")
-        print(f"  Condition: {disease} (Severity: {severity}/10)")
-        print(f"  BMI: {bmi}")
+        # 1. CLUSTERING: Find Similar Patients
+        # 1. CLUSTERING: Find Similar Patients
+        cluster_id = None
         
-        # Herb recommendations based on dosha
-        herb_recommendations = self._recommend_herbs(vikriti, disease)
+        # Prepare input vector for models
+        try:
+            # Encoder helper
+            def safe_encode(encoder, val):
+                try:
+                    return encoder.transform([str(val)])[0]
+                except:
+                    return 0 # Default to first class if unseen
+
+            if self.models_loaded and hasattr(self, 'encoders'):
+                # Normalize inputs
+                prakriti_clean = prakriti.split('-')[0] if '-' in prakriti else prakriti # Simplified mapping
+                
+                # Encode features
+                # X = [Disease, Prakriti, Severity, Age, Gender]
+                # Note: Order must match training script
+                disease_enc = safe_encode(self.encoders['Disease'], disease)
+                prakriti_enc = safe_encode(self.encoders['Prakriti_Clean'], prakriti)
+                gender_enc = safe_encode(self.encoders['Gender'], gender)
+                
+                X_input = [[disease_enc, prakriti_enc, severity, age, gender_enc]]
+                X_rf = [[disease_enc, prakriti_enc, severity, age, gender_enc]] # Same features used
+                
+                # Predict Cluster
+                cluster_id = int(self.kmeans_model.predict(X_input)[0])
+                
+                # Predict Treatments
+                pred_herbs = self.encoders['Herbs'].inverse_transform(self.rf_herbs.predict(X_rf))[0]
+                pred_yoga = self.encoders['Yoga'].inverse_transform(self.rf_yoga.predict(X_rf))[0]
+                pred_diet = self.encoders['Diet'].inverse_transform(self.rf_diet.predict(X_rf))[0]
+                
+                # Parse predictions (Comma separated strings)
+                herb_recommendations = [{'name': h.strip(), 'dosage': 'As per physician', 'benefits': 'AI Predicted based on 15k records'} for h in pred_herbs.split(',')]
+                yoga_recommendations = [{'practice': y.strip(), 'duration': '20 mins', 'benefits': 'AI Recommended'} for y in pred_yoga.split(',')]
+                diet_recommendations = [d.strip() for d in pred_diet.split(',')]
+                
+                explainability.append(f" AI Model based on {disease} + {prakriti} profile.")
+                explainability.append(f" Cluster #{cluster_id}: Matches profile of treated patients.")
+
+            else:
+                # Fallback to rules
+                raise Exception("Models not loaded")
+
+        except Exception as e:
+            print(f"Model inference failed ({e}), falling back to rules.")
+            # Fallback
+            herb_recommendations = self._recommend_herbs(vikriti, disease)
+            yoga_recommendations = self._recommend_yoga(vikriti, disease)
+            diet_recommendations = self._recommend_diet(vikriti, bmi)
+            lifestyle_recommendations = self._recommend_lifestyle(vikriti, severity)
         
-        # Yoga recommendations
-        yoga_recommendations = self._recommend_yoga(vikriti, disease)
+        # Ensure we have lifestyle recommendations (as model doesn't predict these yet explictly in same format)
+        if not 'lifestyle_recommendations' in locals():
+             lifestyle_recommendations = self._recommend_lifestyle(vikriti, severity)
+
         
-        # Diet recommendations
-        diet_recommendations = self._recommend_diet(vikriti, bmi)
+        # Generate Explainability (Evidence)
+        # Rule-based evidence
+        explainability.append(f" Herbs selected to balance {vikriti} dosha.")
+        if severity > 6:
+            explainability.append(f" High severity ({severity}/10) requires intensive detox (Panchakarma) consideration.")
         
-        # Lifestyle modifications
-        lifestyle_recommendations = self._recommend_lifestyle(vikriti, severity)
-        
-        print(f"\n{'─'*60}")
+        print(f"\n {'─'*60}")
         print("RECOMMENDED TREATMENT PLAN")
-        print(f"{'─'*60}")
+        print(f" {'─'*60}")
         
         print(f"\n🌿 HERBAL MEDICINES:")
         for i, herb in enumerate(herb_recommendations, 1):
             print(f"  {i}. {herb['name']}: {herb['dosage']}")
-            print(f"     Benefits: {herb['benefits']}")
         
         print(f"\n🧘 YOGA & PRANAYAMA:")
         for i, yoga in enumerate(yoga_recommendations, 1):
             print(f"  {i}. {yoga['practice']}: {yoga['duration']}")
-            print(f"     Benefits: {yoga['benefits']}")
         
-        print(f"\n🥗 DIETARY GUIDELINES:")
-        for guideline in diet_recommendations:
-            print(f"  • {guideline}")
-        
-        print(f"\n💡 LIFESTYLE MODIFICATIONS:")
-        for modification in lifestyle_recommendations:
-            print(f"  • {modification}")
-        
-        print(f"\n📊 PREDICTED OUTCOMES:")
-        print(f"  Expected improvement: 60-80%")
-        print(f"  Recommended duration: 8-12 weeks")
-        print(f"  Follow-up: Every 3 weeks")
+        print(f"\n🧠 CLINICAL RATIONALE:")
+        for note in explainability:
+            print(f"  • {note}")
         
         return {
             'herbs': herb_recommendations,
             'yoga': yoga_recommendations,
             'diet': diet_recommendations,
-            'lifestyle': lifestyle_recommendations
+            'lifestyle': lifestyle_recommendations,
+            'cluster_id': cluster_id,
+            'explainability': explainability
         }
     
     def recommend_treatment_api(self, patient_data: dict) -> dict:
@@ -370,8 +471,8 @@ class AYUSHRecommendationSystem:
             }
         """
         # Validate inputs
-        age = patient_data.get('age')
-        if not age or age < 0 or age > 120:
+        age_val = patient_data.get('age')
+        if not age_val or age_val < 0 or age_val > 120:
             raise ValueError("Age must be between 0 and 120")
         
         severity = patient_data.get('severity')
@@ -385,6 +486,8 @@ class AYUSHRecommendationSystem:
         # Get recommendations
         vikriti = patient_data['vikriti']
         disease = patient_data['disease']
+        prakriti = patient_data['prakriti']
+        gender = patient_data.get('gender', 'Male') # Default to Male if missing or handle better
         
         herb_recommendations = self._recommend_herbs(vikriti, disease)
         yoga_recommendations = self._recommend_yoga(vikriti, disease)
@@ -400,13 +503,66 @@ class AYUSHRecommendationSystem:
         # Calculate recommended duration
         recommended_duration = 8 if severity <= 5 else 12
         
+        # CLUSTERING & EXPLAINABILITY
+        cluster_id = None
+        explainability = []
+        
+        # Try Model Inference
+        model_success = False
+        if self.models_loaded and hasattr(self, 'encoders'):
+            try:
+                # Encoder helper
+                def safe_encode(encoder, val):
+                    try:
+                        return encoder.transform([str(val)])[0]
+                    except:
+                        return 0
+
+                # Normalize inputs
+                prakriti_clean = prakriti.split('-')[0] if '-' in prakriti else prakriti
+                
+                # Encode features
+                disease_enc = safe_encode(self.encoders['Disease'], disease)
+                prakriti_enc = safe_encode(self.encoders['Prakriti_Clean'], prakriti)
+                gender_enc = safe_encode(self.encoders['Gender'], gender)
+                
+                X_rf = [[disease_enc, prakriti_enc, severity, age_val, gender_enc]]
+                
+                # Predict Treatments
+                pred_herbs = self.encoders['Herbs'].inverse_transform(self.rf_herbs.predict(X_rf))[0]
+                pred_yoga = self.encoders['Yoga'].inverse_transform(self.rf_yoga.predict(X_rf))[0]
+                pred_diet = self.encoders['Diet'].inverse_transform(self.rf_diet.predict(X_rf))[0]
+                
+                # Parse predictions
+                herb_recommendations = [{'name': h.strip(), 'dosage': 'As per physician', 'benefits': 'AI Predicted'} for h in pred_herbs.split(',')]
+                yoga_recommendations = [{'practice': y.strip(), 'duration': '20 mins', 'benefits': 'AI Recommended'} for y in pred_yoga.split(',')]
+                diet_recommendations = [d.strip() for d in pred_diet.split(',')]
+                
+                # Predict Cluster
+                cluster_id = int(self.kmeans_model.predict(X_rf)[0])
+                
+                explainability.append(f"AI Model Prediction based on {disease} + {prakriti} profile (15k+ records).")
+                explainability.append(f"Patient matches Cluster #{cluster_id} behavior.")
+                model_success = True
+            except Exception as e:
+                print(f"API Model Inference failed: {e}")
+
+        if not model_success:
+            explainability.append(f"Herbs selected to balance {vikriti} dosha.")
+            if severity > 6:
+                explainability.append(f"High severity ({severity}/10) requires intensive detox.")
+
+        explainability.append(f"Predicted improvement of {predicted_improvement}% based on cohort analysis.")
+        
         return {
             'herbs': herb_recommendations,
             'yoga': yoga_recommendations,
             'diet': diet_recommendations,
             'lifestyle': lifestyle_recommendations,
             'predicted_improvement': round(predicted_improvement, 1),
-            'recommended_duration_weeks': recommended_duration
+            'recommended_duration_weeks': recommended_duration,
+            'cluster_id': cluster_id,
+            'explainability': explainability
         }
     
     def _recommend_herbs(self, vikriti, disease):
@@ -550,6 +706,8 @@ class AYUSHRecommendationSystem:
         joblib.dump(self.improvement_model, os.path.join(self.models_dir, 'improvement_model.pkl'))
         joblib.dump(self.scaler, os.path.join(self.models_dir, 'scaler.pkl'))
         joblib.dump(self.label_encoders, os.path.join(self.models_dir, 'label_encoders.pkl'))
+        if self.kmeans_model:
+            joblib.dump(self.kmeans_model, os.path.join(self.models_dir, 'kmeans_model.pkl'))
         print("✓ Models saved successfully!")
     
     def generate_report(self):
@@ -599,6 +757,7 @@ if __name__ == "__main__":
     # Train models
     ayush_system.train_outcome_classifier()
     ayush_system.train_improvement_predictor()
+    ayush_system.train_patient_clusters()
     
     # Save models
     ayush_system.save_models()

@@ -57,6 +57,8 @@ class TreatmentRecommendation(BaseModel):
     lifestyle: List[str]
     predicted_improvement: Optional[float] = Field(None, description="Predicted improvement percentage")
     recommended_duration_weeks: Optional[int] = Field(None, description="Recommended treatment duration")
+    cluster_id: Optional[int] = Field(None, description="Patient cluster ID")
+    explainability: List[str] = Field(default_factory=list, description="Reasons for recommendations")
 
 
 class ForecastDataPoint(BaseModel):
