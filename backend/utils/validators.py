@@ -109,6 +109,7 @@ class HealthCheckResponse(BaseModel):
     """Health check response"""
     status: str
     models_loaded: bool
+    database: Optional[str] = None
     version: str
 
 
@@ -156,3 +157,44 @@ class RegistrationData(BaseModel):
     basicInfo: BasicInfo = BasicInfo()
     contactInfo: ContactInfo = ContactInfo()
     otherInfo: OtherInfo = OtherInfo()
+
+
+# --- Analytics Response Models ---
+
+
+class HotspotResponse(BaseModel):
+    """Single hotspot entry"""
+    city: Optional[str] = None
+    pincode: Optional[str] = None
+    diagnosis: str
+    count: int
+
+
+class AlertResponse(BaseModel):
+    """Single outbreak alert"""
+    disease: str
+    severity: str
+    message: str
+    date: str
+
+
+class DiseaseCount(BaseModel):
+    """Disease with case count"""
+    disease: str
+    count: int
+
+
+class CityCount(BaseModel):
+    """City with patient count"""
+    city: str
+    count: int
+
+
+class DashboardSummaryResponse(BaseModel):
+    """Overall analytics dashboard summary"""
+    total_patients: int
+    total_medical_records: int
+    total_health_records: int
+    top_diseases: List[DiseaseCount]
+    top_cities: List[CityCount]
+

@@ -1,10 +1,13 @@
 """
 FastAPI Backend for AYUSH ML Pipeline
 """
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import uvicorn
+import os
+import json
+import csv # Keeping for backward compat if needed, but primary is DB
 
 from utils.validators import (
     PatientProfile,
@@ -16,10 +19,8 @@ from utils.validators import (
 )
 from services.ml_service import ml_service
 from services.forecast_service import forecast_service
-import csv
-import os
-import json
-
+from services.db_service import db_service
+from database import engine, Base
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -28,6 +29,10 @@ async def lifespan(app: FastAPI):
     print("Starting AYUSH ML Backend API")
     print("="*60)
     
+    # Initialize DB Tables
+    Base.metadata.create_all(bind=engine)
+    print("✓ Database tables initialized")
+
     # Initialize ML Service
     ml_service.initialize()
     
@@ -58,6 +63,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3000",
+        "*", # Allow all for network testing
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -82,9 +88,18 @@ async def health_check():
     ml_health = ml_service.health_check()
     forecast_health = forecast_service.health_check()
     
+    # check db
+    db_status = "connected"
+    try:
+        with engine.connect() as conn:
+            pass
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+
     return {
         "status": "healthy" if ml_health["initialized"] else "degraded",
         "models_loaded": ml_health["models_loaded"],
+        "database": db_status,
         "version": "1.0.0"
     }
 
@@ -126,29 +141,14 @@ async def submit_feedback(feedback: TreatmentFeedback):
         feedback: Feedback data including patient ID, rating, comments, and final plan
     """
     try:
-        # Use absolute path relative to this file
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        feedback_file = os.path.join(base_dir, "data", "treatment_feedback.csv")
-        file_exists = os.path.isfile(feedback_file)
+        # Save to Database
+        db_service.save_treatment_feedback(feedback.model_dump())
+        print(f"✓ Feedback saved to DB for Patient {feedback.patientId}")
+
+        # Also keep CSV for backup/backward compatibility for now? 
+        # Optional: We can remove this block if we are fully cutover. 
+        # Keeping it as a fallback might be safe, but let's rely on DB as source of truth.
         
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(feedback_file), exist_ok=True)
-        
-        with open(feedback_file, 'a', newline='') as f:
-            writer = csv.writer(f)
-            if not file_exists:
-                writer.writerow(['timestamp', 'patient_id', 'rating', 'feedback', 'treatment_plan_json', 'context_json'])
-            
-            writer.writerow([
-                feedback.timestamp,
-                feedback.patientId,
-                feedback.rating,
-                feedback.feedback,
-                json.dumps(feedback.treatmentPlan),
-                json.dumps(feedback.context)
-            ])
-            
-        print(f"✓ Feedback saved for Patient {feedback.patientId}")
         return {"status": "success", "message": "Feedback recorded for continuous learning"}
         
     except Exception as e:
@@ -213,6 +213,7 @@ async def get_emerging_trends():
 
 # --- Analytics Endpoints ---
 from services.analytics_service import analytics_service
+from utils.validators import HotspotResponse, AlertResponse, DashboardSummaryResponse
 
 @app.get("/api/analytics/trends", tags=["Public Health Analytics"])
 async def get_disease_trends(days: int = 30):
@@ -223,7 +224,7 @@ async def get_disease_trends(days: int = 30):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/analytics/hotspots", tags=["Public Health Analytics"])
+@app.get("/api/analytics/hotspots", response_model=list[HotspotResponse], tags=["Public Health Analytics"])
 async def get_disease_hotspots(disease: str = None):
     """Get location-based disease hotspots"""
     try:
@@ -232,13 +233,21 @@ async def get_disease_hotspots(disease: str = None):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/analytics/alerts", tags=["Public Health Analytics"])
+@app.get("/api/analytics/alerts", response_model=list[AlertResponse], tags=["Public Health Analytics"])
 async def get_public_health_alerts():
     """Get active outbreak alerts"""
     try:
-        # Detect anomalies dynamically
         alerts = analytics_service.detect_anomalies()
         return alerts
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/analytics/dashboard", response_model=DashboardSummaryResponse, tags=["Public Health Analytics"])
+async def get_dashboard_summary():
+    """Get overall analytics dashboard summary"""
+    try:
+        summary = analytics_service.get_dashboard_summary()
+        return summary
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -269,6 +278,37 @@ app.include_router(registration_agent_router, prefix="/api/copilot/registration"
 
 from services.doctor_agent import doctor_agent_router
 app.include_router(doctor_agent_router, prefix="/api/copilot/doctor", tags=["Copilot Agent"])
+
+from utils.validators import RegistrationData
+
+@app.post("/api/patients", tags=["Patient Management"])
+async def create_patient(data: RegistrationData):
+    """
+    Create a new patient registration
+    """
+    try:
+        # Convert Pydantic models to dicts
+        # db_service.create_patient expects dicts for basic_info, contact_info, other_info
+        
+        # Note: Pydantic model fields are camelCase (firstName), DB service expects keys that match
+        # what it extracts. Let's look at db_service.create_patient:
+        # it uses basic_info.get("firstName") etc. so camelCase keys are fine!
+        
+        basic_info = data.basicInfo.model_dump()
+        contact_info = data.contactInfo.model_dump()
+        other_info = data.otherInfo.model_dump()
+        
+        patient = db_service.create_patient(basic_info, contact_info, other_info)
+        
+        return {
+            "status": "success",
+            "message": "Patient registered successfully",
+            "patient_id": str(patient.id),
+            "abha_id": patient.abha_id
+        }
+    except Exception as e:
+        print(f"Error creating patient: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":

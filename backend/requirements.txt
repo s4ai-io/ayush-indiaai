@@ -8,12 +8,14 @@ joblib==1.4.0
 python-multipart==0.0.12
 pytest==8.3.0
 httpx==0.28.0
+sqlalchemy
+psycopg2-binary
 
 # CopilotKit & AGUI Dependencies
 ag-ui-protocol==0.1.10
 llama-index-core>=0.14,<0.15
 llama-index-llms-openai>=0.5.0,<0.6.0
-llama-index-protocols-ag-ui==0.2.3
+# llama-index-protocols-ag-ui==0.2.3
 # openinference-instrumentation-llama-index==4.3.9
 # openinference-instrumentation-openai==0.1.41
 # arize-phoenix==12.27.0

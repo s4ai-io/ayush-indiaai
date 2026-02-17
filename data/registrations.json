@@ -8998,5 +8998,46 @@
         "timestamp": "2026-01-20T12:02:52.941Z"
       }
     ]
+  },
+  {
+    "contactInfo": {
+      "mobileNumber": "9876543210",
+      "emailId": "johndoe@example.com",
+      "correspondenceAddress": "123 Main Street",
+      "correspondenceCountry": "India",
+      "correspondenceState": "Maharashtra",
+      "correspondenceCity": "Mumbai",
+      "correspondencePincode": "400001",
+      "isPermanentSame": true,
+      "permanentAddress": "123 Main Street",
+      "permanentCountry": "India",
+      "permanentState": "Maharashtra",
+      "permanentCity": "Mumbai",
+      "permanentPincode": "400001",
+      "emergencyContactName": "Jane Doe",
+      "emergencyContactNumber": "9876543211"
+    },
+    "basicInfo": {
+      "firstName": "John",
+      "lastName": "Doe",
+      "gender": "Male",
+      "dateOfBirth": "1990-01-01",
+      "onlyYearOfBirth": false,
+      "relationshipType": "Self",
+      "relationName": "John Doe",
+      "nationality": "Indian",
+      "maritalStatus": "Single",
+      "abhaId": "1234-5678-9012",
+      "insuranceProvider": "ABC Health Insurance"
+    },
+    "otherInfo": {
+      "qualification": "Graduate",
+      "occupation": "Engineer",
+      "bloodGroup": "B+",
+      "idType": "Aadhaar",
+      "idNumber": "1234-5678-9012"
+    },
+    "id": "526c750a-d5a4-4308-850c-ad07836098c9",
+    "timestamp": "2026-02-17T10:12:09.646Z"
   }
 ]
