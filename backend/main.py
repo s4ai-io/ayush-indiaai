@@ -167,6 +167,57 @@ async def get_emerging_trends():
 
 
 
+
+# --- Analytics Endpoints ---
+from services.analytics_service import analytics_service
+
+@app.get("/api/analytics/trends", tags=["Public Health Analytics"])
+async def get_disease_trends(days: int = 30):
+    """Get disease trends over time"""
+    try:
+        trends = analytics_service.get_disease_trends(days=days)
+        return trends
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/analytics/hotspots", tags=["Public Health Analytics"])
+async def get_disease_hotspots(disease: str = None):
+    """Get location-based disease hotspots"""
+    try:
+        hotspots = analytics_service.get_hotspots(disease=disease)
+        return hotspots
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/analytics/alerts", tags=["Public Health Analytics"])
+async def get_public_health_alerts():
+    """Get active outbreak alerts"""
+    try:
+        # Detect anomalies dynamically
+        alerts = analytics_service.detect_anomalies()
+        return alerts
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+from services.gnn_service import gnn_service
+
+@app.get("/api/analytics/predictions", tags=["Public Health Analytics"])
+async def get_disease_spread_prediction():
+    """Predict future disease spread using Spatiotemporal GNN"""
+    try:
+        # 1. Get current hotspots
+        current_hotspots = analytics_service.get_hotspots(disease="Dengue") # Default to Dengue for demo
+        
+        # 2. Predict spread based on current state
+        predictions = gnn_service.predict_spread(current_hotspots)
+        
+        return predictions
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 # Register CopilotKit Agent Router
 app.include_router(ehr_agent_router, prefix="/api/copilot/ehr", tags=["Copilot Agent"])
 
