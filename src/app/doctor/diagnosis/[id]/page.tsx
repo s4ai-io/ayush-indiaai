@@ -9,7 +9,8 @@ import { CopilotKit, useCopilotChat, useCopilotReadable, useCopilotAction } from
 import { CopilotSidebar } from "@copilotkit/react-ui";
 import { TextMessage, MessageRole } from "@copilotkit/runtime-client-gql";
 import "@copilotkit/react-ui/styles.css";
-import { User, Activity, FileText, Pill, Save } from 'lucide-react';
+import Link from 'next/link';
+import { User, Activity, FileText, Pill, Save, Sparkles, ArrowRight } from 'lucide-react';
 
 interface Patient {
     id: string;
@@ -44,6 +45,7 @@ function DiagnosisForm({ patient }: { patient: Patient }) {
     const [isListening, setIsListening] = useState(false);
     const [voiceError, setVoiceError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
+    const [diagnosisSaved, setDiagnosisSaved] = useState(false);
 
     // Diagnosis State
     const [diagnosisData, setDiagnosisData] = useState<DiagnosisData>({
@@ -103,9 +105,7 @@ function DiagnosisForm({ patient }: { patient: Patient }) {
         try {
             const result = await saveDiagnosis(patient.id, diagnosisData);
             if (result.success) {
-                alert("Diagnosis saved successfully!");
-                // Optionally redirect to dashboard
-                // window.location.href = '/doctor'; 
+                setDiagnosisSaved(true);
             } else {
                 alert("Failed to save diagnosis: " + result.message);
             }
@@ -224,20 +224,38 @@ function DiagnosisForm({ patient }: { patient: Patient }) {
 
                 {/* Save Actions */}
                 <div className="flex justify-end gap-4">
-                    <button
-                        className="px-6 py-2 border border-slate-300 rounded-lg text-slate-700 font-medium hover:bg-slate-50"
-                        disabled={saving}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="flex items-center gap-2 px-6 py-2 bg-[#00A9B4] hover:bg-[#008f99] text-white rounded-lg font-medium shadow-sm transition-colors disabled:opacity-50"
-                    >
-                        <Save className="w-4 h-4" />
-                        {saving ? "Saving..." : "Finalize & Save Record"}
-                    </button>
+                    {diagnosisSaved ? (
+                        <div className="flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <span className="text-green-600 font-medium flex items-center gap-2">
+                                <Activity className="w-4 h-4" />
+                                Diagnosis Saved
+                            </span>
+                            <Link href={`/doctor/treatment/${patient.id}`}>
+                                <button className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-bold shadow-lg transform transition-all hover:scale-105">
+                                    <Sparkles className="w-5 h-5 animate-pulse" />
+                                    Generate AI Treatment Plan
+                                    <ArrowRight className="w-5 h-5" />
+                                </button>
+                            </Link>
+                        </div>
+                    ) : (
+                        <>
+                            <button
+                                className="px-6 py-2 border border-slate-300 rounded-lg text-slate-700 font-medium hover:bg-slate-50"
+                                disabled={saving}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                disabled={saving}
+                                className="flex items-center gap-2 px-6 py-2 bg-[#00A9B4] hover:bg-[#008f99] text-white rounded-lg font-medium shadow-sm transition-colors disabled:opacity-50"
+                            >
+                                <Save className="w-4 h-4" />
+                                {saving ? "Saving..." : "Finalize & Save Record"}
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 

@@ -1,88 +1,88 @@
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { Activity, Users, AlertTriangle, UserPlus, Stethoscope } from "lucide-react";
+import { Activity, Users, UserPlus, Stethoscope, ArrowRight, ShieldAlert } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
-export default function DashboardPage() {
+export default function LandingPage() {
     return (
-        <div className="space-y-8">
-            <div className="flex gap-4">
-                <Link href="/registration" className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90">
-                    <UserPlus className="h-4 w-4" />
-                    New Registration
-                </Link>
-                <Link href="/doctor" className="flex items-center gap-2 bg-secondary text-secondary-foreground px-4 py-2 rounded-md hover:bg-secondary/80">
-                    <Stethoscope className="h-4 w-4" />
-                    Doctor Dashboard
-                </Link>
+        <div className="space-y-8 max-w-5xl mx-auto py-12">
+            <div className="text-center space-y-4 mb-12">
+                <h1 className="text-4xl font-bold tracking-tight text-slate-900">Welcome to Ayush AI</h1>
+                <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+                    Intelligent Healthcare System integrating Traditional Knowledge with Modern AI throughout the patient journey.
+                </p>
             </div>
 
-            <div>
-                <h2 className="text-3xl font-bold tracking-tight">Dashboard Overview</h2>
-                <p className="text-muted-foreground">Real-time health monitoring and AYUSH insights.</p>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Active Monitoring Reports</CardTitle>
-                        <Activity className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">12,345</div>
-                        <p className="text-xs text-muted-foreground">+20% from last month</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">High Risk Zones</CardTitle>
-                        <AlertTriangle className="h-4 w-4 text-destructive" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-destructive">4</div>
-                        <p className="text-xs text-muted-foreground">Requires immediate intervention</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Personalized Consultations</CardTitle>
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">573</div>
-                        <p className="text-xs text-muted-foreground">+12 since last hour</p>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4">
+            <div className="grid gap-8 md:grid-cols-3">
+                {/* Reception Role */}
+                <Card className="hover:shadow-lg transition-shadow border-t-4 border-t-blue-500">
                     <CardHeader>
-                        <CardTitle>Disease Activity Map</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pl-2">
-                        <div className="h-[200px] flex items-center justify-center text-muted-foreground bg-slate-50 rounded-md">
-                            Map Visualization Placeholder
+                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 text-blue-600">
+                            <UserPlus className="h-6 w-6" />
                         </div>
+                        <CardTitle className="text-xl">Reception Desk</CardTitle>
+                        <CardDescription>Patient Registration & Triage</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <p className="text-sm text-slate-500 min-h-[60px]">
+                            Register new patients using voice-enabled forms and manage the daily patient queue.
+                        </p>
+                        <Link href="/registration" className="block">
+                            <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                                Enter Reception
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        </Link>
                     </CardContent>
                 </Card>
-                <Card className="col-span-3">
+
+                {/* Clinical Role */}
+                <Card className="hover:shadow-lg transition-shadow border-t-4 border-t-purple-500">
                     <CardHeader>
-                        <CardTitle>Recent Alerts</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            {[1, 2, 3].map((i) => (
-                                <div key={i} className="flex items-center">
-                                    <span className="w-2 h-2 bg-amber-500 rounded-full mr-2" />
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-medium leading-none">Spike in Flu cases - North Zone</p>
-                                        <p className="text-xs text-muted-foreground">2 hours ago</p>
-                                    </div>
-                                </div>
-                            ))}
+                        <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4 text-purple-600">
+                            <Stethoscope className="h-6 w-6" />
                         </div>
+                        <CardTitle className="text-xl">Doctor's Cabin</CardTitle>
+                        <CardDescription>Clinical Diagnosis & Treatment</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <p className="text-sm text-slate-500 min-h-[60px]">
+                            Diagnose patients, generate AI-driven Ayurvedic treatment plans, and provide feedback.
+                        </p>
+                        <Link href="/doctor" className="block">
+                            <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                                Start Consultation
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        </Link>
                     </CardContent>
                 </Card>
+
+                {/* Public Health Role */}
+                <Card className="hover:shadow-lg transition-shadow border-t-4 border-t-amber-500">
+                    <CardHeader>
+                        <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center mb-4 text-amber-600">
+                            <ShieldAlert className="h-6 w-6" />
+                        </div>
+                        <CardTitle className="text-xl">Command Center</CardTitle>
+                        <CardDescription>Public Health Intelligence</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <p className="text-sm text-slate-500 min-h-[60px]">
+                            Monitor disease outbreaks, risk forecasts, and epidemiological trends in real-time.
+                        </p>
+                        <Link href="/public-health/dashboard" className="block">
+                            <Button className="w-full bg-amber-600 hover:bg-amber-700">
+                                View Analytics
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        </Link>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="mt-16 text-center text-sm text-slate-400">
+                <p>Select your role to access specific workflows.</p>
             </div>
         </div >
     );
