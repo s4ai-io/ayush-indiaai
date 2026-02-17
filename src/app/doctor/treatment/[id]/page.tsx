@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Activity, Leaf, Coffee, Moon, Sun, ArrowRight, CheckCircle, Info } from 'lucide-react';
+import { Brain, Activity, Leaf, Coffee, Moon, Sun, ArrowRight, CheckCircle, Info, ThumbsUp, ThumbsDown, Save } from 'lucide-react';
 import {
     Tooltip,
     TooltipContent,
@@ -47,6 +47,11 @@ export default function TreatmentPage({ params }: { params: Promise<{ id: string
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
     const [treatmentPlan, setTreatmentPlan] = useState<TreatmentPlan | null>(null);
+
+    // Feedback State
+    const [rating, setRating] = useState<'positive' | 'negative' | null>(null);
+    const [feedback, setFeedback] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Assessment State
     const [prakriti, setPrakriti] = useState<string>("");
@@ -100,6 +105,41 @@ export default function TreatmentPage({ params }: { params: Promise<{ id: string
             alert("Error generating treatment plan.");
         } finally {
             setGenerating(false);
+        }
+    };
+
+    const submitFeedback = async () => {
+        setIsSubmitting(true);
+        try {
+            const age = new Date().getFullYear() - new Date(patient?.basicInfo.dateOfBirth || "").getFullYear();
+
+            await fetch('/api/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    patientId: id,
+                    treatmentPlan,
+                    context: {
+                        age,
+                        gender: patient?.basicInfo.gender,
+                        prakriti,
+                        vikriti,
+                        disease,
+                        severity,
+                        bmi: 24.0
+                    },
+                    rating,
+                    feedback,
+                    timestamp: new Date().toISOString()
+                })
+            });
+            alert("Treatment Plan Prescribed & Feedback Recorded!");
+            // Redirect or Reset
+        } catch (error) {
+            console.error(error);
+            alert("Failed to submit feedback");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -361,11 +401,55 @@ export default function TreatmentPage({ params }: { params: Promise<{ id: string
                                     </Card>
                                 </div>
 
-                                <div className="flex justify-end pt-4">
-                                    <Button size="lg" className="bg-slate-900 text-white hover:bg-slate-800">
-                                        Accept & Prescribe Plan
-                                        <ArrowRight className="w-4 h-4 ml-2" />
-                                    </Button>
+                                <div className="mt-8 border-t pt-6">
+                                    <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                                        <Brain className="w-4 h-4 text-purple-600" />
+                                        Doctor's Feedback (Continuous Learning)
+                                    </h3>
+
+                                    <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-sm font-medium text-purple-900">How accurate was this AI plan?</label>
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    variant={rating === 'positive' ? "default" : "outline"}
+                                                    size="sm"
+                                                    onClick={() => setRating('positive')}
+                                                    className={rating === 'positive' ? "bg-green-600 hover:bg-green-700" : "text-green-600 border-green-200 hover:bg-green-50"}
+                                                >
+                                                    <ThumbsUp className="w-4 h-4 mr-1" /> Accurate
+                                                </Button>
+                                                <Button
+                                                    variant={rating === 'negative' ? "default" : "outline"}
+                                                    size="sm"
+                                                    onClick={() => setRating('negative')}
+                                                    className={rating === 'negative' ? "bg-red-600 hover:bg-red-700" : "text-red-600 border-red-200 hover:bg-red-50"}
+                                                >
+                                                    <ThumbsDown className="w-4 h-4 mr-1" /> Needs Changes
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        <textarea
+                                            className="w-full p-3 border border-purple-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                                            placeholder="Add clinical notes or modifications/corrections here to retrain the model..."
+                                            rows={2}
+                                            value={feedback}
+                                            onChange={(e) => setFeedback(e.target.value)}
+                                        />
+
+                                        <div className="flex justify-end">
+                                            <Button
+                                                size="lg"
+                                                className="bg-slate-900 text-white hover:bg-slate-800 w-full md:w-auto"
+                                                onClick={submitFeedback}
+                                                disabled={isSubmitting}
+                                            >
+                                                {isSubmitting ? 'Processing...' : 'Accept & Prescribe Plan'}
+                                                <CheckCircle className="w-4 h-4 ml-2" />
+                                            </Button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}

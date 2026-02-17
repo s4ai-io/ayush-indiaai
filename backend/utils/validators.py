@@ -61,6 +61,16 @@ class TreatmentRecommendation(BaseModel):
     explainability: List[str] = Field(default_factory=list, description="Reasons for recommendations")
 
 
+class TreatmentFeedback(BaseModel):
+    """Doctor feedback on treatment plan"""
+    patientId: str
+    treatmentPlan: dict  # Storing as dict to be flexible
+    context: dict # Input features (Prakriti, Severity, etc.)
+    rating: Optional[str] = None
+    feedback: Optional[str] = None
+    timestamp: str
+
+
 class ForecastDataPoint(BaseModel):
     """Single forecast data point"""
     month: str

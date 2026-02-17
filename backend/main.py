@@ -9,12 +9,16 @@ import uvicorn
 from utils.validators import (
     PatientProfile,
     TreatmentRecommendation,
+    TreatmentFeedback,
     ForecastResponse,
     TrendsResponse,
     HealthCheckResponse
 )
 from services.ml_service import ml_service
 from services.forecast_service import forecast_service
+import csv
+import os
+import json
 
 
 @asynccontextmanager
@@ -111,6 +115,45 @@ async def get_recommendation(patient: PatientProfile):
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@app.post("/api/feedback", tags=["Continuous Learning"])
+async def submit_feedback(feedback: TreatmentFeedback):
+    """
+    Submit doctor feedback for model retraining
+    
+    Args:
+        feedback: Feedback data including patient ID, rating, comments, and final plan
+    """
+    try:
+        # Use absolute path relative to this file
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        feedback_file = os.path.join(base_dir, "data", "treatment_feedback.csv")
+        file_exists = os.path.isfile(feedback_file)
+        
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(feedback_file), exist_ok=True)
+        
+        with open(feedback_file, 'a', newline='') as f:
+            writer = csv.writer(f)
+            if not file_exists:
+                writer.writerow(['timestamp', 'patient_id', 'rating', 'feedback', 'treatment_plan_json', 'context_json'])
+            
+            writer.writerow([
+                feedback.timestamp,
+                feedback.patientId,
+                feedback.rating,
+                feedback.feedback,
+                json.dumps(feedback.treatmentPlan),
+                json.dumps(feedback.context)
+            ])
+            
+        print(f"✓ Feedback saved for Patient {feedback.patientId}")
+        return {"status": "success", "message": "Feedback recorded for continuous learning"}
+        
+    except Exception as e:
+        print(f"❌ Error saving feedback: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save feedback: {str(e)}")
 
 
 @app.get("/api/forecast", response_model=ForecastResponse, tags=["Disease Forecasting"])
