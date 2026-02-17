@@ -1,136 +1,139 @@
 #!/bin/bash
 
-# AYUSH ML Pipeline Integration - Setup Script
-# This script sets up both the Python backend and Next.js frontend
+# AYUSH India AI — Complete Setup Script
+# Sets up Python backend, PostgreSQL database, and Next.js frontend.
 
 set -e  # Exit on error
 
-echo "=========================================="
-echo "AYUSH ML Pipeline Integration - Setup"
-echo "=========================================="
-echo ""
-
-# Colors for output
+# Colors
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# Check if we're in the project root
+echo "=========================================="
+echo "   AYUSH India AI — Full Stack Setup"
+echo "=========================================="
+echo ""
+
+# Check execution directory
 if [ ! -f "package.json" ]; then
-    echo -e "${RED}Error: Please run this script from the project root directory${NC}"
+    echo -e "${RED}Error: Please run this script from the project root directory.${NC}"
     exit 1
 fi
 
-# Step 1: Setup Python Backend
-echo -e "${YELLOW}Step 1: Setting up Python backend...${NC}"
+# ------------------------------------------------------------------
+# Step 1: Python Backend & Database
+# ------------------------------------------------------------------
+echo -e "${YELLOW}Step 1: Setting up Python Backend & Database...${NC}"
+
 cd backend
 
-# Check if Python 3 is installed
+# Check Python
 if ! command -v python3 &> /dev/null; then
-    echo -e "${RED}Error: Python 3 is not installed. Please install Python 3.8 or higher.${NC}"
+    echo -e "${RED}Error: Python 3 is required.${NC}"
     exit 1
 fi
 
-# Create virtual environment if it doesn't exist
+# Create Venv
 if [ ! -d "venv" ]; then
-    echo "Creating Python virtual environment..."
+    echo "Creating virtual environment..."
     python3 -m venv venv
 fi
 
-# Activate virtual environment
-echo "Activating virtual environment..."
+# Activate Venv
 source venv/bin/activate
+echo "Virtual environment activated."
 
-# Install dependencies
+# Install Dependencies
 echo "Installing Python dependencies..."
-pip install --upgrade pip
+pip install --upgrade pip > /dev/null
 pip install -r requirements.txt
 
-# Check if models exist
-if [ ! -f "models/outcome_model.pkl" ]; then
-    echo -e "${YELLOW}Warning: ML models not found in backend/models/${NC}"
-    echo "You need to train the models first. Options:"
-    echo "  1. Run: python ayush_ml_pipeline.py (from backend directory)"
-    echo "  2. Or copy from ayush_calude: cp ../ayush_calude/*.pkl models/"
-    echo ""
-    read -p "Do you want to copy models from ayush_calude now? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        if [ -f "../ayush_calude/outcome_model.pkl" ]; then
-            echo "Copying models..."
-            cp ../ayush_calude/*.pkl models/ 2>/dev/null || echo "Some model files not found"
-            echo -e "${GREEN}✓ Models copied${NC}"
-        else
-            echo -e "${YELLOW}Models not found in ayush_calude. You'll need to train them.${NC}"
-        fi
-    fi
+# Create .env if missing
+if [ ! -f ".env" ]; then
+    echo "Creating backend/.env file..."
+    cat > .env << EOF
+DATABASE_URL=postgresql://utsav:postgres@localhost/ayush_db
+# OPENAI_API_KEY=your_key_here
+EOF
+    echo -e "${GREEN}✓ Created backend/.env${NC}"
+else
+    echo -e "${GREEN}✓ backend/.env exists${NC}"
 fi
 
-# Check if data exists
-if [ ! -f "data/public_health_trends.csv" ]; then
-    echo "Copying trend data..."
-    if [ -f "../ayush_calude/public_health_trends.csv" ]; then
-        cp ../ayush_calude/public_health_trends.csv data/
-        echo -e "${GREEN}✓ Trend data copied${NC}"
+# Check PostgreSQL
+echo "Checking PostgreSQL connection..."
+if pg_isready -q; then
+    echo -e "${GREEN}✓ PostgreSQL is running${NC}"
+    
+    # Check/Create Database
+    if psql -lqt | cut -d \| -f 1 | grep -qw ayush_db; then
+        echo -e "${GREEN}✓ Database 'ayush_db' exists${NC}"
     else
-        echo -e "${YELLOW}Warning: Trend data not found. Forecast features may not work.${NC}"
+        echo "Creating database 'ayush_db'..."
+        createdb ayush_db || echo "If creation failed, you might need to run 'createdb ayush_db' manually."
     fi
+
+    # Run Migrations
+    echo "Running Data Migration..."
+    python migrate_data.py
+
+else
+    echo -e "${RED}⚠ PostgreSQL is NOT running. Please start it and run 'python migrate_data.py' manually.${NC}"
+fi
+
+# Check ML Models
+if [ ! -f "models/outcome_model.pkl" ] && [ -f "ayush_ml_pipeline.py" ]; then
+    echo "Training ML models (first run)..."
+    python ayush_ml_pipeline.py
+    echo -e "${GREEN}✓ Models trained${NC}"
 fi
 
 cd ..
-echo -e "${GREEN}✓ Python backend setup complete${NC}"
+echo -e "${GREEN}✓ Backend setup complete${NC}"
 echo ""
 
-# Step 2: Setup Next.js Frontend
-echo -e "${YELLOW}Step 2: Setting up Next.js frontend...${NC}"
+# ------------------------------------------------------------------
+# Step 2: Next.js Frontend
+# ------------------------------------------------------------------
+echo -e "${YELLOW}Step 2: Setting up Next.js Frontend...${NC}"
 
-# Check if Node.js is installed
-if ! command -v node &> /dev/null; then
-    echo -e "${RED}Error: Node.js is not installed. Please install Node.js 18 or higher.${NC}"
+# Check Node.js
+if ! command -v npm &> /dev/null; then
+    echo -e "${RED}Error: Node.js/npm is required.${NC}"
     exit 1
 fi
 
-# Install dependencies
+# Install Deps
 echo "Installing Node.js dependencies..."
 npm install
 
-echo -e "${GREEN}✓ Next.js frontend setup complete${NC}"
-echo ""
-
-# Step 3: Environment Variables
-echo -e "${YELLOW}Step 3: Checking environment variables...${NC}"
-
+# Create .env.local if missing
 if [ ! -f ".env.local" ]; then
-    echo "Creating .env.local file..."
+    echo "Creating .env.local..."
     cat > .env.local << EOF
-# Python Backend URL
+NEXT_PUBLIC_API_URL=http://localhost:8000
 PYTHON_BACKEND_URL=http://localhost:8000
-
-# Next.js Public API URL (for client-side requests)
-NEXT_PUBLIC_API_URL=http://localhost:3000
 EOF
     echo -e "${GREEN}✓ Created .env.local${NC}"
-else
-    echo -e "${GREEN}✓ .env.local already exists${NC}"
 fi
 
+echo -e "${GREEN}✓ Frontend setup complete${NC}"
 echo ""
+
+# ------------------------------------------------------------------
+# Done
+# ------------------------------------------------------------------
 echo "=========================================="
-echo -e "${GREEN}Setup Complete!${NC}"
+echo -e "${GREEN}SETUP PREPARATION COMPLETE!${NC}"
 echo "=========================================="
 echo ""
-echo "To start the application:"
+echo "To start the application run these two commands in separate terminals:"
 echo ""
-echo -e "${YELLOW}Terminal 1 - Python Backend:${NC}"
-echo "  cd backend"
-echo "  source venv/bin/activate"
-echo "  uvicorn main:app --reload --port 8000"
+echo -e "${YELLOW}1. Backend:${NC}"
+echo "   cd backend && source venv/bin/activate && uvicorn main:app --reload --port 8000"
 echo ""
-echo -e "${YELLOW}Terminal 2 - Next.js Frontend:${NC}"
-echo "  npm run dev"
-echo ""
-echo "Then open: http://localhost:3000"
-echo ""
-echo "API Documentation: http://localhost:8000/docs"
+echo -e "${YELLOW}2. Frontend:${NC}"
+echo "   npm run dev"
 echo ""
