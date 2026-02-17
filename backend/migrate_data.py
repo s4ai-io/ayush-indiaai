@@ -63,7 +63,7 @@ def safe_int(val):
 
 
 def migrate_registrations(db):
-    """registrations.json → Patient + MedicalRecord"""
+    """registrations.json → Patient"""
     path = get_data_path("registrations.json")
     if not path:
         print("  ⚠ registrations.json not found, skipping")
@@ -72,40 +72,48 @@ def migrate_registrations(db):
     with open(path, "r") as f:
         data = json.load(f)
 
-    patient_map = {}  # original_id → db uuid
+    patient_map = {}  # original_id (if present) → db uuid
     count_patients = 0
     count_records = 0
 
     for entry in data:
         basic = entry.get("basicInfo", {})
         contact = entry.get("contactInfo", {})
+        other = entry.get("otherInfo", {})
 
-        dob = None
-        if basic.get("dateOfBirth"):
-            d = parse_date(basic["dateOfBirth"])
-            if d:
-                dob = d.date()
-
+        # New schema uses 'age' directly, no DOB logic needed if not present
+        # If 'id' is not in json, we just create a new one, but we return a map if needed.
+        # Generated data doesn't have 'id' key in root usually, but let's check.
+        
         patient_id = uuid.uuid4()
         patient = Patient(
             id=patient_id,
-            abha_id=basic.get("abhaId"),
             first_name=basic.get("firstName"),
             last_name=basic.get("lastName"),
             gender=basic.get("gender"),
-            dob=dob,
-            nationality=basic.get("nationality"),
-            insurance_provider=basic.get("insuranceProvider"),
+            age=basic.get("age"),
+            marital_status=basic.get("maritalStatus"),
+            
             mobile=contact.get("mobileNumber"),
-            email=contact.get("emailId"),
-            city=contact.get("correspondenceCity"),
-            state=contact.get("correspondenceState"),
-            pincode=contact.get("correspondencePincode"),
+            address=contact.get("address"),
+            city=contact.get("city"),
+            state=contact.get("state"),
+            pincode=contact.get("pincode"),
+            
+            occupation=other.get("occupation"),
+            blood_group=other.get("bloodGroup"),
+            id_type=other.get("idType"),
+            id_number=other.get("idNumber"),
+            
+            # Default/Derived
+            nationality=basic.get("nationality", "Indian"),
         )
         db.add(patient)
-        patient_map[entry["id"]] = patient_id
+        if "id" in entry:
+            patient_map[entry["id"]] = patient_id
         count_patients += 1
 
+        # Generated data currently doesn't have medicalRecords, but if it did:
         for record in entry.get("medicalRecords", []):
             mr = MedicalRecord(
                 id=uuid.uuid4(),

@@ -15,36 +15,20 @@ import { LanguageSelector, INDIAN_LANGUAGES } from "@/components/LanguageSelecto
 interface RegistrationData {
     contactInfo: {
         mobileNumber: string;
-        emailId: string;
-        correspondenceAddress: string;
-        correspondenceCountry: string;
-        correspondenceState: string;
-        correspondenceCity: string;
-        correspondencePincode: string;
-        isPermanentSame: boolean;
-        permanentAddress: string;
-        permanentCountry: string;
-        permanentState: string;
-        permanentCity: string;
-        permanentPincode: string;
-        emergencyContactName: string;
-        emergencyContactNumber: string;
+        address: string;
+        city: string;
+        state: string;
+        pincode: string;
     };
     basicInfo: {
         firstName: string;
         lastName: string;
         gender: string;
-        dateOfBirth: string;
-        onlyYearOfBirth: boolean;
-        relationshipType: string;
-        relationName: string;
-        nationality: string;
+        age: string; // Keeping as string for input, will parse
         maritalStatus: string;
-        abhaId: string;
-        insuranceProvider: string;
+        nationality: string;
     };
     otherInfo: {
-        qualification: string;
         occupation: string;
         bloodGroup: string;
         idType: string;
@@ -56,36 +40,20 @@ interface RegistrationData {
 const INITIAL_DATA: RegistrationData = {
     contactInfo: {
         mobileNumber: "",
-        emailId: "",
-        correspondenceAddress: "",
-        correspondenceCountry: "India",
-        correspondenceState: "",
-        correspondenceCity: "",
-        correspondencePincode: "",
-        isPermanentSame: false,
-        permanentAddress: "",
-        permanentCountry: "India",
-        permanentState: "",
-        permanentCity: "",
-        permanentPincode: "",
-        emergencyContactName: "",
-        emergencyContactNumber: "",
+        address: "",
+        city: "",
+        state: "",
+        pincode: "",
     },
     basicInfo: {
         firstName: "",
         lastName: "",
         gender: "",
-        dateOfBirth: "",
-        onlyYearOfBirth: false,
-        relationshipType: "",
-        relationName: "",
-        nationality: "Indian",
+        age: "",
         maritalStatus: "",
-        abhaId: "",
-        insuranceProvider: "",
+        nationality: "Indian",
     },
     otherInfo: {
-        qualification: "",
         occupation: "",
         bloodGroup: "",
         idType: "",
@@ -153,20 +121,10 @@ function RegistrationForm() {
                 type: "object",
                 attributes: [
                     { name: "mobileNumber", type: "string" },
-                    { name: "emailId", type: "string" },
-                    { name: "correspondenceAddress", type: "string" },
-                    { name: "correspondenceCountry", type: "string" },
-                    { name: "correspondenceState", type: "string" },
-                    { name: "correspondenceCity", type: "string" },
-                    { name: "correspondencePincode", type: "string" },
-                    { name: "isPermanentSame", type: "boolean" },
-                    { name: "permanentAddress", type: "string" },
-                    { name: "permanentCountry", type: "string" },
-                    { name: "permanentState", type: "string" },
-                    { name: "permanentCity", type: "string" },
-                    { name: "permanentPincode", type: "string" },
-                    { name: "emergencyContactName", type: "string" },
-                    { name: "emergencyContactNumber", type: "string" },
+                    { name: "address", type: "string" },
+                    { name: "city", type: "string" },
+                    { name: "state", type: "string" },
+                    { name: "pincode", type: "string" },
                 ],
             },
             {
@@ -176,24 +134,18 @@ function RegistrationForm() {
                     { name: "firstName", type: "string" },
                     { name: "lastName", type: "string" },
                     { name: "gender", type: "string", description: "Male, Female, or Transgender" },
-                    { name: "dateOfBirth", type: "string" },
-                    { name: "onlyYearOfBirth", type: "boolean" },
-                    { name: "relationshipType", type: "string", description: "Father, Guardian, or Spouse" },
-                    { name: "relationName", type: "string" },
-                    { name: "nationality", type: "string", description: "Indian or Others" },
+                    { name: "age", type: "string" },
                     { name: "maritalStatus", type: "string", description: "Married, Unmarried, Divorcee, or Widow" },
-                    { name: "abhaId", type: "string", description: "Ayushman Bharat Health Account ID" },
-                    { name: "insuranceProvider", type: "string" },
+                    { name: "nationality", type: "string" },
                 ],
             },
             {
                 name: "otherInfo",
                 type: "object",
                 attributes: [
-                    { name: "qualification", type: "string" },
                     { name: "occupation", type: "string" },
                     { name: "bloodGroup", type: "string" },
-                    { name: "idType", type: "string" },
+                    { name: "idType", type: "string", description: "Aadhar, PAN Card, Voter ID" },
                     { name: "idNumber", type: "string" },
                 ],
             },
@@ -225,19 +177,7 @@ function RegistrationForm() {
     const handleChange = (section: keyof RegistrationData, field: string, value: any) => {
         setFormData((prev) => {
             const newData = { ...prev };
-            if (section === 'contactInfo' && field === 'isPermanentSame') {
-                newData.contactInfo = {
-                    ...newData.contactInfo,
-                    isPermanentSame: value,
-                    permanentAddress: value ? newData.contactInfo.correspondenceAddress : newData.contactInfo.permanentAddress,
-                    permanentCountry: value ? newData.contactInfo.correspondenceCountry : newData.contactInfo.permanentCountry,
-                    permanentState: value ? newData.contactInfo.correspondenceState : newData.contactInfo.permanentState,
-                    permanentCity: value ? newData.contactInfo.correspondenceCity : newData.contactInfo.permanentCity,
-                    permanentPincode: value ? newData.contactInfo.correspondencePincode : newData.contactInfo.permanentPincode,
-                };
-            } else {
-                (newData[section] as any)[field] = value;
-            }
+            (newData[section] as any)[field] = value;
             return newData;
         });
     };
@@ -286,54 +226,13 @@ function RegistrationForm() {
                         onChange={(v: string) => handleChange("basicInfo", "gender", v)}
                     />
 
-                    <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between mb-1">
-                                <label className="text-sm font-semibold text-gray-700">Date of Birth <span className="text-red-500">*</span></label>
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        className="h-4 w-4 text-[#00A9B4] focus:ring-[#00A9B4] border-gray-300 rounded"
-                                        checked={formData.basicInfo.onlyYearOfBirth}
-                                        onChange={(e) => handleChange("basicInfo", "onlyYearOfBirth", e.target.checked)}
-                                    />
-                                    <span className="text-xs text-gray-500">Year Only</span>
-                                </label>
-                            </div>
-                            <input
-                                type="date"
-                                className="w-full h-12 px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#00A9B4]/20 focus:border-[#00A9B4] outline-none transition-all text-gray-700 bg-white shadow-sm"
-                                value={formData.basicInfo.dateOfBirth}
-                                onChange={(e) => handleChange("basicInfo", "dateOfBirth", e.target.value)}
-                            />
-                        </div>
-
-                        <FormInput
-                            label="Age"
-                            value={formData.basicInfo.dateOfBirth ? calculateAge(formData.basicInfo.dateOfBirth) : ""}
-                            readOnly
-                            placeholder="Calculated automatically"
-                            className="bg-gray-50 text-gray-500 cursor-not-allowed"
-                        />
-                    </div>
-
-                    <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormRadioGroup
-                            label="Relationship Type"
-                            required
-                            options={["Father", "Guardian", "Spouse"]}
-                            value={formData.basicInfo.relationshipType}
-                            onChange={(v: string) => handleChange("basicInfo", "relationshipType", v)}
-                        />
-                        <FormInput label="Relation Name" value={formData.basicInfo.relationName} onChange={(v: string) => handleChange("basicInfo", "relationName", v)} placeholder="Full Name of Relation" />
-                    </div>
-
-                    <FormRadioGroup
-                        label="Nationality"
+                    <FormInput
+                        label="Age"
                         required
-                        options={["Indian", "Others"]}
-                        value={formData.basicInfo.nationality}
-                        onChange={(v: string) => handleChange("basicInfo", "nationality", v)}
+                        type="number"
+                        value={formData.basicInfo.age}
+                        onChange={(v: string) => handleChange("basicInfo", "age", v)}
+                        placeholder="Age in Years"
                     />
 
                     <FormRadioGroup
@@ -343,9 +242,6 @@ function RegistrationForm() {
                         value={formData.basicInfo.maritalStatus}
                         onChange={(v: string) => handleChange("basicInfo", "maritalStatus", v)}
                     />
-
-                    <FormInput label="ABHA ID" value={formData.basicInfo.abhaId} onChange={(v: string) => handleChange("basicInfo", "abhaId", v)} placeholder="XX-XXXX-XXXX-XXXX" helperText="Ayushman Bharat Health Account ID" />
-                    <FormInput label="Insurance Provider" value={formData.basicInfo.insuranceProvider} onChange={(v: string) => handleChange("basicInfo", "insuranceProvider", v)} placeholder="e.g. LIC, Star Health" />
                 </div>
             </Section>
 
@@ -353,71 +249,26 @@ function RegistrationForm() {
             <Section title="Contact Info" isExpanded={isContactExpanded} onToggle={() => setIsContactExpanded(!isContactExpanded)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormInput label="Mobile Number" required value={formData.contactInfo.mobileNumber} onChange={(v: string) => handleChange("contactInfo", "mobileNumber", v)} placeholder="10-digit Mobile Number" />
-                    <FormInput label="Email ID" type="email" value={formData.contactInfo.emailId} onChange={(v: string) => handleChange("contactInfo", "emailId", v)} placeholder="example@email.com" />
 
-                    <div className="col-span-1 md:col-span-2 border-t border-gray-100 my-2"></div>
-
-                    <div className="col-span-1 md:col-span-2">
-                        <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">Correspondence Address</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="md:col-span-2">
-                                <FormTextArea label="Address" value={formData.contactInfo.correspondenceAddress} onChange={(v: string) => handleChange("contactInfo", "correspondenceAddress", v)} placeholder="Street, Sector, Landmark" />
-                            </div>
-                            <FormSelect label="Country" required options={["India", "USA", "UK"]} value={formData.contactInfo.correspondenceCountry} onChange={(v: string) => handleChange("contactInfo", "correspondenceCountry", v)} />
-                            <FormSelect label="State" required options={["Delhi", "Maharashtra", "Karnataka", "Gujarat"]} value={formData.contactInfo.correspondenceState} onChange={(v: string) => handleChange("contactInfo", "correspondenceState", v)} />
-                            <FormSelect label="City" required options={["New Delhi", "Mumbai", "Bangalore", "Ahmedabad"]} value={formData.contactInfo.correspondenceCity} onChange={(v: string) => handleChange("contactInfo", "correspondenceCity", v)} />
-                            <FormInput label="Pincode" value={formData.contactInfo.correspondencePincode} onChange={(v: string) => handleChange("contactInfo", "correspondencePincode", v)} placeholder="6-digit Pincode" />
-                        </div>
+                    <div className="md:col-span-2">
+                        <FormTextArea label="Address" value={formData.contactInfo.address} onChange={(v: string) => handleChange("contactInfo", "address", v)} placeholder="Complete Address (Street, Sector, Landmark)" />
                     </div>
 
-                    <div className="col-span-1 md:col-span-2 flex items-center gap-3 bg-teal-50 p-4 rounded-lg border border-teal-100">
-                        <input
-                            type="checkbox"
-                            id="sameAddress"
-                            className="h-5 w-5 text-[#00A9B4] focus:ring-[#00A9B4] border-gray-300 rounded"
-                            checked={formData.contactInfo.isPermanentSame}
-                            onChange={(e) => handleChange("contactInfo", "isPermanentSame", e.target.checked)}
-                        />
-                        <label htmlFor="sameAddress" className="text-sm font-medium text-gray-700 cursor-pointer select-none">Permanent Address is same as Correspondence Address</label>
-                    </div>
-
-                    <div className={`col - span - 1 md: col - span - 2 transition - opacity duration - 200 ${formData.contactInfo.isPermanentSame ? 'opacity-50 pointer-events-none' : ''} `}>
-                        <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">Permanent Address</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="md:col-span-2">
-                                <FormTextArea label="Address" disabled={formData.contactInfo.isPermanentSame} value={formData.contactInfo.permanentAddress} onChange={(v: string) => handleChange("contactInfo", "permanentAddress", v)} placeholder="Street, Sector, Landmark" />
-                            </div>
-                            <FormSelect label="Country" required disabled={formData.contactInfo.isPermanentSame} options={["India", "USA", "UK"]} value={formData.contactInfo.permanentCountry} onChange={(v: string) => handleChange("contactInfo", "permanentCountry", v)} />
-                            <FormSelect label="State" required disabled={formData.contactInfo.isPermanentSame} options={["Delhi", "Maharashtra", "Karnataka", "Gujarat"]} value={formData.contactInfo.permanentState} onChange={(v: string) => handleChange("contactInfo", "permanentState", v)} />
-                            <FormSelect label="City" required disabled={formData.contactInfo.isPermanentSame} options={["New Delhi", "Mumbai", "Bangalore", "Ahmedabad"]} value={formData.contactInfo.permanentCity} onChange={(v: string) => handleChange("contactInfo", "permanentCity", v)} />
-                            <FormInput label="Pincode" disabled={formData.contactInfo.isPermanentSame} value={formData.contactInfo.permanentPincode} onChange={(v: string) => handleChange("contactInfo", "permanentPincode", v)} placeholder="6-digit Pincode" />
-                        </div>
-                    </div>
-
-                    <div className="col-span-1 md:col-span-2 border-t border-gray-100 my-2"></div>
-
-                    <div className="col-span-1 md:col-span-2">
-                        <h3 className="text-sm font-semibold text-red-600 mb-4 uppercase tracking-wider flex items-center gap-2">
-                            Emergency Contact
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FormInput label="Contact Name" value={formData.contactInfo.emergencyContactName} onChange={(v: string) => handleChange("contactInfo", "emergencyContactName", v)} placeholder="Name of relative/friend" />
-                            <FormInput label="Contact Number" value={formData.contactInfo.emergencyContactNumber} onChange={(v: string) => handleChange("contactInfo", "emergencyContactNumber", v)} placeholder="Emergency Contact Number" />
-                        </div>
-                    </div>
+                    <FormSelect label="State" required options={["Delhi", "Maharashtra", "Karnataka", "Gujarat", "Uttar Pradesh"]} value={formData.contactInfo.state} onChange={(v: string) => handleChange("contactInfo", "state", v)} />
+                    <FormSelect label="City" required options={["New Delhi", "Mumbai", "Bangalore", "Ahmedabad", "Lucknow"]} value={formData.contactInfo.city} onChange={(v: string) => handleChange("contactInfo", "city", v)} />
+                    <FormInput label="Pincode" value={formData.contactInfo.pincode} onChange={(v: string) => handleChange("contactInfo", "pincode", v)} placeholder="6-digit Pincode" />
                 </div>
             </Section>
 
             {/* Other Info Section */}
             <Section title="Other Info" isExpanded={isOtherInfoExpanded} onToggle={() => setIsOtherInfoExpanded(!isOtherInfoExpanded)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormSelect label="Qualification" options={["High School", "Bachelor", "Master", "PhD"]} value={formData.otherInfo.qualification} onChange={(v: string) => handleChange("otherInfo", "qualification", v)} />
                     <FormInput label="Occupation" value={formData.otherInfo.occupation} onChange={(v: string) => handleChange("otherInfo", "occupation", v)} placeholder="Current Occupation" />
                     <FormSelect label="Blood Group" options={["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]} value={formData.otherInfo.bloodGroup} onChange={(v: string) => handleChange("otherInfo", "bloodGroup", v)} />
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormSelect label="ID Type" options={["Aadhar", "Passport", "Driving License"]} value={formData.otherInfo.idType} onChange={(v: string) => handleChange("otherInfo", "idType", v)} />
-                        <FormInput label="ID Number" value={formData.otherInfo.idNumber} onChange={(v: string) => handleChange("otherInfo", "idNumber", v)} placeholder="ID Number" />
+                    <div className="grid grid-cols-2 gap-4 md:col-span-2">
+                        <FormSelect label="ID Type" options={["Aadhar", "PAN Card", "Voter ID"]} value={formData.otherInfo.idType} onChange={(v: string) => handleChange("otherInfo", "idType", v)} />
+                        <FormInput label="ID Number" value={formData.otherInfo.idNumber} onChange={(v: string) => handleChange("otherInfo", "idNumber", v)} placeholder="ID Number (e.g. 12-digit Aadhar)" />
                     </div>
                 </div>
             </Section>

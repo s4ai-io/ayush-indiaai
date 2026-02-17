@@ -23,39 +23,39 @@ class DBService:
     # ─── Patient Operations ──────────────────────────────────────────
 
     def create_patient(self, basic_info: dict, contact_info: dict, other_info: dict = None):
-        """Create or return existing patient (de-dup by ABHA ID)"""
-        abha_id = basic_info.get("abhaId")
-        if abha_id:
-            existing_patient = self.db.query(Patient).filter(Patient.abha_id == abha_id).first()
-            if existing_patient:
-                return existing_patient
+        """Create or return existing patient (de-dup by Mobile or ID)"""
+        # 1. Try deduplication by Mobile
+        mobile = contact_info.get("mobileNumber")
+        if mobile:
+            existing = self.db.query(Patient).filter(Patient.mobile == mobile).first()
+            if existing:
+                return existing
 
-        dob = None
-        if basic_info.get("dateOfBirth"):
-            try:
-                dob = datetime.strptime(basic_info["dateOfBirth"], "%Y-%m-%d").date()
-            except Exception:
-                pass
+        # 2. Try deduplication by ID Number if provided
+        id_number = (other_info or {}).get("idNumber")
+        if id_number:
+            existing = self.db.query(Patient).filter(Patient.id_number == id_number).first()
+            if existing:
+                return existing
 
         new_patient = Patient(
             id=uuid.uuid4(),
-            abha_id=abha_id,
             first_name=basic_info.get("firstName"),
             last_name=basic_info.get("lastName"),
             gender=basic_info.get("gender"),
-            dob=dob,
             age=basic_info.get("age"),
-            prakriti=basic_info.get("prakriti"),
-            vikriti=basic_info.get("vikriti"),
-            bmi=basic_info.get("bmi"),
-            nationality=basic_info.get("nationality"),
-            insurance_provider=basic_info.get("insuranceProvider"),
+            marital_status=basic_info.get("maritalStatus"),
+            
+            mobile=mobile,
+            address=contact_info.get("address"),
+            city=contact_info.get("city"),
+            state=contact_info.get("state"),
+            pincode=contact_info.get("pincode"),
+            
+            blood_group=(other_info or {}).get("bloodGroup"),
             occupation=(other_info or {}).get("occupation"),
-            mobile=contact_info.get("mobileNumber"),
-            email=contact_info.get("emailId"),
-            city=contact_info.get("correspondenceCity"),
-            state=contact_info.get("correspondenceState"),
-            pincode=contact_info.get("correspondencePincode"),
+            id_type=(other_info or {}).get("idType"),
+            id_number=(other_info or {}).get("idNumber"),
         )
         self.db.add(new_patient)
         self.db.commit()
@@ -63,13 +63,17 @@ class DBService:
         return new_patient
 
     def get_patient_by_id(self, patient_id):
-        return self.db.query(Patient).filter(Patient.id == patient_id).first()
+        from sqlalchemy.orm import joinedload
+        return self.db.query(Patient).options(joinedload(Patient.medical_records)).filter(Patient.id == patient_id).first()
 
     def get_patient_by_mobile(self, mobile: str):
         return self.db.query(Patient).filter(Patient.mobile == mobile).first()
 
     def get_patient_by_abha(self, abha_id: str):
         return self.db.query(Patient).filter(Patient.abha_id == abha_id).first()
+
+    def get_all_patients(self, limit: int = 100):
+        return self.db.query(Patient).order_by(Patient.created_at.desc()).limit(limit).all()
 
     # ─── Medical Record Operations ───────────────────────────────────
 

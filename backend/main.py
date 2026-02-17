@@ -17,7 +17,7 @@ from utils.validators import (
     TrendsResponse,
     HealthCheckResponse
 )
-from services.ml_service import ml_service
+from services.ayurgenix_service import ayurgenix_service
 from services.forecast_service import forecast_service
 from services.db_service import db_service
 from database import engine, Base
@@ -33,8 +33,8 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     print("✓ Database tables initialized")
 
-    # Initialize ML Service
-    ml_service.initialize()
+    # Initialize AyurGenix Treatment Service
+    ayurgenix_service.initialize()
     
     # Initialize Forecast Service
     forecast_service.initialize()
@@ -85,7 +85,7 @@ async def root():
 @app.get("/health", response_model=HealthCheckResponse, tags=["Health"])
 async def health_check():
     """Health check endpoint"""
-    ml_health = ml_service.health_check()
+    ayurgenix_health = ayurgenix_service.health_check()
     forecast_health = forecast_service.health_check()
     
     # check db
@@ -97,31 +97,29 @@ async def health_check():
         db_status = f"error: {str(e)}"
 
     return {
-        "status": "healthy" if ml_health["initialized"] else "degraded",
-        "models_loaded": ml_health["models_loaded"],
+        "status": "healthy" if ayurgenix_health["initialized"] else "degraded",
+        "models_loaded": ayurgenix_health["dataset_loaded"],
         "database": db_status,
-        "version": "1.0.0"
+        "version": "2.0.0"
     }
 
 
-@app.post("/api/recommend", response_model=TreatmentRecommendation, tags=["ML Recommendations"])
+@app.post("/api/recommend", response_model=TreatmentRecommendation, tags=["Treatment Recommendations"])
 async def get_recommendation(patient: PatientProfile):
     """
-    Get personalized AYUSH treatment recommendation
+    Get personalized AYUSH treatment recommendation using AyurGenix dataset.
+    
+    Uses 3-tier matching: exact disease → fuzzy match → TF-IDF symptom similarity.
     
     Args:
-        patient: Patient profile with age, gender, prakriti, vikriti, disease, severity, and optional BMI
+        patient: Patient profile with disease, symptoms, prakriti, vikriti, severity, age, gender
         
     Returns:
-        Treatment recommendation with herbs, yoga, diet, lifestyle, and predictions
+        Treatment plan with herbs, yoga, diet, lifestyle, formulation, prevention, prognosis
     """
     try:
-        # Convert Pydantic model to dict
         patient_data = patient.model_dump()
-        
-        # Get recommendation from ML service
-        recommendation = ml_service.get_recommendation(patient_data)
-        
+        recommendation = ayurgenix_service.get_recommendation(patient_data)
         return recommendation
         
     except ValueError as e:
@@ -304,10 +302,38 @@ async def create_patient(data: RegistrationData):
             "status": "success",
             "message": "Patient registered successfully",
             "patient_id": str(patient.id),
-            "abha_id": patient.abha_id
+            "mobile": patient.mobile
         }
     except Exception as e:
         print(f"Error creating patient: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/patients", tags=["Patient Management"])
+async def get_patients():
+    """
+    Get all registered patients
+    """
+    try:
+        patients = db_service.get_all_patients()
+        return patients
+    except Exception as e:
+        print(f"Error fetching patients: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/patients/{patient_id}", tags=["Patient Management"])
+async def get_patient(patient_id: str):
+    """
+    Get patient by ID
+    """
+    try:
+        patient = db_service.get_patient_by_id(patient_id)
+        if not patient:
+            raise HTTPException(status_code=404, detail="Patient not found")
+        return patient
+    except Exception as e:
+        print(f"Error fetching patient: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -16,31 +16,30 @@ class Patient(Base):
     __tablename__ = "patients"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    abha_id = Column(String, unique=True, index=True, nullable=True)
+    
+    # Basic Info
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=True)
     gender = Column(String, nullable=True)
-    dob = Column(Date, nullable=True)
     age = Column(Integer, nullable=True)
-
-    # AYUSH-specific
-    prakriti = Column(String, nullable=True)      # Natural constitution
-    vikriti = Column(String, nullable=True)       # Current dosha imbalance
-    bmi = Column(Float, nullable=True)
-
-    # Demographics
-    occupation = Column(String, nullable=True)
-    nationality = Column(String, nullable=True, default="Indian")
-    insurance_provider = Column(String, nullable=True)
-
-    # Contact Info
+    marital_status = Column(String, nullable=True)
+    
+    # Contact
     mobile = Column(String, index=True, nullable=True)
-    email = Column(String, nullable=True)
-
-    # Address (Correspondence)
+    
+    # Address
+    address = Column(String, nullable=True)
     city = Column(String, index=True, nullable=True)
     state = Column(String, nullable=True)
     pincode = Column(String, index=True, nullable=True)
+    
+    # Other Info
+    blood_group = Column(String, nullable=True)
+    occupation = Column(String, nullable=True)
+    
+    # ID Details
+    id_type = Column(String, nullable=True)  # Aadhar, PAN Card, Voter ID
+    id_number = Column(String, index=True, nullable=True)
 
     # Metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now())

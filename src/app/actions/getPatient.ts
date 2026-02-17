@@ -1,18 +1,17 @@
 'use server';
 
-import fs from 'fs/promises';
-import path from 'path';
-
-const DATA_FILE_PATH = path.join(process.cwd(), 'data', 'registrations.json');
-
 export async function getPatient(id: string) {
     try {
-        await fs.access(DATA_FILE_PATH);
-        const fileContent = await fs.readFile(DATA_FILE_PATH, 'utf-8');
-        const data = JSON.parse(fileContent);
-        return data.find((p: { id: string }) => p.id === id) || null;
+        const response = await fetch(`http://127.0.0.1:8000/api/patients/${id}`, {
+            cache: 'no-store'
+        });
+        if (!response.ok) {
+            return null;
+        }
+        const data = await response.json();
+        return data;
     } catch (error) {
-        console.error("Error reading patient:", error);
+        console.error("Error fetching patient:", error);
         return null;
     }
 }
