@@ -1,196 +1,164 @@
 """
-Analytics Service — DB-backed disease trends, hotspots, and anomaly detection
+Analytics Service — CSV-backed disease trends, hotspots, and anomaly detection
 """
-from sqlalchemy import func, text
-from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
-from database import SessionLocal
-from models_db import Patient, MedicalRecord, HealthRecord
+import csv
+import os
+from datetime import datetime, timedelta, date
+from collections import defaultdict
+
+DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
+PATIENTS_CSV = os.path.join(DATA_DIR, "patients.csv")
+MEDICAL_RECORDS_CSV = os.path.join(DATA_DIR, "medical_records.csv")
+
+
+def _read_csv(filepath: str) -> list[dict]:
+    if not os.path.exists(filepath):
+        return []
+    with open(filepath, "r", encoding="utf-8") as f:
+        return list(csv.DictReader(f))
+
+
+def _parse_date(date_str: str):
+    """Parse various date formats to a date object."""
+    if not date_str:
+        return None
+    for fmt in ("%Y-%m-%d %H:%M:%S.%f%z", "%Y-%m-%d %H:%M:%S%z",
+                "%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S",
+                "%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S",
+                "%Y-%m-%d"):
+        try:
+            return datetime.strptime(date_str.strip(), fmt).date()
+        except ValueError:
+            continue
+    return None
 
 
 class AnalyticsService:
     def __init__(self):
         pass
 
-    def _get_db(self):
-        return SessionLocal()
-
     def get_disease_trends(self, days=30):
-        """Aggregate daily case counts for diseases from medical_records table"""
-        db = self._get_db()
-        try:
-            cutoff = datetime.utcnow() - timedelta(days=days)
+        """Aggregate daily case counts for diseases from medical_records CSV"""
+        records = _read_csv(MEDICAL_RECORDS_CSV)
+        cutoff = date.today() - timedelta(days=days)
 
-            results = (
-                db.query(
-                    func.date(MedicalRecord.visit_date).label("date"),
-                    MedicalRecord.diagnosis,
-                    func.count().label("count"),
-                )
-                .filter(MedicalRecord.visit_date >= cutoff)
-                .filter(MedicalRecord.diagnosis.isnot(None))
-                .group_by(func.date(MedicalRecord.visit_date), MedicalRecord.diagnosis)
-                .order_by(func.date(MedicalRecord.visit_date))
-                .all()
-            )
+        date_map = {}
+        for r in records:
+            d = _parse_date(r.get("visit_date", ""))
+            diagnosis = r.get("diagnosis", "").strip()
+            if not d or not diagnosis or d < cutoff:
+                continue
+            date_str = d.isoformat()
+            if date_str not in date_map:
+                date_map[date_str] = {"date": date_str}
+            date_map[date_str][diagnosis] = date_map[date_str].get(diagnosis, 0) + 1
 
-            # Pivot into frontend format: [{date: '2026-02-01', Dengue: 5, Fever: 2}, ...]
-            date_map = {}
-            for r in results:
-                date_str = str(r.date)
-                if date_str not in date_map:
-                    date_map[date_str] = {"date": date_str}
-                date_map[date_str][r.diagnosis] = r.count
-
-            return list(date_map.values())
-        finally:
-            db.close()
+        return sorted(date_map.values(), key=lambda x: x["date"])
 
     def get_hotspots(self, disease=None):
-        """Identify locations with high case counts from DB"""
-        db = self._get_db()
-        try:
-            query = (
-                db.query(
-                    Patient.city,
-                    Patient.pincode,
-                    MedicalRecord.diagnosis,
-                    func.count().label("count"),
-                )
-                .join(MedicalRecord, Patient.id == MedicalRecord.patient_id)
-                .filter(Patient.city.isnot(None))
-                .filter(MedicalRecord.diagnosis.isnot(None))
-                .group_by(Patient.city, Patient.pincode, MedicalRecord.diagnosis)
-            )
+        """Identify locations with high case counts from CSV"""
+        patients = _read_csv(PATIENTS_CSV)
+        records = _read_csv(MEDICAL_RECORDS_CSV)
 
-            if disease:
-                query = query.filter(MedicalRecord.diagnosis == disease)
+        patient_map = {p["id"]: p for p in patients}
 
-            results = query.order_by(func.count().desc()).all()
+        counts = defaultdict(int)
+        for r in records:
+            diag = r.get("diagnosis", "").strip()
+            if not diag:
+                continue
+            if disease and diag != disease:
+                continue
+            p = patient_map.get(r["patient_id"], {})
+            city = p.get("city", "Unknown")
+            pincode = p.get("pincode", "")
+            key = (city, pincode, diag)
+            counts[key] += 1
 
-            return [
-                {
-                    "city": r.city,
-                    "pincode": r.pincode,
-                    "diagnosis": r.diagnosis,
-                    "count": r.count,
-                }
-                for r in results
-            ]
-        finally:
-            db.close()
+        results = [
+            {"city": k[0], "pincode": k[1], "diagnosis": k[2], "count": v}
+            for k, v in counts.items()
+        ]
+        results.sort(key=lambda x: x["count"], reverse=True)
+        return results
 
     def detect_anomalies(self):
-        """Detect sudden spikes in disease cases using DB data"""
-        db = self._get_db()
-        try:
-            # Get the latest date in records
-            latest_date_result = db.query(
-                func.max(func.date(MedicalRecord.visit_date))
-            ).scalar()
+        """Detect sudden spikes in disease cases using CSV data"""
+        records = _read_csv(MEDICAL_RECORDS_CSV)
 
-            if not latest_date_result:
-                return []
+        # Parse all dates
+        all_dates = set()
+        disease_date_counts = defaultdict(lambda: defaultdict(int))
+        for r in records:
+            d = _parse_date(r.get("visit_date", ""))
+            diag = r.get("diagnosis", "").strip()
+            if not d or not diag:
+                continue
+            all_dates.add(d)
+            disease_date_counts[diag][d] += 1
 
-            latest_date = latest_date_result
+        if not all_dates:
+            return []
 
-            # Get daily counts per disease for the last 8 days (1 day current + 7 baseline)
-            start_date = latest_date - timedelta(days=8)
+        latest_date = max(all_dates)
 
-            daily_counts = (
-                db.query(
-                    func.date(MedicalRecord.visit_date).label("date"),
-                    MedicalRecord.diagnosis,
-                    func.count().label("count"),
-                )
-                .filter(func.date(MedicalRecord.visit_date) >= start_date)
-                .filter(MedicalRecord.diagnosis.isnot(None))
-                .group_by(func.date(MedicalRecord.visit_date), MedicalRecord.diagnosis)
-                .all()
-            )
+        alerts = []
+        for disease, date_counts in disease_date_counts.items():
+            today_count = date_counts.get(latest_date, 0)
+            if today_count == 0:
+                continue
 
-            if not daily_counts:
-                return []
+            baseline = []
+            for i in range(1, 8):
+                d = latest_date - timedelta(days=i)
+                if d in date_counts:
+                    baseline.append(date_counts[d])
 
-            # Structure: {disease: {date: count}}
-            disease_data = {}
-            for r in daily_counts:
-                d = r.diagnosis
-                if d not in disease_data:
-                    disease_data[d] = {}
-                disease_data[d][r.date] = r.count
+            avg = sum(baseline) / len(baseline) if baseline else 0
 
-            alerts = []
-            for disease, date_counts in disease_data.items():
-                today_count = date_counts.get(latest_date, 0)
-                if today_count == 0:
-                    continue
+            if today_count > max(5, avg * 1.5) or today_count > 15:
+                alerts.append({
+                    "disease": disease,
+                    "severity": "High",
+                    "message": f"Potential outbreak of {disease} detected. Cases today ({today_count}) remain critically high (Weekly Avg: {avg:.1f}).",
+                    "date": latest_date.isoformat(),
+                })
 
-                # Baseline: previous 7 days
-                baseline_counts = []
-                for i in range(1, 8):
-                    d = latest_date - timedelta(days=i)
-                    if d in date_counts:
-                        baseline_counts.append(date_counts[d])
-
-                avg_count = sum(baseline_counts) / len(baseline_counts) if baseline_counts else 0
-
-                # Rule: spike if > 1.5x baseline (min 5) or absolute > 15
-                if today_count > max(5, avg_count * 1.5) or today_count > 15:
-                    alerts.append({
-                        "disease": disease,
-                        "severity": "High",
-                        "message": f"Potential outbreak of {disease} detected. Cases today ({today_count}) remain critically high (Weekly Avg: {avg_count:.1f}).",
-                        "date": latest_date.strftime("%Y-%m-%d") if hasattr(latest_date, 'strftime') else str(latest_date),
-                    })
-
-            return alerts
-        finally:
-            db.close()
+        return alerts
 
     def get_dashboard_summary(self):
-        """Get overall analytics dashboard summary from DB"""
-        db = self._get_db()
-        try:
-            total_patients = db.query(func.count(Patient.id)).scalar() or 0
-            total_records = db.query(func.count(MedicalRecord.id)).scalar() or 0
-            total_health_records = db.query(func.count(HealthRecord.id)).scalar() or 0
+        """Get overall analytics dashboard summary from CSV"""
+        patients = _read_csv(PATIENTS_CSV)
+        records = _read_csv(MEDICAL_RECORDS_CSV)
 
-            # Top diseases
-            top_diseases = (
-                db.query(
-                    MedicalRecord.diagnosis,
-                    func.count().label("count"),
-                )
-                .filter(MedicalRecord.diagnosis.isnot(None))
-                .group_by(MedicalRecord.diagnosis)
-                .order_by(func.count().desc())
-                .limit(5)
-                .all()
-            )
+        total_patients = len(patients)
+        total_records = len(records)
 
-            # Top cities by patients
-            top_cities = (
-                db.query(
-                    Patient.city,
-                    func.count().label("count"),
-                )
-                .filter(Patient.city.isnot(None))
-                .group_by(Patient.city)
-                .order_by(func.count().desc())
-                .limit(5)
-                .all()
-            )
+        # Top diseases
+        disease_counts = defaultdict(int)
+        for r in records:
+            diag = r.get("diagnosis", "").strip()
+            if diag:
+                disease_counts[diag] += 1
 
-            return {
-                "total_patients": total_patients,
-                "total_medical_records": total_records,
-                "total_health_records": total_health_records,
-                "top_diseases": [{"disease": r.diagnosis, "count": r.count} for r in top_diseases],
-                "top_cities": [{"city": r.city, "count": r.count} for r in top_cities],
-            }
-        finally:
-            db.close()
+        top_diseases = sorted(disease_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+
+        # Top cities
+        city_counts = defaultdict(int)
+        for p in patients:
+            city = p.get("city", "").strip()
+            if city:
+                city_counts[city] += 1
+
+        top_cities = sorted(city_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+
+        return {
+            "total_patients": total_patients,
+            "total_medical_records": total_records,
+            "total_health_records": 0,
+            "top_diseases": [{"disease": d, "count": c} for d, c in top_diseases],
+            "top_cities": [{"city": c, "count": n} for c, n in top_cities],
+        }
 
 
 # Singleton instance

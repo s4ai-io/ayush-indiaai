@@ -18,7 +18,7 @@ echo "============================================================"
 echo ""
 
 # ── 1. Python Virtual Environment ────────────────────
-echo "Step 1/5: Setting up Python environment..."
+echo "Step 1/3: Setting up Python environment..."
 if [ -d "venv" ]; then
     echo "  ✓ venv already exists"
 else
@@ -29,51 +29,30 @@ source venv/bin/activate
 
 # ── 2. Install dependencies ──────────────────────────
 echo ""
-echo "Step 2/5: Installing Python dependencies..."
+echo "Step 2/3: Installing Python dependencies..."
 pip install --quiet --upgrade pip
 pip install --quiet -r requirements.txt
 echo "  ✓ All dependencies installed"
 
-# ── 3. Check PostgreSQL ──────────────────────────────
+# ── 3. Check data files ─────────────────────────────
 echo ""
-echo "Step 3/5: Checking PostgreSQL..."
-if ! command -v psql &>/dev/null; then
-    echo "  ❌ PostgreSQL not found!"
-    echo "  Install with: brew install postgresql@16"
-    echo "  Then run: brew services start postgresql@16"
-    exit 1
-fi
+echo "Step 3/3: Checking data files..."
+MISSING=0
+for f in "data/patients.csv" "data/medical_records.csv" "data/ayush_treatments.csv" "data/AyurGenixAI_Dataset.csv"; do
+    if [ -f "$f" ]; then
+        ROWS=$(wc -l < "$f" | tr -d ' ')
+        echo "  ✓ $f ($ROWS lines)"
+    else
+        echo "  ❌ Missing: $f"
+        MISSING=1
+    fi
+done
 
-if ! pg_isready -q 2>/dev/null; then
-    echo "  ⚠️  PostgreSQL not running. Starting..."
-    brew services start postgresql@16 2>/dev/null || brew services start postgresql 2>/dev/null || {
-        echo "  ❌ Could not start PostgreSQL."
-        exit 1
-    }
-    sleep 2
+if [ "$MISSING" -eq 1 ]; then
+    echo ""
+    echo "  ⚠️  Some data files are missing. The app will still start"
+    echo "     but some features may not work until data is available."
 fi
-echo "  ✓ PostgreSQL running"
-
-# ── 4. Create database ──────────────────────────────
-echo ""
-echo "Step 4/5: Setting up database..."
-DB_NAME="ayush_db"
-if psql -lqt 2>/dev/null | cut -d \| -f 1 | grep -qw "$DB_NAME"; then
-    echo "  ✓ Database '$DB_NAME' already exists"
-else
-    createdb "$DB_NAME"
-    echo "  ✓ Created database '$DB_NAME'"
-fi
-
-# ── 5. Create tables ─────────────────────────────────
-echo ""
-echo "Step 5/5: Creating database tables..."
-python3 -c "
-from database import engine, Base
-import models_db
-Base.metadata.create_all(bind=engine)
-print('  ✓ All tables created')
-"
 
 # ── Summary ──────────────────────────────────────────
 echo ""
@@ -82,7 +61,6 @@ echo "  ✅ Setup Complete!"
 echo "============================================================"
 echo ""
 echo "  Next steps:"
-echo "    1. Migrate data:    ./migrate.sh"
-echo "    2. Generate data:   ./migrate.sh --generate"
-echo "    3. Run server:      ./run.sh"
+echo "    1. Copy .env.example to .env and add your API keys"
+echo "    2. Run server:  ./run.sh"
 echo ""

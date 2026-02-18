@@ -132,30 +132,32 @@ export default function TreatmentPage({ params }: { params: Promise<{ id: string
     const submitPrescription = async () => {
         setIsSubmitting(true);
         try {
-            await fetch('/api/ml/recommend', {
+            const res = await fetch('http://localhost:8000/api/prescribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    // This will be wired to /api/prescribe later
                     patientId: id,
+                    disease,
+                    symptoms,
+                    severity,
+                    prakriti,
+                    vikriti,
                     treatmentPlan,
-                    context: {
-                        age: patient?.age,
-                        gender: patient?.gender,
-                        prakriti, vikriti, disease, symptoms, severity
-                    },
-                    doctorPrescription,
                     doctorMedicines,
+                    doctorPrescription,
                     doctorNotes,
                     rating,
                     feedback,
-                    timestamp: new Date().toISOString()
                 })
             });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.detail || 'Failed to save');
+            }
             alert("Treatment Plan Prescribed & Saved Successfully!");
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            alert("Failed to save prescription");
+            alert(error.message || "Failed to save prescription");
         } finally {
             setIsSubmitting(false);
         }
@@ -267,8 +269,8 @@ export default function TreatmentPage({ params }: { params: Promise<{ id: string
                                             className="flex-1"
                                         />
                                         <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${severity > 7 ? 'bg-red-100 text-red-700' :
-                                                severity > 4 ? 'bg-amber-100 text-amber-700' :
-                                                    'bg-green-100 text-green-700'
+                                            severity > 4 ? 'bg-amber-100 text-amber-700' :
+                                                'bg-green-100 text-green-700'
                                             }`}>
                                             {severity}
                                         </div>

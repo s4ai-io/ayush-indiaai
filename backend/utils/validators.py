@@ -80,6 +80,22 @@ class TreatmentRecommendation(BaseModel):
     explainability: List[str] = Field(default_factory=list, description="AI reasoning for recommendations")
 
 
+class PrescriptionRequest(BaseModel):
+    """Full prescription payload when doctor clicks 'Save & Prescribe'"""
+    patientId: str = Field(..., description="Patient UUID")
+    disease: Optional[str] = Field("", description="Diagnosed disease")
+    symptoms: Optional[str] = Field("", description="Patient symptoms text")
+    severity: int = Field(5, ge=1, le=10, description="Severity 1-10")
+    prakriti: str = Field("Vata", description="Patient prakriti")
+    vikriti: str = Field("Vata", description="Patient vikriti")
+    treatmentPlan: Optional[dict] = Field(None, description="Full AI treatment plan JSON")
+    doctorMedicines: Optional[str] = Field("", description="Doctor's own medicine prescription")
+    doctorPrescription: Optional[str] = Field("", description="Doctor's prescription notes")
+    doctorNotes: Optional[str] = Field("", description="Additional doctor notes")
+    rating: Optional[str] = Field(None, description="positive / negative")
+    feedback: Optional[str] = Field(None, description="Doctor feedback text")
+
+
 class TreatmentFeedback(BaseModel):
     """Doctor feedback on treatment plan"""
     patientId: str
@@ -128,7 +144,7 @@ class HealthCheckResponse(BaseModel):
     """Health check response"""
     status: str
     models_loaded: bool
-    database: Optional[str] = None
+    storage: Optional[str] = None
     version: str
 
 

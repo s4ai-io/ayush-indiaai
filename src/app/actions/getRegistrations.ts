@@ -1,8 +1,11 @@
 'use server';
 
-export async function getRegistrations() {
+export async function getRegistrations(status?: 'pending' | 'completed') {
     try {
-        const response = await fetch('http://127.0.0.1:8000/api/patients', {
+        const url = status
+            ? `http://127.0.0.1:8000/api/patients?status=${status}`
+            : 'http://127.0.0.1:8000/api/patients';
+        const response = await fetch(url, {
             cache: 'no-store'
         });
         if (!response.ok) {

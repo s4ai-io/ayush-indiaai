@@ -7,20 +7,20 @@ from contextlib import asynccontextmanager
 import uvicorn
 import os
 import json
-import csv # Keeping for backward compat if needed, but primary is DB
+import csv
 
 from utils.validators import (
     PatientProfile,
     TreatmentRecommendation,
     TreatmentFeedback,
+    PrescriptionRequest,
     ForecastResponse,
     TrendsResponse,
     HealthCheckResponse
 )
 from services.ayurgenix_service import ayurgenix_service
 from services.forecast_service import forecast_service
-from services.db_service import db_service
-from database import engine, Base
+from services.csv_service import csv_service
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -29,10 +29,6 @@ async def lifespan(app: FastAPI):
     print("Starting AYUSH ML Backend API")
     print("="*60)
     
-    # Initialize DB Tables
-    Base.metadata.create_all(bind=engine)
-    print("✓ Database tables initialized")
-
     # Initialize AyurGenix Treatment Service
     ayurgenix_service.initialize()
     
@@ -86,21 +82,12 @@ async def root():
 async def health_check():
     """Health check endpoint"""
     ayurgenix_health = ayurgenix_service.health_check()
-    forecast_health = forecast_service.health_check()
     
-    # check db
-    db_status = "connected"
-    try:
-        with engine.connect() as conn:
-            pass
-    except Exception as e:
-        db_status = f"error: {str(e)}"
-
     return {
         "status": "healthy" if ayurgenix_health["initialized"] else "degraded",
         "models_loaded": ayurgenix_health["dataset_loaded"],
-        "database": db_status,
-        "version": "2.0.0"
+        "storage": "csv",
+        "version": "3.0.0"
     }
 
 
@@ -140,8 +127,8 @@ async def submit_feedback(feedback: TreatmentFeedback):
     """
     try:
         # Save to Database
-        db_service.save_treatment_feedback(feedback.model_dump())
-        print(f"✓ Feedback saved to DB for Patient {feedback.patientId}")
+        csv_service.save_treatment_feedback(feedback.model_dump())
+        print(f"✓ Feedback saved for Patient {feedback.patientId}")
 
         # Also keep CSV for backup/backward compatibility for now? 
         # Optional: We can remove this block if we are fully cutover. 
@@ -152,6 +139,30 @@ async def submit_feedback(feedback: TreatmentFeedback):
     except Exception as e:
         print(f"❌ Error saving feedback: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to save feedback: {str(e)}")
+
+
+@app.post("/api/prescribe", tags=["Prescriptions"])
+async def save_prescription(data: PrescriptionRequest):
+    """
+    Save a doctor's full prescription.
+
+    Creates 3 linked rows in a single transaction:
+      - medical_records  (diagnosis + symptoms → feeds trends, alerts, hotspots)
+      - ayush_treatments (herbs, yoga, diet details)
+      - treatment_feedback (AI plan + doctor rating for ML loop)
+    """
+    try:
+        result = csv_service.save_prescription(data.model_dump())
+        return {
+            "status": "success",
+            "message": "Prescription saved successfully",
+            **result,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        print(f"❌ Error saving prescription: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save prescription: {str(e)}")
 
 
 @app.get("/api/forecast", response_model=ForecastResponse, tags=["Disease Forecasting"])
@@ -285,18 +296,11 @@ async def create_patient(data: RegistrationData):
     Create a new patient registration
     """
     try:
-        # Convert Pydantic models to dicts
-        # db_service.create_patient expects dicts for basic_info, contact_info, other_info
-        
-        # Note: Pydantic model fields are camelCase (firstName), DB service expects keys that match
-        # what it extracts. Let's look at db_service.create_patient:
-        # it uses basic_info.get("firstName") etc. so camelCase keys are fine!
-        
         basic_info = data.basicInfo.model_dump()
         contact_info = data.contactInfo.model_dump()
         other_info = data.otherInfo.model_dump()
         
-        patient = db_service.create_patient(basic_info, contact_info, other_info)
+        patient = csv_service.create_patient(basic_info, contact_info, other_info)
         
         return {
             "status": "success",
@@ -310,12 +314,22 @@ async def create_patient(data: RegistrationData):
 
 
 @app.get("/api/patients", tags=["Patient Management"])
-async def get_patients():
+async def get_patients(status: str = None):
     """
-    Get all registered patients
+    Get patients, optionally filtered by diagnosis status.
+
+    Query params:
+      - status=pending   → patients NOT yet diagnosed
+      - status=completed → patients already diagnosed
+      - (none)           → all patients
     """
     try:
-        patients = db_service.get_all_patients()
+        if status == "pending":
+            patients = csv_service.get_patients_by_status(diagnosis_done=False)
+        elif status == "completed":
+            patients = csv_service.get_patients_by_status(diagnosis_done=True)
+        else:
+            patients = csv_service.get_all_patients()
         return patients
     except Exception as e:
         print(f"Error fetching patients: {e}")
@@ -328,12 +342,33 @@ async def get_patient(patient_id: str):
     Get patient by ID
     """
     try:
-        patient = db_service.get_patient_by_id(patient_id)
+        patient = csv_service.get_patient_by_id(patient_id)
         if not patient:
             raise HTTPException(status_code=404, detail="Patient not found")
         return patient
     except Exception as e:
         print(f"Error fetching patient: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/patients/{patient_id}/diagnoses", tags=["Patient Management"])
+async def get_patient_diagnoses(patient_id: str):
+    """Get all diagnoses (medical records + AYUSH treatment) for a patient."""
+    try:
+        diagnoses = csv_service.get_patient_diagnoses(patient_id)
+        return diagnoses
+    except Exception as e:
+        print(f"Error fetching diagnoses: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/diagnoses/completed", tags=["Patient Management"])
+async def get_completed_diagnoses():
+    """Get summary of completed diagnoses for card-based display."""
+    try:
+        return csv_service.get_completed_diagnoses_summary()
+    except Exception as e:
+        print(f"Error fetching completed diagnoses: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
