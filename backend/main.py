@@ -91,6 +91,24 @@ async def health_check():
     }
 
 
+@app.get("/api/diseases", tags=["Treatment Recommendations"])
+async def get_disease_list(q: str = None):
+    """
+    Get list of all disease names from the AyurGenix dataset.
+    
+    Args:
+        q: Optional search query to filter disease names
+        
+    Returns:
+        List of disease name strings
+    """
+    diseases = ayurgenix_service.get_disease_list()
+    if q:
+        q_lower = q.strip().lower()
+        diseases = [d for d in diseases if q_lower in d.lower()]
+    return {"diseases": diseases}
+
+
 @app.post("/api/recommend", response_model=TreatmentRecommendation, tags=["Treatment Recommendations"])
 async def get_recommendation(patient: PatientProfile):
     """
@@ -196,7 +214,6 @@ async def get_forecast(disease: str = None, months: int = 3):
 
 
 # ... existing imports ...
-from services.ehr_agent import ehr_agent_router
 
 # ... existing code ...
 
@@ -278,12 +295,14 @@ async def get_disease_spread_prediction():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-
 # Register CopilotKit Agent Router
-app.include_router(ehr_agent_router, prefix="/api/copilot/ehr", tags=["Copilot Agent"])
 
 from services.registration_agent import registration_agent_router
 app.include_router(registration_agent_router, prefix="/api/copilot/registration", tags=["Copilot Agent"])
+
+# --- Agents ---
+from services.ehr_agent import ehr_agent_router
+app.include_router(ehr_agent_router, prefix="/api/copilot/ehr", tags=["Copilot Agent"])
 
 from services.doctor_agent import doctor_agent_router
 app.include_router(doctor_agent_router, prefix="/api/copilot/doctor", tags=["Copilot Agent"])

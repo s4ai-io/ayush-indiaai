@@ -18,6 +18,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { DiseaseSearchDropdown } from '@/components/ui/DiseaseSearchDropdown';
 
 interface MedicalRecord {
     diagnosis: string;
@@ -95,8 +96,8 @@ export default function TreatmentPage({ params }: { params: Promise<{ id: string
             alert("Please complete the Clinical Assessment (Prakriti & Vikriti) first.");
             return;
         }
-        if (!disease && !symptoms) {
-            alert("Please enter either a disease name or symptoms.");
+        if (!disease) {
+            alert("Please enter a disease name.");
             return;
         }
 
@@ -177,9 +178,6 @@ export default function TreatmentPage({ params }: { params: Promise<{ id: string
         } else if (method === "symptom_similarity") {
             color = "bg-blue-100 text-blue-800 border-blue-200";
             label = "Symptom Match";
-        } else if (method === "fallback") {
-            color = "bg-slate-100 text-slate-600 border-slate-200";
-            label = "Dosha-Based";
         }
 
         return (
@@ -232,22 +230,20 @@ export default function TreatmentPage({ params }: { params: Promise<{ id: string
                             <CardContent className="space-y-5">
                                 {/* Disease Input */}
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-slate-700">Primary Condition</label>
-                                    <input
-                                        type="text"
+                                    <label className="text-sm font-medium text-slate-700">Primary Condition <span className="text-red-500">*</span></label>
+                                    <DiseaseSearchDropdown
                                         value={disease}
-                                        onChange={(e) => setDisease(e.target.value)}
-                                        className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all"
-                                        placeholder="e.g. Diabetes, Arthritis, Migraine"
+                                        onChange={setDisease}
+                                        required
+                                        placeholder="Search for a disease..."
                                     />
                                 </div>
 
-                                {/* Symptoms Input (NEW) */}
+                                {/* Symptoms Input */}
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
                                         <Stethoscope className="w-4 h-4 text-purple-400" />
-                                        Symptoms
-                                        <span className="text-xs text-slate-400 font-normal">(helps AI match if disease unclear)</span>
+                                        Symptoms <span className="text-xs text-slate-400 font-normal">(optional)</span>
                                     </label>
                                     <textarea
                                         value={symptoms}

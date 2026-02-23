@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { getMLRecommendation, validatePatientProfile, MLAPIError, type PatientProfile, type TreatmentRecommendation } from '@/lib/api/ml-client';
+import { DiseaseSearchDropdown } from '@/components/ui/DiseaseSearchDropdown';
 import { Stethoscope, Leaf, Pizza, Activity, AlertCircle, Loader2, TrendingUp, Calendar } from 'lucide-react';
 
 export function ConsultationForm({ initialCondition }: { initialCondition?: string }) {
@@ -12,6 +13,7 @@ export function ConsultationForm({ initialCondition }: { initialCondition?: stri
     const [prakriti, setPrakriti] = useState<string>('Vata');
     const [vikriti, setVikriti] = useState<string>('Vata');
     const [condition, setCondition] = useState<string>(initialCondition || 'Anxiety');
+    const [symptoms, setSymptoms] = useState<string>('');
     const [severity, setSeverity] = useState<number>(5);
     const [bmi, setBmi] = useState<number | undefined>(undefined);
     const [height, setHeight] = useState<number | undefined>(undefined);
@@ -44,6 +46,7 @@ export function ConsultationForm({ initialCondition }: { initialCondition?: stri
                 prakriti,
                 vikriti,
                 disease: condition,
+                symptoms,
                 severity,
                 bmi
             };
@@ -71,25 +74,6 @@ export function ConsultationForm({ initialCondition }: { initialCondition?: stri
             setLoading(false);
         }
     };
-
-    // Common diseases for dropdown
-    const commonDiseases = [
-        'Anxiety',
-        'Diabetes',
-        'Hypertension',
-        'Arthritis',
-        'Asthma',
-        'IBS',
-        'Acidity',
-        'Constipation',
-        'Insomnia',
-        'Migraine',
-        'Obesity',
-        'Stress',
-        'Depression',
-        'Back Pain',
-        'Joint Pain'
-    ];
 
     const doshaOptions = [
         'Vata',
@@ -172,17 +156,25 @@ export function ConsultationForm({ initialCondition }: { initialCondition?: stri
 
                         {/* Primary Health Concern */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Primary Health Concern</label>
-                            <select
-                                className="w-full p-2 border rounded-md"
+                            <label className="text-sm font-medium">Primary Health Concern <span className="text-red-500">*</span></label>
+                            <DiseaseSearchDropdown
                                 value={condition}
-                                onChange={(e) => setCondition(e.target.value)}
+                                onChange={setCondition}
                                 required
-                            >
-                                {commonDiseases.map(disease => (
-                                    <option key={disease} value={disease}>{disease}</option>
-                                ))}
-                            </select>
+                                placeholder="Search for a disease..."
+                            />
+                        </div>
+
+                        {/* Symptoms */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Symptoms <span className="text-xs text-slate-400 font-normal">(optional)</span></label>
+                            <textarea
+                                className="w-full p-2 border rounded-md resize-none"
+                                value={symptoms}
+                                onChange={(e) => setSymptoms(e.target.value)}
+                                placeholder="e.g. excessive thirst, frequent urination, fatigue..."
+                                rows={3}
+                            />
                         </div>
 
                         {/* Severity Slider */}

@@ -23,10 +23,10 @@ class PatientProfile(BaseModel):
     """Patient profile for treatment recommendation"""
     age: int = Field(..., ge=0, le=120, description="Patient age in years")
     gender: str = Field(..., description="Patient gender (Male/Female)")
-    prakriti: str = Field(..., description="Natural constitution (Prakriti)")
-    vikriti: str = Field(..., description="Current dosha imbalance (Vikriti)")
-    disease: Optional[str] = Field("", description="Primary health condition (optional if symptoms provided)")
-    symptoms: Optional[str] = Field(None, description="Patient symptoms for TF-IDF matching")
+    prakriti: Optional[str] = Field(None, description="Natural constitution (Prakriti)")
+    vikriti: Optional[str] = Field(None, description="Current dosha imbalance (Vikriti)")
+    disease: str = Field(..., min_length=1, description="Primary health condition (required)")
+    symptoms: Optional[str] = Field(None, description="Patient symptoms (optional)")
     severity: int = Field(..., ge=1, le=10, description="Condition severity (1-10)")
     bmi: Optional[float] = Field(None, ge=10, le=50, description="Body Mass Index")
     

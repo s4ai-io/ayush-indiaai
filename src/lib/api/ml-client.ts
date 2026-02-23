@@ -25,6 +25,7 @@ export interface PatientProfile {
     prakriti: string;
     vikriti: string;
     disease: string;
+    symptoms?: string;
     severity: number; // 1-10
     bmi?: number;
 }
@@ -232,6 +233,10 @@ export async function checkMLHealth(): Promise<HealthCheckResponse> {
  */
 export function validatePatientProfile(profile: PatientProfile): string[] {
     const errors: string[] = [];
+
+    if (!profile.disease || profile.disease.trim().length === 0) {
+        errors.push('Disease name is required');
+    }
 
     if (profile.age < 0 || profile.age > 120) {
         errors.push('Age must be between 0 and 120');

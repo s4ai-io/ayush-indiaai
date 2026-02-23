@@ -4,15 +4,12 @@ AyurGenix Treatment Recommendation Service
 Uses AyurGenixAI_Dataset.csv (447 diseases × 34 columns) to provide
 disease-specific Ayurvedic treatment recommendations.
 
-3-Tier Matching Strategy:
+2-Tier Matching Strategy:
   Tier 1: Exact disease name lookup
-  Tier 2: Fuzzy disease name match (difflib)
-  Tier 3: TF-IDF + cosine similarity on symptoms
-  Fallback: Dosha-based generic recommendations
+  Tier 2: TF-IDF + cosine similarity on symptoms
 """
 import os
 import re
-import difflib
 import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -88,6 +85,12 @@ class AyurGenixService:
             "disease_count": len(self.df) if self.df is not None else 0
         }
 
+    def get_disease_list(self) -> list:
+        """Return all disease names from the dataset (original casing)."""
+        if not self.initialized or self.df is None:
+            return []
+        return sorted(self.df['Disease'].str.strip().unique().tolist())
+
     # ------------------------------------------------------------------
     # Core Recommendation Logic
     # ------------------------------------------------------------------
@@ -116,6 +119,11 @@ class AyurGenixService:
 
         disease_input = (patient_data.get('disease') or '').strip()
         symptoms_input = (patient_data.get('symptoms') or '').strip()
+
+        # Validate: disease is required
+        if not disease_input:
+            raise ValueError("Disease name is required.")
+
         prakriti = patient_data.get('prakriti', 'Vata')
         vikriti = patient_data.get('vikriti', 'Vata')
         severity = patient_data.get('severity', 5)
@@ -123,43 +131,46 @@ class AyurGenixService:
         gender = patient_data.get('gender', 'Male')
         bmi = patient_data.get('bmi', 25.0)
 
-        # --- 3-Tier Matching ---
+        # --- 2-Tier Matching ---
         matched_row = None
-        match_method = "fallback"
+        match_method = None
         match_confidence = 0.0
         source_disease = None
 
         # Tier 1: Exact disease name lookup
-        if disease_input:
-            matched_row, match_confidence = self._exact_lookup(disease_input)
-            if matched_row is not None:
-                match_method = "exact"
-                source_disease = matched_row['Disease']
+        matched_row, match_confidence = self._exact_lookup(disease_input)
+        if matched_row is not None:
+            match_method = "exact"
+            source_disease = matched_row['Disease']
 
-        # Tier 2: Fuzzy disease name match
-        if matched_row is None and disease_input:
-            matched_row, match_confidence = self._fuzzy_match(disease_input)
-            if matched_row is not None:
-                match_method = "fuzzy"
-                source_disease = matched_row['Disease']
-
-        # Tier 3: TF-IDF symptom similarity
+        # Tier 2: TF-IDF symptom similarity
         if matched_row is None and symptoms_input:
             matched_row, match_confidence = self._symptom_match(symptoms_input)
             if matched_row is not None:
                 match_method = "symptom_similarity"
                 source_disease = matched_row['Disease']
 
-        # Build response
-        if matched_row is not None:
-            response = self._build_dataset_response(
-                matched_row, match_method, match_confidence,
-                source_disease, vikriti, prakriti, severity, age, bmi
+        # No match found across all 3 tiers
+        if matched_row is None:
+            raise ValueError(
+                f"No matching disease found for '{disease_input}' with the given symptoms. "
+                f"Please verify the disease name and symptoms and try again."
             )
-        else:
-            response = self._build_fallback_response(
-                vikriti, prakriti, severity, disease_input, bmi
-            )
+
+        # Override clinical assessment with dataset values if available
+        ds_doshas = self._safe_get(matched_row, 'Doshas')
+        ds_prakriti = self._safe_get(matched_row, 'Constitution/Prakriti')
+        
+        if ds_doshas:
+            vikriti = ds_doshas
+        if ds_prakriti:
+            prakriti = ds_prakriti
+
+        # Build response from matched disease row
+        response = self._build_dataset_response(
+            matched_row, match_method, match_confidence,
+            source_disease, vikriti, prakriti, severity, age, bmi
+        )
 
         return response
 
@@ -176,24 +187,7 @@ class AyurGenixService:
             return matches.iloc[0], 1.0
         return None, 0.0
 
-    # ------------------------------------------------------------------
-    # Tier 2: Fuzzy Match
-    # ------------------------------------------------------------------
 
-    def _fuzzy_match(self, disease: str, cutoff: float = 0.65):
-        """Find closest disease name using difflib."""
-        disease_lower = disease.strip().lower()
-        close_matches = difflib.get_close_matches(
-            disease_lower, self.disease_names, n=1, cutoff=cutoff
-        )
-
-        if close_matches:
-            best_match = close_matches[0]
-            confidence = difflib.SequenceMatcher(
-                None, disease_lower, best_match
-            ).ratio()
-            matched_row = self.df[self.df['Disease_Clean'] == best_match].iloc[0]
-            return matched_row, round(confidence, 2)
 
         return None, 0.0
 
@@ -273,43 +267,7 @@ class AyurGenixService:
             "explainability": explainability
         }
 
-    def _build_fallback_response(self, vikriti, prakriti, severity, disease_input, bmi) -> dict:
-        """Build dosha-based fallback when no disease matches."""
 
-        herbs = self._dosha_herbs(vikriti)
-        yoga = self._dosha_yoga(vikriti)
-        diet = self._dosha_diet(vikriti, bmi)
-        lifestyle = self._dosha_lifestyle(vikriti, severity)
-
-        predicted_improvement = self._calculate_improvement(severity, prakriti, vikriti)
-        recommended_duration_weeks = 8 if severity <= 5 else 12
-
-        explainability = []
-        if disease_input:
-            explainability.append(f"No match found for '{disease_input}' in 447-disease database.")
-        explainability.append(f"Using dosha-based recommendations for {vikriti} imbalance.")
-        if vikriti != prakriti:
-            explainability.append(f"Herbs target {vikriti} dosha imbalance (prakriti is {prakriti}).")
-        explainability.append(f"Predicted {predicted_improvement}% improvement based on severity + dosha profile.")
-
-        return {
-            "herbs": herbs,
-            "yoga": yoga,
-            "diet": diet,
-            "lifestyle": lifestyle,
-            "formulation": None,
-            "prevention": [],
-            "prognosis": None,
-            "complications": [],
-            "medical_intervention": None,
-            "doshas_affected": vikriti,
-            "source_disease": None,
-            "match_confidence": 0.0,
-            "match_method": "fallback",
-            "predicted_improvement": predicted_improvement,
-            "recommended_duration_weeks": recommended_duration_weeks,
-            "explainability": explainability
-        }
 
     # ------------------------------------------------------------------
     # CSV Field Parsers
@@ -446,12 +404,9 @@ class AyurGenixService:
         # 1. Match info
         if match_method == "exact":
             explainability.append(
-                f"Exact match: {source_disease} found in 447-disease Ayurvedic database."
+                f"Exact match: {source_disease} found in 446-disease Ayurvedic database."
             )
-        elif match_method == "fuzzy":
-            explainability.append(
-                f"Fuzzy match: Input matched to '{source_disease}' ({match_confidence*100:.0f}% similarity)."
-            )
+
         elif match_method == "symptom_similarity":
             explainability.append(
                 f"Symptom match: Symptoms most similar to {source_disease} ({match_confidence*100:.0f}% match)."
@@ -500,79 +455,7 @@ class AyurGenixService:
         improvement = min(95, base_improvement + severity_factor + dosha_balance_bonus)
         return round(float(improvement), 1)
 
-    # ------------------------------------------------------------------
-    # Dosha-Based Fallback Recommendations
-    # ------------------------------------------------------------------
 
-    def _dosha_herbs(self, vikriti) -> list:
-        """Fallback herb recommendations based on dosha."""
-        herb_db = {
-            'Vata': [
-                {'name': 'Ashwagandha', 'dosage': '500mg twice daily', 'benefits': 'Reduces anxiety, improves sleep'},
-                {'name': 'Brahmi', 'dosage': '300mg daily', 'benefits': 'Enhances memory, reduces stress'},
-                {'name': 'Shatavari', 'dosage': '500mg twice daily', 'benefits': 'Balances hormones, improves digestion'}
-            ],
-            'Pitta': [
-                {'name': 'Amla', 'dosage': '1000mg daily', 'benefits': 'Cooling effect, rich in Vitamin C'},
-                {'name': 'Licorice', 'dosage': '400mg twice daily', 'benefits': 'Soothes inflammation'},
-                {'name': 'Neem', 'dosage': '500mg daily', 'benefits': 'Purifies blood, improves skin health'}
-            ],
-            'Kapha': [
-                {'name': 'Triphala', 'dosage': '1000mg before bed', 'benefits': 'Detoxifies body, aids weight management'},
-                {'name': 'Guggul', 'dosage': '500mg twice daily', 'benefits': 'Supports metabolism'},
-                {'name': 'Ginger', 'dosage': 'Fresh ginger tea 2-3x daily', 'benefits': 'Improves digestion'}
-            ]
-        }
-        base = vikriti.split('-')[0]
-        return herb_db.get(base, herb_db['Vata'])
-
-    def _dosha_yoga(self, vikriti) -> list:
-        """Fallback yoga recommendations based on dosha."""
-        yoga_db = {
-            'Vata': [
-                {'practice': 'Surya Namaskar', 'duration': '10 rounds daily', 'benefits': 'Grounds energy'},
-                {'practice': 'Anulom Vilom', 'duration': '15 minutes', 'benefits': 'Balances nervous system'},
-                {'practice': 'Shavasana', 'duration': '10 minutes', 'benefits': 'Deep relaxation'}
-            ],
-            'Pitta': [
-                {'practice': 'Sheetali Pranayama', 'duration': '10 minutes', 'benefits': 'Cooling breath'},
-                {'practice': 'Moon Salutation', 'duration': '5 rounds', 'benefits': 'Calming effect'},
-                {'practice': 'Meditation', 'duration': '20 minutes daily', 'benefits': 'Mental clarity'}
-            ],
-            'Kapha': [
-                {'practice': 'Kapalbhati', 'duration': '5 minutes', 'benefits': 'Energizes, aids weight loss'},
-                {'practice': 'Surya Namaskar', 'duration': '12 rounds vigorously', 'benefits': 'Increases metabolism'},
-                {'practice': 'Bhujangasana', 'duration': '5 repetitions', 'benefits': 'Opens chest, stimulates digestion'}
-            ]
-        }
-        base = vikriti.split('-')[0]
-        return yoga_db.get(base, yoga_db['Vata'])
-
-    def _dosha_diet(self, vikriti, bmi) -> list:
-        """Fallback diet recommendations based on dosha."""
-        diet_db = {
-            'Vata': ["Favor warm, cooked foods", "Include healthy fats (ghee, olive oil)", "Eat sweet fruits", "Avoid cold, raw foods", "Regular meal times"],
-            'Pitta': ["Favor cooling foods (cucumber, coconut)", "Include sweet and bitter tastes", "Avoid spicy, oily foods", "Reduce caffeine", "Eat more salads"],
-            'Kapha': ["Favor light, dry, warm foods", "Include pungent tastes (ginger, turmeric)", "Reduce dairy and sugar", "Eat more vegetables", "Smaller portions"]
-        }
-        base = vikriti.split('-')[0]
-        guidelines = diet_db.get(base, diet_db['Vata'])
-        if bmi and bmi > 28:
-            guidelines.append("Focus on portion control and avoid late-night eating")
-        return guidelines
-
-    def _dosha_lifestyle(self, vikriti, severity) -> list:
-        """Fallback lifestyle recommendations based on dosha."""
-        lifestyle_db = {
-            'Vata': ["Maintain regular daily routine", "Practice oil massage (Abhyanga)", "Ensure 7-8 hours of sleep", "Reduce screen time before bed"],
-            'Pitta': ["Avoid overworking, take breaks", "Practice cooling activities", "Avoid direct sun during peak hours", "Spend time in nature"],
-            'Kapha': ["Wake up early for morning walk", "Vigorous exercise 5-6 days/week", "Avoid day sleep", "Seek variety and new experiences"]
-        }
-        base = vikriti.split('-')[0]
-        recs = lifestyle_db.get(base, lifestyle_db['Vata'])
-        if severity > 7:
-            recs.insert(0, "Consult AYUSH practitioner weekly for monitoring")
-        return recs
 
     # ------------------------------------------------------------------
     # Utility Helpers
