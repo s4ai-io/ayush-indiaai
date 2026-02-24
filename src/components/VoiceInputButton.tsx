@@ -8,9 +8,10 @@ interface VoiceInputButtonProps {
     onError?: (error: string) => void;
     onStateChange?: (isListening: boolean) => void;
     language?: string;
+    isActive?: boolean;
 }
 
-export function VoiceInputButton({ onTranscript, onError, onStateChange, language = 'en-US' }: VoiceInputButtonProps) {
+export function VoiceInputButton({ onTranscript, onError, onStateChange, language = 'en-US', isActive = true }: VoiceInputButtonProps) {
     const [isListening, setIsListening] = useState(false);
     const [isSupported, setIsSupported] = useState(false);
     const [permissionState, setPermissionState] = useState<PermissionState | 'unknown'>('unknown');
@@ -32,6 +33,20 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange, languag
             recognitionRef.current.lang = language;
         }
     }, [language]);
+
+    // Force stop if component becomes inactive while listening
+    useEffect(() => {
+        if (!isActive && isListening) {
+            if (recognitionRef.current) {
+                try {
+                    recognitionRef.current.stop();
+                } catch (e) {
+                    console.error('Error stopping recognition on inactive:', e);
+                }
+            }
+            setIsListening(false);
+        }
+    }, [isActive, isListening]);
 
     // Use refs to keep latest callbacks without triggering re-effects
     const onTranscriptRef = useRef(onTranscript);
@@ -202,17 +217,16 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange, languag
         <button
             onClick={toggleListening}
             className={`
-        relative z-[100] flex items-center justify-center
-        w-12 h-12 rounded-full shadow-lg transition-all duration-300
-        ${isListening
-                    ? 'bg-red-500 text-white animate-pulse shadow-red-500/50'
-                    : 'bg-[#00A9B4] text-white hover:bg-[#008f99] shadow-[#00A9B4]/30 hover:scale-105'
+                flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200
+                ${isListening
+                    ? 'bg-destructive text-destructive-foreground animate-pulse'
+                    : 'bg-transparent text-muted-foreground hover:bg-primary/10 hover:text-primary'
                 }
-      `}
+            `}
             title={isListening ? 'Stop recording' : 'Start voice input'}
             type="button"
         >
-            {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
         </button>
     );
 }

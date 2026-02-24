@@ -23,22 +23,22 @@ interface LanguageSelectorProps {
 export function LanguageSelector({ selectedLanguage, onLanguageChange }: LanguageSelectorProps) {
     return (
         <div className="relative group">
-            <div className="flex items-center gap-2 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full px-3 py-1.5 shadow-sm hover:shadow-md transition-all cursor-pointer">
-                <Languages className="w-4 h-4 text-teal-600" />
+            <div className="flex items-center gap-1 bg-transparent hover:bg-primary/5 rounded-full px-2 py-1 transition-all cursor-pointer border border-transparent hover:border-primary/20">
+                <Languages className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
                 <select
                     value={selectedLanguage}
                     onChange={(e) => onLanguageChange(e.target.value)}
-                    className="appearance-none bg-transparent border-none text-sm font-medium text-gray-700 focus:ring-0 focus:outline-none cursor-pointer pr-6 min-w-[100px]"
+                    className="appearance-none bg-transparent border-none text-xs font-medium text-muted-foreground group-hover:text-primary focus:ring-0 focus:outline-none cursor-pointer pr-4 min-w-[70px] transition-colors"
                     style={{ backgroundImage: 'none' }}
                 >
                     {INDIAN_LANGUAGES.map((lang) => (
                         <option key={lang.code} value={lang.code}>
-                            {lang.native} ({lang.name})
+                            {lang.native}
                         </option>
                     ))}
                 </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <svg className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                 </div>

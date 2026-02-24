@@ -4,12 +4,14 @@ import { CopilotKit, useCopilotChat } from "@copilotkit/react-core";
 import { CopilotSidebar } from "@copilotkit/react-ui";
 import { useCopilotReadable, useCopilotAction } from "@copilotkit/react-core";
 import { TextMessage, MessageRole } from "@copilotkit/runtime-client-gql";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import "@copilotkit/react-ui/styles.css";
 import { saveRegistration } from "../actions/saveRegistration";
-import { Minus, Plus, ChevronDown } from "lucide-react";
+import { Minus, Plus, ChevronDown, RefreshCw } from "lucide-react";
 import { VoiceInputButton } from "@/components/VoiceInputButton";
 import { LanguageSelector, INDIAN_LANGUAGES } from "@/components/LanguageSelector";
+import { useRouter } from "next/navigation";
 
 
 interface RegistrationData {
@@ -62,6 +64,8 @@ const INITIAL_DATA: RegistrationData = {
 };
 
 export default function RegistrationPage() {
+    const [isChatOpen, setIsChatOpen] = useState(true);
+
     return (
         <CopilotKit runtimeUrl="/api/copilotkit" agent="registration_agent">
             <CopilotSidebar
@@ -72,10 +76,11 @@ export default function RegistrationPage() {
                 }}
                 defaultOpen={true}
                 clickOutsideToClose={false}
+                onSetOpen={(open) => setIsChatOpen(open)}
             >
-                <div className="flex-1 h-screen overflow-y-auto bg-gray-50">
+                <div className="flex-1 h-full min-h-screen overflow-y-auto bg-gradient-to-b from-background to-muted/20">
                     <div className="max-w-5xl mx-auto p-4 md:p-8">
-                        <RegistrationForm />
+                        <RegistrationForm isChatOpen={isChatOpen} />
                     </div>
                 </div>
             </CopilotSidebar>
@@ -83,7 +88,7 @@ export default function RegistrationPage() {
     );
 }
 
-function RegistrationForm() {
+function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
     const [formData, setFormData] = useState<RegistrationData>(INITIAL_DATA);
     const [status, setStatus] = useState<string | null>(null);
     const [isBasicInfoExpanded, setIsBasicInfoExpanded] = useState(true);
@@ -91,9 +96,37 @@ function RegistrationForm() {
     const [isOtherInfoExpanded, setIsOtherInfoExpanded] = useState(true);
     const [voiceError, setVoiceError] = useState<string | null>(null);
     const [isListening, setIsListening] = useState(false);
-    const [selectedLanguage, setSelectedLanguage] = useState("en-US");
+    const [selectedLanguage, setSelectedLanguage] = useState("en-IN");
+    const [chatInputNode, setChatInputNode] = useState<Element | null>(null);
+    const router = useRouter();
 
-    const { appendMessage } = useCopilotChat();
+    useEffect(() => {
+        if (!isChatOpen) {
+            setChatInputNode(null);
+            return;
+        }
+
+        const interval = setInterval(() => {
+            const inputContainer = document.querySelector('.copilotKitInput');
+            if (inputContainer) {
+                (inputContainer as HTMLElement).style.position = 'relative';
+                setChatInputNode(inputContainer);
+                clearInterval(interval);
+            }
+        }, 100);
+
+        return () => clearInterval(interval);
+    }, [isChatOpen]);
+
+    const { appendMessage, reset: resetChat } = useCopilotChat();
+
+    const handleNewChat = () => {
+        const confirmClearData = window.confirm("Do you want to clear the form data as well?\n\nClick 'OK' to clear the form and start fresh.\nClick 'Cancel' to keep the form data but start a new chat.");
+        resetChat();
+        if (confirmClearData) {
+            setFormData(INITIAL_DATA);
+        }
+    };
 
     const handleVoiceTranscript = async (transcript: string) => {
         setVoiceError(null); // Clear error on new input
@@ -120,11 +153,11 @@ function RegistrationForm() {
                 name: "contactInfo",
                 type: "object",
                 attributes: [
-                    { name: "mobileNumber", type: "string" },
-                    { name: "address", type: "string" },
-                    { name: "city", type: "string" },
-                    { name: "state", type: "string" },
-                    { name: "pincode", type: "string" },
+                    { name: "mobileNumber", type: "string", description: "The mobile phone number" },
+                    { name: "address", type: "string", description: "The correspondence or residential address" },
+                    { name: "city", type: "string", description: "Must exactly match: New Delhi, Mumbai, Bangalore, Ahmedabad, Lucknow. Map 'Bengaluru' to 'Bangalore'" },
+                    { name: "state", type: "string", description: "Must exactly match: Delhi, Maharashtra, Karnataka, Gujarat, Uttar Pradesh" },
+                    { name: "pincode", type: "string", description: "The postal code or pincode" },
                 ],
             },
             {
@@ -135,7 +168,7 @@ function RegistrationForm() {
                     { name: "lastName", type: "string" },
                     { name: "gender", type: "string", description: "Male, Female, or Transgender" },
                     { name: "age", type: "string" },
-                    { name: "maritalStatus", type: "string", description: "Married, Unmarried, Divorcee, or Widow" },
+                    { name: "maritalStatus", type: "string", description: "Must exactly match: Married, Unmarried, Divorcee, Widow (e.g., map 'Single' to 'Unmarried')" },
                     { name: "nationality", type: "string" },
                 ],
             },
@@ -144,8 +177,8 @@ function RegistrationForm() {
                 type: "object",
                 attributes: [
                     { name: "occupation", type: "string" },
-                    { name: "bloodGroup", type: "string" },
-                    { name: "idType", type: "string", description: "Aadhar, PAN Card, Voter ID" },
+                    { name: "bloodGroup", type: "string", description: "Must exactly match: A+, A-, B+, B-, O+, O-, AB+, AB-" },
+                    { name: "idType", type: "string", description: "Must exactly match: Aadhar, PAN Card, Voter ID" },
                     { name: "idNumber", type: "string" },
                 ],
             },
@@ -186,6 +219,14 @@ function RegistrationForm() {
         setStatus("Saving...");
         const result = await saveRegistration(formData);
         setStatus(result.message);
+
+        if (result.success) {
+            // Optional: short delay to let them see the success message
+            setTimeout(() => {
+                router.push('/');
+            }, 1500);
+        }
+
         return result.message;
     };
 
@@ -205,11 +246,11 @@ function RegistrationForm() {
     });
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-8 pb-20">
+        <form onSubmit={handleSubmit} className="space-y-8 pb-32">
             {/* Header */}
             <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-800 tracking-tight">Patient Registration</h1>
-                <p className="text-gray-500 mt-2">Enter patient details to register for Ayurvedic consultation.</p>
+                <h1 className="text-3xl font-bold text-foreground tracking-tight">Patient Registration</h1>
+                <p className="text-muted-foreground mt-2">Enter patient details to register for Ayurvedic consultation.</p>
             </div>
 
             {/* Basic Info Section */}
@@ -273,41 +314,78 @@ function RegistrationForm() {
                 </div>
             </Section>
 
-            <div className="flex justify-end pt-6 sticky bottom-0 bg-gray-50/80 backdrop-blur-sm pb-4 border-t border-gray-200 mt-8">
-                {status && <span className="mr-6 text-green-600 self-center font-medium bg-green-50 px-3 py-1 rounded-full text-sm border border-green-200">{status}</span>}
-                <button
-                    type="submit"
-                    className="bg-gradient-to-r from-[#00A9B4] to-[#008f99] text-white px-10 py-3 rounded-xl shadow-lg hover:shadow-xl hover:from-[#008f99] hover:to-[#007a82] transform hover:-translate-y-0.5 transition-all duration-200 font-bold tracking-wide uppercase text-sm"
-                >
-                    Complete Registration
-                </button>
-            </div>
-
-            {/* Voice Input Button Overlay */}
-            <div className="fixed bottom-24 right-6 z-[1000] flex flex-col items-end gap-2">
-                {voiceError && (
-                    <div className="bg-red-50 text-red-600 px-4 py-2 rounded-lg border border-red-200 shadow-sm text-sm animate-in fade-in slide-in-from-right-4">
-                        {voiceError}
-                    </div>
-                )}
-                <div className="flex items-center gap-3">
-                    {isListening && (
-                        <div className="bg-black/75 text-white px-3 py-1 rounded-full text-sm font-medium backdrop-blur-sm animate-pulse">
-                            Listening ({INDIAN_LANGUAGES.find(l => l.code === selectedLanguage)?.name || 'English'})...
-                        </div>
+            <div className="flex flex-col md:flex-row items-center justify-between pt-4 sticky bottom-0 bg-background/90 backdrop-blur-md pb-6 border-t border-border mt-8 z-50 px-2 gap-4">
+                {/* Left side: Status */}
+                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    {status && (
+                        <span className="text-primary font-medium bg-primary/10 px-4 py-2 rounded-full text-sm border border-primary/20">
+                            {status}
+                        </span>
                     )}
-                    <LanguageSelector
-                        selectedLanguage={selectedLanguage}
-                        onLanguageChange={setSelectedLanguage}
-                    />
-                    <VoiceInputButton
-                        onTranscript={handleVoiceTranscript}
-                        onError={(err) => setVoiceError(err)}
-                        onStateChange={setIsListening}
-                        language={selectedLanguage}
-                    />
+                </div>
+
+                {/* Right side: Submit */}
+                <div className="flex items-center gap-4 w-full md:w-auto justify-end">
+                    <button
+                        type="submit"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 h-12 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 font-bold tracking-wide uppercase text-sm w-full md:w-auto whitespace-nowrap"
+                    >
+                        Complete Registration
+                    </button>
                 </div>
             </div>
+
+            {/* --- Chat Overlay Controls (Injected natively INSIDE the Copilot Text Input area) --- */}
+            {chatInputNode && createPortal(
+                <>
+                    {/* Restart Chat Button: Above text box on the right side */}
+                    <div className="absolute -top-12 right-0 z-[1000]">
+                        <button
+                            type="button"
+                            onClick={handleNewChat}
+                            className="flex items-center justify-center w-8 h-8 bg-background border border-border shadow-sm rounded-full text-muted-foreground hover:text-primary transition-all duration-200"
+                            title="Restart Chat"
+                        >
+                            <RefreshCw className="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    {/* Language Selector: Inside text box, bottom left corner */}
+                    <div className="absolute bottom-1.5 left-1 z-[1000] pointer-events-auto">
+                        <LanguageSelector
+                            selectedLanguage={selectedLanguage}
+                            onLanguageChange={setSelectedLanguage}
+                        />
+                    </div>
+
+                    {/* Voice Input: Inside text box, besides send button (right side) */}
+                    <div className="absolute bottom-1.5 right-12 z-[1000] pointer-events-auto">
+                        <VoiceInputButton
+                            onTranscript={handleVoiceTranscript}
+                            onError={(err) => setVoiceError(err)}
+                            onStateChange={setIsListening}
+                            language={selectedLanguage}
+                            isActive={isChatOpen}
+                        />
+                        {isListening && (
+                            <span className="absolute top-0 right-0 flex h-2 w-2 -mt-0.5 -mr-0.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
+                            </span>
+                        )}
+                    </div>
+                </>,
+                chatInputNode
+            )}
+
+            {/* Voice Error Display */}
+            {isChatOpen && voiceError && (
+                <div className="fixed bottom-[130px] right-4 md:right-auto md:w-[350px] z-[1000] px-4 pointer-events-none flex justify-end">
+                    <div className="bg-destructive/10 text-destructive px-3 py-1.5 rounded-lg border border-destructive/20 shadow-sm text-xs animate-in fade-in slide-in-from-bottom-4 pointer-events-auto">
+                        {voiceError}
+                    </div>
+                </div>
+            )}
         </form>
     );
 }
@@ -316,16 +394,16 @@ function RegistrationForm() {
 
 function Section({ title, isExpanded, onToggle, children }: { title: string; isExpanded: boolean; onToggle: () => void; children: React.ReactNode }) {
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-shadow hover:shadow-md">
+        <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden transition-shadow hover:shadow-md">
             <div
-                className={`px - 8 py - 5 flex justify - between items - center cursor - pointer select - none transition - colors duration - 200 ${isExpanded ? 'bg-white border-b border-gray-100' : 'bg-gray-50 hover:bg-gray-100'} `}
+                className={`px-8 py-5 flex justify-between items-center cursor-pointer select-none transition-colors duration-200 ${isExpanded ? 'bg-card border-b border-border' : 'bg-muted/30 hover:bg-muted/50'} `}
                 onClick={onToggle}
             >
                 <div className="flex items-center gap-3">
-                    <div className={`w - 1 h - 6 rounded - full ${isExpanded ? 'bg-[#00A9B4]' : 'bg-gray-300'} `}></div>
-                    <h2 className={`font - bold uppercase tracking - wide text - sm ${isExpanded ? 'text-gray-900' : 'text-gray-500'} `}>{title}</h2>
+                    <div className={`w-1 h-6 rounded-full ${isExpanded ? 'bg-primary' : 'bg-muted-foreground/30'} `}></div>
+                    <h2 className={`font-bold uppercase tracking-wide text-sm ${isExpanded ? 'text-card-foreground' : 'text-muted-foreground'} `}>{title}</h2>
                 </div>
-                {isExpanded ? <Minus className="text-[#00A9B4] w-5 h-5" /> : <Plus className="text-gray-400 w-5 h-5" />}
+                {isExpanded ? <Minus className="text-primary w-5 h-5" /> : <Plus className="text-muted-foreground w-5 h-5" />}
             </div>
             {isExpanded && <div className="p-8 animate-in fade-in slide-in-from-top-4 duration-300">{children}</div>}
         </div>
@@ -335,13 +413,13 @@ function Section({ title, isExpanded, onToggle, children }: { title: string; isE
 function FormInput({ label, value, onChange, placeholder, type = "text", required, disabled, readOnly, className, helperText }: any) {
     return (
         <div className="flex flex-col gap-2 w-full">
-            <label className="text-sm font-semibold text-gray-700 flex justify-between">
-                <span>{label} {required && <span className="text-red-500">*</span>}</span>
+            <label className="text-sm font-semibold text-foreground flex justify-between">
+                <span>{label} {required && <span className="text-destructive">*</span>}</span>
             </label>
             <input
                 type={type}
                 placeholder={placeholder}
-                className={`w - full h - 12 px - 4 border border - gray - 200 rounded - lg focus: ring - 2 focus: ring - [#00A9B4] / 20 focus: border - [#00A9B4] outline - none transition - all text - gray - 700 bg - white placeholder - gray - 400 shadow - sm ${className} ${disabled ? 'bg-gray-100 text-gray-500' : ''} `}
+                className={`w-full h-12 px-4 border border-input rounded-lg focus:ring-2 focus:ring-ring border-input focus:border-ring outline-none transition-all text-foreground bg-background placeholder-muted-foreground shadow-sm ${className} ${disabled ? 'bg-muted text-muted-foreground' : ''} `}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 disabled={disabled}
@@ -355,11 +433,11 @@ function FormInput({ label, value, onChange, placeholder, type = "text", require
 function FormTextArea({ label, value, onChange, placeholder, disabled }: any) {
     return (
         <div className="flex flex-col gap-2 w-full">
-            <label className="text-sm font-semibold text-gray-700">{label}</label>
+            <label className="text-sm font-semibold text-foreground">{label}</label>
             <textarea
                 placeholder={placeholder}
                 rows={3}
-                className={`w - full p - 4 border border - gray - 200 rounded - lg focus: ring - 2 focus: ring - [#00A9B4] / 20 focus: border - [#00A9B4] outline - none transition - all text - gray - 700 bg - white placeholder - gray - 400 shadow - sm resize - none ${disabled ? 'bg-gray-100 text-gray-500' : ''} `}
+                className={`w-full p-4 border border-input rounded-lg focus:ring-2 focus:ring-ring border-input focus:border-ring outline-none transition-all text-foreground bg-background placeholder-muted-foreground shadow-sm resize-none ${disabled ? 'bg-muted text-muted-foreground' : ''} `}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 disabled={disabled}
@@ -371,10 +449,10 @@ function FormTextArea({ label, value, onChange, placeholder, disabled }: any) {
 function FormSelect({ label, value, onChange, options, required, disabled }: any) {
     return (
         <div className="flex flex-col gap-2 w-full relative">
-            <label className="text-sm font-semibold text-gray-700">{label} {required && <span className="text-red-500">*</span>}</label>
+            <label className="text-sm font-semibold text-foreground">{label} {required && <span className="text-destructive">*</span>}</label>
             <div className="relative">
                 <select
-                    className={`w - full h - 12 px - 4 border border - gray - 200 rounded - lg focus: ring - 2 focus: ring - [#00A9B4] / 20 focus: border - [#00A9B4] outline - none transition - all text - gray - 700 bg - white shadow - sm appearance - none cursor - pointer ${disabled ? 'bg-gray-100 text-gray-500' : ''} `}
+                    className={`w-full h-12 px-4 border border-input rounded-lg focus:ring-2 focus:ring-ring border-input focus:border-ring outline-none transition-all text-foreground bg-background shadow-sm appearance-none cursor-pointer ${disabled ? 'bg-muted text-muted-foreground' : ''} `}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     disabled={disabled}
@@ -384,7 +462,7 @@ function FormSelect({ label, value, onChange, options, required, disabled }: any
                         <option key={opt} value={opt}>{opt}</option>
                     ))}
                 </select>
-                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             </div>
         </div>
     );
@@ -393,16 +471,16 @@ function FormSelect({ label, value, onChange, options, required, disabled }: any
 function FormRadioGroup({ label, value, onChange, options, required }: any) {
     return (
         <div className="flex flex-col gap-3 w-full">
-            <label className="text-sm font-semibold text-gray-700">{label} {required && <span className="text-red-500">*</span>}</label>
+            <label className="text-sm font-semibold text-foreground">{label} {required && <span className="text-destructive">*</span>}</label>
             <div className="flex flex-wrap gap-3">
                 {options.map((opt: string) => (
                     <label
                         key={opt}
                         className={`
-                            flex items - center gap - 2 px - 4 py - 2.5 rounded - lg border cursor - pointer transition - all select - none text - sm font - medium
+                            flex items-center gap-2 px-4 py-2.5 rounded-lg border cursor-pointer transition-all select-none text-sm font-medium
                             ${value === opt
-                                ? 'bg-teal-50 border-[#00A9B4] text-[#00A9B4] shadow-sm ring-1 ring-[#00A9B4]'
-                                : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300'
+                                ? 'bg-primary/5 border-primary text-primary shadow-sm ring-1 ring-primary'
+                                : 'bg-background border-border text-muted-foreground hover:bg-muted/50 hover:border-border'
                             }
 `}
                     >
@@ -415,8 +493,8 @@ function FormRadioGroup({ label, value, onChange, options, required }: any) {
                             className="hidden" // hide default radio
                         />
                         {/* Custom radio indicator */}
-                        <div className={`w - 4 h - 4 rounded - full border flex items - center justify - center ${value === opt ? 'border-[#00A9B4]' : 'border-gray-400'} `}>
-                            {value === opt && <div className="w-2 h-2 rounded-full bg-[#00A9B4]"></div>}
+                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${value === opt ? 'border-primary' : 'border-muted-foreground'} `}>
+                            {value === opt && <div className="w-2 h-2 rounded-full bg-primary"></div>}
                         </div>
                         {opt}
                     </label>

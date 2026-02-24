@@ -35,37 +35,22 @@ Map the patient's details to these fields:
    - firstName
    - lastName
    - gender ("Male", "Female", "Transgender")
-   - dateOfBirth (format "YYYY-MM-DD")
-   - onlyYearOfBirth (boolean)
-   - maritalStatus
-   - relationshipType
-   - relationName
+   - age
+   - maritalStatus (MUST strictly be one of: "Married", "Unmarried", "Divorcee", "Widow". If user says 'Single', map to 'Unmarried')
    - nationality
-   - abhaId (Ayushman Bharat Health Account ID)
-   - insuranceProvider
 
 2. contactInfo:
    - mobileNumber
-   - emailId
-   - correspondenceAddress
-   - correspondenceCountry
-   - correspondenceState
-   - correspondenceCity
-   - correspondencePincode
-   - isPermanentSame (boolean)
-   - permanentAddress
-   - permanentCountry
-   - permanentState
-   - permanentCity
-   - permanentPincode
-   - emergencyContactName
-   - emergencyContactNumber
+   - address
+   - state (MUST strictly be one of: "Delhi", "Maharashtra", "Karnataka", "Gujarat", "Uttar Pradesh")
+   - city (MUST strictly be one of: "New Delhi", "Mumbai", "Bangalore", "Ahmedabad", "Lucknow". Map 'Bengaluru' to 'Bangalore')
+   - pincode
 
 3. otherInfo:
    - qualification
    - occupation
-   - bloodGroup
-   - idType
+   - bloodGroup (MUST strictly be one of: "A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-")
+   - idType (MUST strictly be one of: "Aadhar", "PAN Card", "Voter ID")
    - idNumber
 """
 
