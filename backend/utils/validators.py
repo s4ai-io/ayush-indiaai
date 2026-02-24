@@ -27,6 +27,7 @@ class PatientProfile(BaseModel):
     vikriti: Optional[str] = Field(None, description="Current dosha imbalance (Vikriti)")
     disease: str = Field(..., min_length=1, description="Primary health condition (required)")
     symptoms: Optional[str] = Field(None, description="Patient symptoms (optional)")
+    medical_history: Optional[str] = Field(None, description="Patient medical history or comorbidities")
     severity: int = Field(..., ge=1, le=10, description="Condition severity (1-10)")
     bmi: Optional[float] = Field(None, ge=10, le=50, description="Body Mass Index")
     
@@ -89,7 +90,6 @@ class PrescriptionRequest(BaseModel):
     prakriti: str = Field("Vata", description="Patient prakriti")
     vikriti: str = Field("Vata", description="Patient vikriti")
     treatmentPlan: Optional[dict] = Field(None, description="Full AI treatment plan JSON")
-    doctorMedicines: Optional[str] = Field("", description="Doctor's own medicine prescription")
     doctorPrescription: Optional[str] = Field("", description="Doctor's prescription notes")
     doctorNotes: Optional[str] = Field("", description="Additional doctor notes")
     rating: Optional[str] = Field(None, description="positive / negative")

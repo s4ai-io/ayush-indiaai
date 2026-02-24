@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import {
     Brain, Activity, Leaf, Coffee, Moon, Sun, ArrowRight, CheckCircle, Info,
     ThumbsUp, ThumbsDown, Save, AlertTriangle, Shield, Heart, Stethoscope,
-    FileText, Pill, ClipboardList, Sparkles, TrendingUp, Clock, Target
+    FileText, Pill, ClipboardList, Sparkles, TrendingUp, Clock, Target,
+    Plus, Trash2, X
 } from 'lucide-react';
 import {
     Tooltip,
@@ -19,6 +20,7 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { DiseaseSearchDropdown } from '@/components/ui/DiseaseSearchDropdown';
+import { useRouter } from "next/navigation";
 
 interface MedicalRecord {
     diagnosis: string;
@@ -59,6 +61,7 @@ export default function TreatmentPage({ params }: { params: Promise<{ id: string
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
     const [treatmentPlan, setTreatmentPlan] = useState<TreatmentPlan | null>(null);
+    const router = useRouter();
 
     // Feedback State
     const [rating, setRating] = useState<'positive' | 'negative' | null>(null);
@@ -71,11 +74,59 @@ export default function TreatmentPage({ params }: { params: Promise<{ id: string
     const [severity, setSeverity] = useState<number>(5);
     const [disease, setDisease] = useState<string>("");
     const [symptoms, setSymptoms] = useState<string>("");
+    const [medicalHistory, setMedicalHistory] = useState<string>("");
 
     // Doctor Prescription State
     const [doctorPrescription, setDoctorPrescription] = useState<string>("");
-    const [doctorMedicines, setDoctorMedicines] = useState<string>("");
     const [doctorNotes, setDoctorNotes] = useState<string>("");
+
+    // Inline Add State
+    const [addingHerb, setAddingHerb] = useState(false);
+    const [newHerbName, setNewHerbName] = useState("");
+    const [addingYoga, setAddingYoga] = useState(false);
+    const [newYogaName, setNewYogaName] = useState("");
+    const [addingDiet, setAddingDiet] = useState(false);
+    const [newDietItem, setNewDietItem] = useState("");
+    const [addingLifestyle, setAddingLifestyle] = useState(false);
+    const [newLifestyleItem, setNewLifestyleItem] = useState("");
+
+    // --- Add/Delete Handlers ---
+    const addHerb = () => {
+        if (!newHerbName.trim() || !treatmentPlan) return;
+        setTreatmentPlan({ ...treatmentPlan, herbs: [...treatmentPlan.herbs, { name: newHerbName.trim(), dosage: '', benefits: 'Added by doctor' }] });
+        setNewHerbName(""); setAddingHerb(false);
+    };
+    const deleteHerb = (idx: number) => {
+        if (!treatmentPlan) return;
+        setTreatmentPlan({ ...treatmentPlan, herbs: treatmentPlan.herbs.filter((_, i) => i !== idx) });
+    };
+    const addYoga = () => {
+        if (!newYogaName.trim() || !treatmentPlan) return;
+        setTreatmentPlan({ ...treatmentPlan, yoga: [...treatmentPlan.yoga, { practice: newYogaName.trim(), duration: '', benefits: 'Added by doctor' }] });
+        setNewYogaName(""); setAddingYoga(false);
+    };
+    const deleteYoga = (idx: number) => {
+        if (!treatmentPlan) return;
+        setTreatmentPlan({ ...treatmentPlan, yoga: treatmentPlan.yoga.filter((_, i) => i !== idx) });
+    };
+    const addDiet = () => {
+        if (!newDietItem.trim() || !treatmentPlan) return;
+        setTreatmentPlan({ ...treatmentPlan, diet: [...treatmentPlan.diet, newDietItem.trim()] });
+        setNewDietItem(""); setAddingDiet(false);
+    };
+    const deleteDiet = (idx: number) => {
+        if (!treatmentPlan) return;
+        setTreatmentPlan({ ...treatmentPlan, diet: treatmentPlan.diet.filter((_, i) => i !== idx) });
+    };
+    const addLifestyle = () => {
+        if (!newLifestyleItem.trim() || !treatmentPlan) return;
+        setTreatmentPlan({ ...treatmentPlan, lifestyle: [...treatmentPlan.lifestyle, newLifestyleItem.trim()] });
+        setNewLifestyleItem(""); setAddingLifestyle(false);
+    };
+    const deleteLifestyle = (idx: number) => {
+        if (!treatmentPlan) return;
+        setTreatmentPlan({ ...treatmentPlan, lifestyle: treatmentPlan.lifestyle.filter((_, i) => i !== idx) });
+    };
 
     useEffect(() => {
         const fetchPatient = async () => {
@@ -113,6 +164,7 @@ export default function TreatmentPage({ params }: { params: Promise<{ id: string
                     vikriti,
                     disease,
                     symptoms: symptoms || undefined,
+                    medical_history: medicalHistory || undefined,
                     severity,
                     bmi: 24.0
                 })
@@ -144,7 +196,6 @@ export default function TreatmentPage({ params }: { params: Promise<{ id: string
                     prakriti,
                     vikriti,
                     treatmentPlan,
-                    doctorMedicines,
                     doctorPrescription,
                     doctorNotes,
                     rating,
@@ -156,6 +207,9 @@ export default function TreatmentPage({ params }: { params: Promise<{ id: string
                 throw new Error(data.detail || 'Failed to save');
             }
             alert("Treatment Plan Prescribed & Saved Successfully!");
+            setTimeout(() => {
+                router.push('/doctor?tab=completed');
+            }, 500);
         } catch (error: any) {
             console.error(error);
             alert(error.message || "Failed to save prescription");
@@ -251,6 +305,21 @@ export default function TreatmentPage({ params }: { params: Promise<{ id: string
                                         className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all resize-none"
                                         placeholder="e.g. excessive thirst, frequent urination, fatigue..."
                                         rows={3}
+                                    />
+                                </div>
+
+                                {/* Comorbidity Input */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                        <Activity className="w-4 h-4 text-purple-400" />
+                                        Comorbidity <span className="text-xs text-slate-400 font-normal">(optional)</span>
+                                    </label>
+                                    <textarea
+                                        value={medicalHistory}
+                                        onChange={(e) => setMedicalHistory(e.target.value)}
+                                        className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all resize-none"
+                                        placeholder="Any known medical history or comorbidities..."
+                                        rows={2}
                                     />
                                 </div>
 
@@ -395,33 +464,31 @@ export default function TreatmentPage({ params }: { params: Promise<{ id: string
                                             <Leaf className="w-5 h-5 text-green-600" />
                                             Herbal Interventions
                                             {treatmentPlan.formulation && (
-                                                <Badge variant="outline" className="ml-auto text-green-700 border-green-300 bg-green-50 font-normal">
+                                                <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50 font-normal">
                                                     {treatmentPlan.formulation}
                                                 </Badge>
                                             )}
+                                            <button onClick={() => setAddingHerb(true)} className="ml-auto w-7 h-7 rounded-full bg-green-100 hover:bg-green-200 flex items-center justify-center text-green-700 transition-colors" title="Add herb">
+                                                <Plus className="w-4 h-4" />
+                                            </button>
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent className="grid gap-3 pt-5">
                                         {treatmentPlan.herbs.map((herb, idx) => (
-                                            <div key={idx} className="flex items-start justify-between p-4 bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-                                                <div>
-                                                    <h4 className="font-bold text-slate-900 text-lg">{herb.name}</h4>
-                                                    <p className="text-green-700 font-medium mt-1 text-sm">{herb.dosage}</p>
-                                                </div>
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger>
-                                                            <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center hover:bg-green-50 text-slate-400 hover:text-green-600 transition-colors">
-                                                                <Info className="w-4 h-4" />
-                                                            </div>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent side="left" className="max-w-xs">
-                                                            <p>{herb.benefits}</p>
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </TooltipProvider>
+                                            <div key={idx} className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                                                <h4 className="font-bold text-slate-900 text-lg">{herb.name}</h4>
+                                                <button onClick={() => deleteHerb(idx)} className="w-8 h-8 rounded-full bg-slate-50 hover:bg-red-50 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors" title="Remove">
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
                                             </div>
                                         ))}
+                                        {addingHerb && (
+                                            <div className="flex items-center gap-2 p-3 bg-green-50 rounded-xl border border-green-200">
+                                                <input type="text" value={newHerbName} onChange={e => setNewHerbName(e.target.value)} onKeyDown={e => e.key === 'Enter' && addHerb()} placeholder="Enter herb name..." autoFocus className="flex-1 px-3 py-2 rounded-lg border border-green-300 text-sm focus:ring-2 focus:ring-green-400 outline-none" />
+                                                <button onClick={addHerb} className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">Add</button>
+                                                <button onClick={() => { setAddingHerb(false); setNewHerbName(""); }} className="w-8 h-8 rounded-full hover:bg-green-100 flex items-center justify-center text-slate-500"><X className="w-4 h-4" /></button>
+                                            </div>
+                                        )}
                                     </CardContent>
                                 </Card>
 
@@ -431,29 +498,27 @@ export default function TreatmentPage({ params }: { params: Promise<{ id: string
                                         <CardTitle className="flex items-center gap-2 text-orange-800">
                                             <Activity className="w-5 h-5 text-orange-600" />
                                             Yoga & Physical Therapy
+                                            <button onClick={() => setAddingYoga(true)} className="ml-auto w-7 h-7 rounded-full bg-orange-100 hover:bg-orange-200 flex items-center justify-center text-orange-700 transition-colors" title="Add yoga">
+                                                <Plus className="w-4 h-4" />
+                                            </button>
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent className="grid gap-3 pt-5">
                                         {treatmentPlan.yoga.map((yoga, idx) => (
-                                            <div key={idx} className="flex items-start justify-between p-4 bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-                                                <div>
-                                                    <h4 className="font-bold text-slate-900 text-lg">{yoga.practice}</h4>
-                                                    <p className="text-orange-700 font-medium mt-1 text-sm">{yoga.duration}</p>
-                                                </div>
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger>
-                                                            <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center hover:bg-orange-50 text-slate-400 hover:text-orange-600 transition-colors">
-                                                                <Info className="w-4 h-4" />
-                                                            </div>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent side="left" className="max-w-xs">
-                                                            <p>{yoga.benefits}</p>
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </TooltipProvider>
+                                            <div key={idx} className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                                                <h4 className="font-bold text-slate-900 text-lg">{yoga.practice}</h4>
+                                                <button onClick={() => deleteYoga(idx)} className="w-8 h-8 rounded-full bg-slate-50 hover:bg-red-50 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors" title="Remove">
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
                                             </div>
                                         ))}
+                                        {addingYoga && (
+                                            <div className="flex items-center gap-2 p-3 bg-orange-50 rounded-xl border border-orange-200">
+                                                <input type="text" value={newYogaName} onChange={e => setNewYogaName(e.target.value)} onKeyDown={e => e.key === 'Enter' && addYoga()} placeholder="Enter yoga/exercise name..." autoFocus className="flex-1 px-3 py-2 rounded-lg border border-orange-300 text-sm focus:ring-2 focus:ring-orange-400 outline-none" />
+                                                <button onClick={addYoga} className="px-3 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors">Add</button>
+                                                <button onClick={() => { setAddingYoga(false); setNewYogaName(""); }} className="w-8 h-8 rounded-full hover:bg-orange-100 flex items-center justify-center text-slate-500"><X className="w-4 h-4" /></button>
+                                            </div>
+                                        )}
                                     </CardContent>
                                 </Card>
 
@@ -464,16 +529,30 @@ export default function TreatmentPage({ params }: { params: Promise<{ id: string
                                             <CardTitle className="flex items-center gap-2 text-amber-800">
                                                 <Coffee className="w-5 h-5 text-amber-600" />
                                                 Dietary Guidelines
+                                                <button onClick={() => setAddingDiet(true)} className="ml-auto w-7 h-7 rounded-full bg-amber-100 hover:bg-amber-200 flex items-center justify-center text-amber-700 transition-colors" title="Add diet item">
+                                                    <Plus className="w-4 h-4" />
+                                                </button>
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent className="pt-5">
                                             <ul className="space-y-2.5">
                                                 {treatmentPlan.diet.map((item, idx) => (
-                                                    <li key={idx} className="flex gap-3 text-sm text-slate-700 bg-amber-50/50 p-2.5 rounded-lg">
-                                                        <span className="text-amber-500 font-bold">•</span> {item}
+                                                    <li key={idx} className="flex items-center gap-3 text-sm text-slate-700 bg-amber-50/50 p-2.5 rounded-lg">
+                                                        <span className="text-amber-500 font-bold">•</span>
+                                                        <span className="flex-1">{item}</span>
+                                                        <button onClick={() => deleteDiet(idx)} className="w-6 h-6 rounded-full hover:bg-red-50 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors shrink-0" title="Remove">
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        </button>
                                                     </li>
                                                 ))}
                                             </ul>
+                                            {addingDiet && (
+                                                <div className="flex items-center gap-2 mt-3 p-2.5 bg-amber-50 rounded-lg border border-amber-200">
+                                                    <input type="text" value={newDietItem} onChange={e => setNewDietItem(e.target.value)} onKeyDown={e => e.key === 'Enter' && addDiet()} placeholder="New dietary guideline..." autoFocus className="flex-1 px-3 py-1.5 rounded-lg border border-amber-300 text-sm focus:ring-2 focus:ring-amber-400 outline-none" />
+                                                    <button onClick={addDiet} className="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-medium hover:bg-amber-700 transition-colors">Add</button>
+                                                    <button onClick={() => { setAddingDiet(false); setNewDietItem(""); }} className="text-slate-500 hover:text-slate-700"><X className="w-4 h-4" /></button>
+                                                </div>
+                                            )}
                                         </CardContent>
                                     </Card>
 
@@ -482,16 +561,30 @@ export default function TreatmentPage({ params }: { params: Promise<{ id: string
                                             <CardTitle className="flex items-center gap-2 text-indigo-800">
                                                 <Sun className="w-5 h-5 text-indigo-600" />
                                                 Lifestyle Changes
+                                                <button onClick={() => setAddingLifestyle(true)} className="ml-auto w-7 h-7 rounded-full bg-indigo-100 hover:bg-indigo-200 flex items-center justify-center text-indigo-700 transition-colors" title="Add lifestyle item">
+                                                    <Plus className="w-4 h-4" />
+                                                </button>
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent className="pt-5">
                                             <ul className="space-y-2.5">
                                                 {treatmentPlan.lifestyle.map((item, idx) => (
-                                                    <li key={idx} className="flex gap-3 text-sm text-slate-700 bg-indigo-50/50 p-2.5 rounded-lg">
-                                                        <span className="text-indigo-500 font-bold">•</span> {item}
+                                                    <li key={idx} className="flex items-center gap-3 text-sm text-slate-700 bg-indigo-50/50 p-2.5 rounded-lg">
+                                                        <span className="text-indigo-500 font-bold">•</span>
+                                                        <span className="flex-1">{item}</span>
+                                                        <button onClick={() => deleteLifestyle(idx)} className="w-6 h-6 rounded-full hover:bg-red-50 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors shrink-0" title="Remove">
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        </button>
                                                     </li>
                                                 ))}
                                             </ul>
+                                            {addingLifestyle && (
+                                                <div className="flex items-center gap-2 mt-3 p-2.5 bg-indigo-50 rounded-lg border border-indigo-200">
+                                                    <input type="text" value={newLifestyleItem} onChange={e => setNewLifestyleItem(e.target.value)} onKeyDown={e => e.key === 'Enter' && addLifestyle()} placeholder="New lifestyle change..." autoFocus className="flex-1 px-3 py-1.5 rounded-lg border border-indigo-300 text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+                                                    <button onClick={addLifestyle} className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors">Add</button>
+                                                    <button onClick={() => { setAddingLifestyle(false); setNewLifestyleItem(""); }} className="text-slate-500 hover:text-slate-700"><X className="w-4 h-4" /></button>
+                                                </div>
+                                            )}
                                         </CardContent>
                                     </Card>
                                 </div>
@@ -581,26 +674,6 @@ export default function TreatmentPage({ params }: { params: Promise<{ id: string
                                     </h3>
 
                                     <div className="space-y-5">
-                                        {/* Medicines */}
-                                        <Card className="border-l-4 border-l-rose-500 shadow-sm">
-                                            <CardHeader className="pb-2">
-                                                <CardTitle className="flex items-center gap-2 text-rose-800 text-base">
-                                                    <Pill className="w-4 h-4 text-rose-600" />
-                                                    Prescribed Medicines
-                                                </CardTitle>
-                                                <CardDescription>Enter prescribed medicines with dosage</CardDescription>
-                                            </CardHeader>
-                                            <CardContent className="pt-2">
-                                                <textarea
-                                                    className="w-full p-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-rose-400 outline-none shadow-inner bg-white"
-                                                    placeholder={"e.g.\nMetformin 500mg — 1 tablet after meals, twice daily\nVitamin D3 60K — Once weekly\nTriphala Churna — 1 tsp with warm water at bedtime"}
-                                                    rows={4}
-                                                    value={doctorMedicines}
-                                                    onChange={(e) => setDoctorMedicines(e.target.value)}
-                                                />
-                                            </CardContent>
-                                        </Card>
-
                                         {/* Prescription Notes */}
                                         <Card className="border-l-4 border-l-violet-500 shadow-sm">
                                             <CardHeader className="pb-2">

@@ -103,6 +103,7 @@ class AyurGenixService:
             patient_data: {
                 'disease': str (optional),
                 'symptoms': str (optional),
+                'medical_history': str (optional),
                 'prakriti': str,
                 'vikriti': str,
                 'severity': int,
@@ -119,6 +120,7 @@ class AyurGenixService:
 
         disease_input = (patient_data.get('disease') or '').strip()
         symptoms_input = (patient_data.get('symptoms') or '').strip()
+        medical_history_input = (patient_data.get('medical_history') or '').strip()
 
         # Validate: disease is required
         if not disease_input:
@@ -137,20 +139,21 @@ class AyurGenixService:
         match_confidence = 0.0
         source_disease = None
 
-        # Tier 1: Exact disease name lookup
-        matched_row, match_confidence = self._exact_lookup(disease_input)
+        # Tier 1: Exact disease name lookup with Scoring
+        matched_row, match_confidence = self._exact_lookup(
+            disease=disease_input,
+            symptoms=symptoms_input,
+            medical_history=medical_history_input,
+            prakriti=prakriti,
+            vikriti=vikriti,
+            gender=gender,
+            age=age
+        )
         if matched_row is not None:
             match_method = "exact"
             source_disease = matched_row['Disease']
 
-        # Tier 2: TF-IDF symptom similarity
-        if matched_row is None and symptoms_input:
-            matched_row, match_confidence = self._symptom_match(symptoms_input)
-            if matched_row is not None:
-                match_method = "symptom_similarity"
-                source_disease = matched_row['Disease']
-
-        # No match found across all 3 tiers
+        # No match found
         if matched_row is None:
             raise ValueError(
                 f"No matching disease found for '{disease_input}' with the given symptoms. "
@@ -175,38 +178,77 @@ class AyurGenixService:
         return response
 
     # ------------------------------------------------------------------
-    # Tier 1: Exact Lookup
+    # Tier 1: Exact Lookup (Scoring Algorithm)
     # ------------------------------------------------------------------
 
-    def _exact_lookup(self, disease: str):
-        """Find exact match in dataset (case-insensitive)."""
+    def _exact_lookup(self, disease: str, symptoms: str = "", medical_history: str = "", 
+                      prakriti: str = "", vikriti: str = "", gender: str = "", age: int = 30):
+        """Find exact match in dataset and return best fit row based on scoring."""
         disease_lower = disease.strip().lower()
         matches = self.df[self.df['Disease_Clean'] == disease_lower]
 
-        if len(matches) > 0:
+        if len(matches) == 0:
+            return None, 0.0
+            
+        if len(matches) == 1:
             return matches.iloc[0], 1.0
-        return None, 0.0
 
-
-
-        return None, 0.0
-
-    # ------------------------------------------------------------------
-    # Tier 3: Symptom Similarity (TF-IDF)
-    # ------------------------------------------------------------------
-
-    def _symptom_match(self, symptoms: str, threshold: float = 0.1):
-        """Find closest disease by symptom similarity using TF-IDF."""
-        query_vec = self.tfidf_vectorizer.transform([symptoms])
-        similarities = cosine_similarity(query_vec, self.tfidf_matrix).flatten()
-
-        best_idx = np.argmax(similarities)
-        best_score = similarities[best_idx]
-
-        if best_score >= threshold:
-            return self.df.iloc[best_idx], round(float(best_score), 2)
-
-        return None, 0.0
+        best_score = -999.0
+        best_row = None
+        
+        for idx, row in matches.iterrows():
+            score = 0.0
+            
+            # 1. Symptom Similarity (Max +30)
+            row_symptoms = str(row.get('Symptoms', ''))
+            if symptoms and row_symptoms and row_symptoms != 'nan':
+                try:
+                    query_vec = self.tfidf_vectorizer.transform([symptoms])
+                    row_vec = self.tfidf_vectorizer.transform([row_symptoms])
+                    sim = cosine_similarity(query_vec, row_vec)[0][0]
+                    score += (sim * 30.0)
+                except Exception:
+                    pass
+                    
+            # 2. Medical History (Comorbidity) (+20 or -20)
+            patient_mh_lower = medical_history.lower()
+            if patient_mh_lower:
+                row_history = str(row.get('Medical History', '')).lower()
+                row_risks = str(row.get('Risk Factors', '')).lower()
+                
+                # Boost if the row is meant for this comorbidity
+                if any(word in row_history for word in patient_mh_lower.split()):
+                    score += 10.0
+                if any(word in row_risks for word in patient_mh_lower.split()):
+                    score += 10.0
+                    
+                # Note: In a production system, explicit contraindications would be highly penalized here.
+                    
+            # 3. Dosha/Prakriti Alignment (+10)
+            row_dosha = str(row.get('Doshas', '')).lower()
+            row_prakriti = str(row.get('Constitution/Prakriti', '')).lower()
+            
+            if vikriti.lower() in row_dosha or vikriti.lower() in row_prakriti:
+                score += 5.0
+            if prakriti.lower() in row_dosha or prakriti.lower() in row_prakriti:
+                score += 5.0
+                
+            # 4. Demographics Alignment (+10)
+            row_gender = str(row.get('Gender', '')).lower()
+            if row_gender != 'both genders' and row_gender != 'all genders' and row_gender != 'nan':
+                if gender.lower() == row_gender:
+                    score += 5.0
+                else:
+                    score -= 5.0 # Penalty for mismatch
+                    
+            if score > best_score:
+                best_score = score
+                best_row = row
+                
+        # Calculate a pseudo-confidence score between 0.3 and 1.0 based on how well it matched
+        normalized_confidence = min(0.3 + (max(best_score, 0) / 100.0), 1.0)
+        
+        return best_row, round(normalized_confidence, 2)
 
     # ------------------------------------------------------------------
     # Response Builders

@@ -158,7 +158,6 @@ class CSVService:
         treatment_plan = data.get("treatmentPlan") or {}
         disease = data.get("disease", "")
         symptoms = data.get("symptoms", "")
-        doctor_medicines = data.get("doctorMedicines", "")
         doctor_notes = data.get("doctorNotes", "")
 
         record_id = str(uuid.uuid4())
@@ -169,7 +168,6 @@ class CSVService:
         # 1. Medical Record
         prescription_json = {
             "ai_plan": treatment_plan,
-            "doctor_medicines": doctor_medicines,
             "doctor_notes": data.get("doctorPrescription", ""),
         }
 
