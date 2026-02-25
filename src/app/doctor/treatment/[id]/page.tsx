@@ -68,7 +68,7 @@ export default function TreatmentPage({ params }: { params: Promise<{ id: string
     return (
         <CopilotKit runtimeUrl="/api/copilotkit" agent="treatment_agent">
             <CopilotSidebar
-                instructions="You are an AI Clinical Assistant helping the doctor fill the treatment assessment form."
+                instructions="You are an AI Clinical Assistant helping the doctor fill the Ayurvedic treatment assessment form. Map patient conditions to the specific fields in the form accurately. Pay special attention to exact Ayurvedic terms for Dosha and Prakriti. Always use the provided mapping_rules."
                 labels={{
                     title: "Treatment Assistant",
                     initial: "Hello Doctor! Tell me the patient's condition and I'll fill the clinical assessment for you.",
@@ -151,6 +151,9 @@ function TreatmentPageContent({ id }: { id: string }) {
     const [doctorPrescription, setDoctorPrescription] = useState<string>("");
     const [doctorNotes, setDoctorNotes] = useState<string>("");
 
+    // Disease validation state for AI
+    const [allowedDiseases, setAllowedDiseases] = useState<string[]>([]);
+
     // Inline Add State
     const [addingHerb, setAddingHerb] = useState(false);
     const [newHerbName, setNewHerbName] = useState("");
@@ -201,29 +204,68 @@ function TreatmentPageContent({ id }: { id: string }) {
 
     // --- CopilotKit Integration ---
     useCopilotReadable({
+        description: "Guidelines and Knowledge for Mapping Ayurvedic Form Fields",
+        value: {
+            mapping_rules: [
+                "Map 'doshas' (current imbalance/vikriti) STRICTLY to one of these exact values: 'Vata', 'Pitta', 'Kapha'.",
+                "Map 'prakriti' (constitution) STRICTLY to one of these exact values: 'Vata', 'Pitta', 'Kapha', 'Vata-Pitta', 'Pitta-Kapha', 'Vata-Kapha'.",
+                "Extract the primary diagnosis or condition as 'disease'.",
+                "Extract all symptoms into a comma-separated 'symptoms' string.",
+                "Always map 'medicalHistory' to the 'comorbidity' parameter.",
+                "If severity is not explicitly stated, estimate based on symptoms or default to 5."
+            ]
+        },
+    });
+
+    useCopilotReadable({
         description: "Current clinical assessment form state",
         value: { disease, symptoms, severity, medicalHistory, vikriti, prakriti },
     });
 
     useCopilotAction({
         name: "fill_clinical_assessment",
-        description: "Fill the clinical assessment form with patient details.",
+        description: "Fill the clinical assessment form with patient details. Always call this action to map doctor's input to the form.",
         parameters: [
-            { name: "disease", type: "string", description: "Disease name" },
-            { name: "symptoms", type: "string", description: "Comma-separated symptoms" },
-            { name: "severity", type: "number", description: "Severity 1-10" },
-            { name: "comorbidity", type: "string", description: "Medical history / comorbidities" },
-            { name: "doshas", type: "string", description: "Current dosha imbalance: Vata, Pitta, or Kapha" },
-            { name: "prakriti", type: "string", description: "Constitution: Vata, Pitta, Kapha, Vata-Pitta, Pitta-Kapha, Vata-Kapha" },
+            { name: "disease", type: "string", description: "Primary condition or disease name (e.g., Diabetes, Hypertension)" },
+            { name: "symptoms", type: "string", description: "Comma-separated list of symptoms" },
+            { name: "severity", type: "number", description: "Severity scale from 1 (mild) to 10 (severe)" },
+            { name: "comorbidity", type: "string", description: "Medical history or comorbidities" },
+            { name: "doshas", type: "string", description: "Current dosha imbalance (Vikriti). Allowed values: Vata, Pitta, Kapha" },
+            { name: "prakriti", type: "string", description: "Constitution (Prakriti). Allowed values: Vata, Pitta, Kapha, Vata-Pitta, Pitta-Kapha, Vata-Kapha" },
         ],
         handler: async (args: any) => {
-            if (args.disease) setDisease(args.disease);
+            let returnMessage = "Clinical assessment form updated successfully.";
+
+            if (args.disease) {
+                const query = args.disease.trim().toLowerCase();
+                const exactMatch = allowedDiseases.find(d => d.toLowerCase() === query);
+
+                if (exactMatch) {
+                    setDisease(exactMatch);
+                } else if (allowedDiseases.length > 0) {
+                    // Try to find similar diseases
+                    const similar = allowedDiseases
+                        .filter(d => d.toLowerCase().includes(query) || query.includes(d.toLowerCase()))
+                        .slice(0, 5);
+
+                    if (similar.length > 0) {
+                        returnMessage = `Validation Error: The disease '${args.disease}' is not in the allowed list. DO NOT fill the disease field yet. Please ask the doctor if they meant one of these similar options: ${similar.join(', ')}.`;
+                    } else {
+                        returnMessage = `Validation Error: The disease '${args.disease}' is not recognized in the database. DO NOT fill the disease field yet. Please ask the doctor to clarify or use a standard medical term.`;
+                    }
+                } else {
+                    // Fallback if list didn't load
+                    setDisease(args.disease);
+                }
+            }
+
             if (args.symptoms) setSymptoms(args.symptoms);
-            if (args.severity) setSeverity(args.severity);
+            if (args.severity !== undefined && args.severity !== null) setSeverity(Number(args.severity));
             if (args.comorbidity) setMedicalHistory(args.comorbidity);
             if (args.doshas) setVikriti(args.doshas);
             if (args.prakriti) setPrakriti(args.prakriti);
-            return "Clinical assessment form updated.";
+
+            return returnMessage;
         },
     });
 
@@ -250,6 +292,19 @@ function TreatmentPageContent({ id }: { id: string }) {
         };
         fetchPatient();
     }, [id]);
+
+    useEffect(() => {
+        const fetchDiseases = async () => {
+            try {
+                const res = await fetch('/api/ml/diseases');
+                const data = await res.json();
+                setAllowedDiseases(data.diseases || []);
+            } catch (err) {
+                console.error('Failed to fetch diseases for AI validation:', err);
+            }
+        };
+        fetchDiseases();
+    }, []);
 
     const generatePlan = async () => {
         if (!prakriti || !vikriti) {
@@ -279,13 +334,17 @@ function TreatmentPageContent({ id }: { id: string }) {
                 })
             });
 
-            if (!response.ok) throw new Error("Failed to generate plan");
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                const errorMessage = errorData?.error || "Failed to generate plan";
+                throw new Error(errorMessage);
+            }
 
             const plan = await response.json();
             setTreatmentPlan(plan);
-        } catch (error) {
-            console.error(error);
-            alert("Error generating treatment plan.");
+        } catch (error: any) {
+            console.error("Failed to generate plan:", error);
+            alert(error.message || "Error generating treatment plan.");
         } finally {
             setGenerating(false);
         }
