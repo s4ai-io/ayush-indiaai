@@ -37,17 +37,15 @@ Map the patient's details to these fields:
    - gender ("Male", "Female", "Transgender")
    - age
    - maritalStatus (MUST strictly be one of: "Married", "Unmarried", "Divorcee", "Widow". If user says 'Single', map to 'Unmarried')
-   - nationality
 
 2. contactInfo:
-   - mobileNumber
+   - mobileNumber (MUST be exactly 10 digits. Extract ONLY the digits, ignoring spaces, hyphens, and +91. Ignore any other text.)
    - address
    - state (MUST strictly be one of: "Delhi", "Maharashtra", "Karnataka", "Gujarat", "Uttar Pradesh")
    - city (MUST strictly be one of: "New Delhi", "Mumbai", "Bangalore", "Ahmedabad", "Lucknow". Map 'Bengaluru' to 'Bangalore')
    - pincode
 
 3. otherInfo:
-   - qualification
    - occupation
    - bloodGroup (MUST strictly be one of: "A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-")
    - idType (MUST strictly be one of: "Aadhar", "PAN Card", "Voter ID")

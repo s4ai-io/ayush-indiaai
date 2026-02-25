@@ -101,8 +101,8 @@ class AyurGenixService:
 
         Args:
             patient_data: {
-                'disease': str (optional),
-                'symptoms': str (optional),
+                'disease': str ,
+                'symptoms': str ,
                 'medical_history': str (optional),
                 'prakriti': str,
                 'vikriti': str,

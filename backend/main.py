@@ -307,6 +307,9 @@ app.include_router(ehr_agent_router, prefix="/api/copilot/ehr", tags=["Copilot A
 from services.doctor_agent import doctor_agent_router
 app.include_router(doctor_agent_router, prefix="/api/copilot/doctor", tags=["Copilot Agent"])
 
+from services.treatment_agent import treatment_agent_router
+app.include_router(treatment_agent_router, prefix="/api/copilot/treatment", tags=["Copilot Agent"])
+
 from utils.validators import RegistrationData
 
 @app.post("/api/patients", tags=["Patient Management"])

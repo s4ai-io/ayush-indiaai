@@ -161,7 +161,6 @@ class BasicInfo(BaseModel):
     gender: str = ""
     age: Optional[int] = None
     maritalStatus: str = ""
-    nationality: str = "Indian" # Keep default for UI convenience, even if not in DB strict reqs
 
 
 class ContactInfo(BaseModel):
@@ -173,8 +172,6 @@ class ContactInfo(BaseModel):
 
 
 class OtherInfo(BaseModel):
-    qualification: str = "" # Optional but good to keep in Pydantic for UI if needed, or remove? User didn't ask to remove "qualification" explicitly but said "occupation". "remove other fields". I will keep occupation. 
-    # Actually user list didn't say qualification. "remove other fields". I should remove qualification.
     occupation: str = ""
     bloodGroup: str = ""
     idType: str = ""

@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { MobileSidebar } from "@/components/layout/MobileSidebar";
+import { AppSidebar } from "@/components/layout/AppSidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,15 +28,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased text-foreground bg-background`}
       >
-        <div className="flex h-screen w-full overflow-hidden">
-          <aside className="hidden md:block">
-            <Sidebar />
-          </aside>
-          <main className="flex-1 overflow-auto">
-            <div className="p-4 md:hidden">
-              <MobileSidebar />
-            </div>
-            <div className="p-8">
+        <div className="flex min-h-screen w-full">
+          <AppSidebar />
+          <main className="flex-1 overflow-auto w-full">
+            <div className="p-4 md:p-8 pt-20"> {/* Added pt-20 to ensure content isn't hidden under the absolute hamburger menu */}
               {children}
             </div>
           </main>
