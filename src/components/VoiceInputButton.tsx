@@ -20,6 +20,7 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange, onInter
     const recognitionRef = useRef<any>(null);
     const accumulatedTranscriptRef = useRef<string>(''); // Buffer for full session
     const isRecognitionActiveRef = useRef<boolean>(false);
+    const shouldBeListeningRef = useRef<boolean>(false); // tracks USER intent (vs Chrome timeout)
 
     useEffect(() => {
         if (onStateChange) {
@@ -128,16 +129,31 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange, onInter
             };
 
             recognition.onend = () => {
-                console.log('Speech recognition ended');
+                console.log('Speech recognition ended. User intended to listen:', shouldBeListeningRef.current);
                 isRecognitionActiveRef.current = false;
-                setIsListening(false);
 
-                // Only NOW send the complete accumulated transcript
-                const fullTranscript = accumulatedTranscriptRef.current.trim();
-                if (fullTranscript && onTranscriptRef.current) {
-                    onTranscriptRef.current(fullTranscript);
+                if (shouldBeListeningRef.current) {
+                    // Chrome timed out — NOT a user stop. Auto-restart to keep listening.
+                    console.log('Auto-restarting speech recognition (Chrome timeout bypass)...');
+                    setTimeout(() => {
+                        if (shouldBeListeningRef.current && recognitionRef.current) {
+                            try {
+                                recognitionRef.current.start();
+                                isRecognitionActiveRef.current = true;
+                            } catch (e) {
+                                console.error('Failed to auto-restart recognition:', e);
+                            }
+                        }
+                    }, 200); // small delay to avoid "already started" error
+                } else {
+                    // User pressed Stop — finalize
+                    setIsListening(false);
+                    const fullTranscript = accumulatedTranscriptRef.current.trim();
+                    if (fullTranscript && onTranscriptRef.current) {
+                        onTranscriptRef.current(fullTranscript);
+                    }
+                    accumulatedTranscriptRef.current = '';
                 }
-                accumulatedTranscriptRef.current = '';
             };
 
             recognitionRef.current = recognition;
@@ -189,6 +205,7 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange, onInter
 
         try {
             accumulatedTranscriptRef.current = '';
+            shouldBeListeningRef.current = true;  // mark USER intent
             if (recognitionRef.current) {
                 recognitionRef.current.lang = language;
             }
@@ -201,6 +218,7 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange, onInter
 
     const stopListening = () => {
         try {
+            shouldBeListeningRef.current = false;  // mark USER intent to stop
             recognitionRef.current.stop();
             // onend will fire and send the full transcript
         } catch (e) {
