@@ -10,8 +10,8 @@ import { NextRequest } from "next/server";
 export async function POST(request: NextRequest) {
     const runtime = new CopilotRuntime({
         agents: {
-            registration_agent: new LlamaIndexAgent({
-                url: "http://127.0.0.1:8000/api/copilot/registration/run",
+            consultation_agent: new LlamaIndexAgent({
+                url: "http://127.0.0.1:8000/api/copilot/consultation/run",
             }) as any,
             doctor_agent: new LlamaIndexAgent({
                 url: "http://127.0.0.1:8000/api/copilot/doctor/run",

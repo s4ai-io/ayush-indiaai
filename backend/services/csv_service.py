@@ -61,6 +61,7 @@ PATIENT_FIELDS = [
 
 MEDICAL_RECORD_FIELDS = [
     "id", "patient_id", "visit_date", "diagnosis", "symptoms",
+    "prakriti", "vikriti", "severity", "comorbidities",
     "notes", "prescription",
 ]
 
@@ -127,11 +128,25 @@ class CSVService:
                 return _DictObj(p)
         return None
 
-    def get_all_patients(self, limit: int = 100):
+    def get_all_patients(self, limit: int = 5000):
         """Get all patients, sorted by created_at desc."""
         patients = _read_csv(PATIENTS_CSV)
         patients.sort(key=lambda p: p.get("created_at", ""), reverse=True)
         return [_DictObj(p) for p in patients[:limit]]
+
+    def search_patients(self, query: str, limit: int = 20):
+        """Search patients by name or mobile number."""
+        patients = _read_csv(PATIENTS_CSV)
+        query = query.lower()
+        results = []
+        for p in patients:
+            name = f'{p.get("first_name", "")} {p.get("last_name", "")}'.lower()
+            mobile = p.get("mobile", "").lower()
+            if query in name or query in mobile:
+                results.append(_DictObj(p))
+                if len(results) >= limit:
+                    break
+        return results
 
     def get_patients_by_status(self, diagnosis_done: bool, limit: int = 200):
         """Get patients filtered by diagnosis status."""
@@ -143,12 +158,40 @@ class CSVService:
 
     # ─── Prescription / Diagnosis ────────────────────────────────
 
+    def create_consultation(self, patient_id: str, assessment: dict) -> str:
+        """
+        Create a new medical record (visit) from the Consultation form.
+        """
+        record_id = str(uuid.uuid4())
+        now = datetime.utcnow().isoformat()
+        
+        row = {
+            "id": record_id,
+            "patient_id": patient_id,
+            "visit_date": now,
+            "diagnosis": assessment.get("diagnosis", ""),
+            "symptoms": assessment.get("symptoms", ""),
+            "prakriti": assessment.get("prakriti", ""),
+            "vikriti": assessment.get("vikriti", ""),
+            "severity": str(assessment.get("severity", 5)),
+            "comorbidities": assessment.get("comorbidities", ""),
+            "notes": assessment.get("notes", ""),
+            "prescription": "{}",  # Empty initially
+        }
+        
+        with _lock:
+            _append_csv(MEDICAL_RECORDS_CSV, row, MEDICAL_RECORD_FIELDS)
+            
+        print(f"✓ Consultation saved (CSV): patient={patient_id}, visit={record_id}")
+        return record_id
+
     def save_prescription(self, data: dict) -> dict:
         """
         Save a doctor's prescription.
-        Creates 3 linked CSV rows + marks patient as diagnosed.
+        Creates 3 linked CSV rows (or updates medical record if visitId exists) + marks patient as diagnosed.
         """
         patient_id = data.get("patientId")
+        record_id = data.get("visitId")
 
         # Verify patient exists
         patient = self.get_patient_by_id(patient_id)
@@ -159,86 +202,109 @@ class CSVService:
         disease = data.get("disease", "")
         symptoms = data.get("symptoms", "")
         doctor_notes = data.get("doctorNotes", "")
-
-        record_id = str(uuid.uuid4())
+        
         treatment_id = str(uuid.uuid4())
         feedback_id = str(uuid.uuid4())
         now = datetime.utcnow().isoformat()
 
-        # 1. Medical Record
         prescription_json = {
             "ai_plan": treatment_plan,
             "doctor_notes": data.get("doctorPrescription", ""),
         }
 
-        medical_row = {
-            "id": record_id,
-            "patient_id": patient_id,
-            "visit_date": now,
-            "diagnosis": disease or (treatment_plan.get("source_disease") or "Unknown"),
-            "symptoms": symptoms,
-            "notes": doctor_notes,
-            "prescription": json.dumps(prescription_json),
-        }
-
-        # 2. AYUSH Treatment
-        herbs_list = treatment_plan.get("herbs", [])
-        yoga_list = treatment_plan.get("yoga", [])
-        diet_list = treatment_plan.get("diet", [])
-
-        herbs_text = ", ".join(
-            h.get("name", "") if isinstance(h, dict) else str(h) for h in herbs_list
-        )
-        yoga_text = ", ".join(
-            y.get("practice", "") if isinstance(y, dict) else str(y) for y in yoga_list
-        )
-        diet_text = "; ".join(diet_list) if diet_list else ""
-
-        ayush_row = {
-            "id": treatment_id,
-            "patient_id": patient_id,
-            "medical_record_id": record_id,
-            "visit_date": date.today().isoformat(),
-            "disease": medical_row["diagnosis"],
-            "herbs_prescribed": herbs_text,
-            "yoga_prescribed": yoga_text,
-            "diet_plan": diet_text,
-            "treatment_duration_weeks": treatment_plan.get("recommended_duration_weeks", ""),
-            "improvement_percentage": treatment_plan.get("predicted_improvement", ""),
-            "outcome": "Prescribed",
-        }
-
-        # 3. Treatment Feedback
-        ml_context = {
-            "disease": disease,
-            "symptoms": symptoms,
-            "severity": data.get("severity"),
-            "prakriti": data.get("prakriti"),
-            "vikriti": data.get("vikriti"),
-            "match_method": treatment_plan.get("match_method"),
-            "match_confidence": treatment_plan.get("match_confidence"),
-        }
-
-        feedback_row = {
-            "id": feedback_id,
-            "patient_id": patient_id,
-            "medical_record_id": record_id,
-            "ai_plan": json.dumps(treatment_plan),
-            "ml_context": json.dumps(ml_context),
-            "doctor_rating": data.get("rating", ""),
-            "doctor_comments": data.get("feedback", ""),
-            "is_retrained": "False",
-            "created_at": now,
-        }
-
         with _lock:
-            _append_csv(MEDICAL_RECORDS_CSV, medical_row, MEDICAL_RECORD_FIELDS)
+            # 1. Update or Create Medical Record
+            record_found = False
+            if record_id:
+                records = _read_csv(MEDICAL_RECORDS_CSV)
+                for r in records:
+                    if r["id"] == record_id:
+                        r["prescription"] = json.dumps(prescription_json)
+                        if doctor_notes:
+                            r["notes"] = r.get("notes", "") + f"\n\n[Treatment Phase]: {doctor_notes}"
+                        if disease:
+                            r["diagnosis"] = disease
+                        
+                        record_found = True
+                        disease = disease or r.get("diagnosis", "")
+                        break
+                
+                if record_found:
+                    _write_csv(MEDICAL_RECORDS_CSV, records, MEDICAL_RECORD_FIELDS)
+
+            if not record_found:
+                record_id = record_id or str(uuid.uuid4())
+                medical_row = {
+                    "id": record_id,
+                    "patient_id": patient_id,
+                    "visit_date": now,
+                    "diagnosis": disease or (treatment_plan.get("source_disease") or "Unknown"),
+                    "symptoms": symptoms,
+                    "prakriti": data.get("prakriti", ""),
+                    "vikriti": data.get("vikriti", ""),
+                    "severity": str(data.get("severity", 5)),
+                    "comorbidities": "",
+                    "notes": doctor_notes,
+                    "prescription": json.dumps(prescription_json),
+                }
+                _append_csv(MEDICAL_RECORDS_CSV, medical_row, MEDICAL_RECORD_FIELDS)
+
+            # 2. AYUSH Treatment
+            herbs_list = treatment_plan.get("herbs", [])
+            yoga_list = treatment_plan.get("yoga", [])
+            diet_list = treatment_plan.get("diet", [])
+
+            herbs_text = ", ".join(
+                h.get("name", "") if isinstance(h, dict) else str(h) for h in herbs_list
+            )
+            yoga_text = ", ".join(
+                y.get("practice", "") if isinstance(y, dict) else str(y) for y in yoga_list
+            )
+            diet_text = "; ".join(diet_list) if diet_list else ""
+
+            ayush_row = {
+                "id": treatment_id,
+                "patient_id": patient_id,
+                "medical_record_id": record_id,
+                "visit_date": date.today().isoformat(),
+                "disease": disease,
+                "herbs_prescribed": herbs_text,
+                "yoga_prescribed": yoga_text,
+                "diet_plan": diet_text,
+                "treatment_duration_weeks": treatment_plan.get("recommended_duration_weeks", ""),
+                "improvement_percentage": treatment_plan.get("predicted_improvement", ""),
+                "outcome": "Prescribed",
+            }
             _append_csv(AYUSH_TREATMENTS_CSV, ayush_row, AYUSH_TREATMENT_FIELDS)
+
+            # 3. Treatment Feedback
+            ml_context = {
+                "disease": disease,
+                "symptoms": symptoms,
+                "severity": data.get("severity"),
+                "prakriti": data.get("prakriti"),
+                "vikriti": data.get("vikriti"),
+                "match_method": treatment_plan.get("match_method"),
+                "match_confidence": treatment_plan.get("match_confidence"),
+            }
+
+            feedback_row = {
+                "id": feedback_id,
+                "patient_id": patient_id,
+                "medical_record_id": record_id,
+                "ai_plan": json.dumps(treatment_plan),
+                "ml_context": json.dumps(ml_context),
+                "doctor_rating": data.get("rating", ""),
+                "doctor_comments": data.get("feedback", ""),
+                "is_retrained": "False",
+                "created_at": now,
+            }
             _append_csv(TREATMENT_FEEDBACK_CSV, feedback_row, TREATMENT_FEEDBACK_FIELDS)
+            
             # Mark patient as diagnosed
             self._set_patient_diagnosed(patient_id)
 
-        print(f"✓ Prescription saved (CSV): patient={patient_id}, diagnosis={medical_row['diagnosis']}")
+        print(f"✓ Treatment saved (CSV): patient={patient_id}, diagnosis={disease}")
 
         return {
             "medical_record_id": record_id,
@@ -267,6 +333,14 @@ class CSVService:
         return feedback_row
 
     # ─── Diagnosis Queries ───────────────────────────────────────
+
+    def get_medical_record_by_id(self, record_id: str):
+        """Get a specific medical record by ID."""
+        records = _read_csv(MEDICAL_RECORDS_CSV)
+        for r in records:
+            if r["id"] == str(record_id):
+                return r
+        return None
 
     def get_patient_diagnoses(self, patient_id_str: str) -> list:
         """Get all diagnoses for a patient (medical records + AYUSH details)."""

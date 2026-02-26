@@ -7,17 +7,18 @@ interface VoiceInputButtonProps {
     onTranscript: (text: string) => void;
     onError?: (error: string) => void;
     onStateChange?: (isListening: boolean) => void;
+    onInterimTranscript?: (text: string) => void;  // NEW: live preview callback
     language?: string;
     isActive?: boolean;
 }
 
-export function VoiceInputButton({ onTranscript, onError, onStateChange, language = 'en-US', isActive = true }: VoiceInputButtonProps) {
+export function VoiceInputButton({ onTranscript, onError, onStateChange, onInterimTranscript, language = 'en-US', isActive = true }: VoiceInputButtonProps) {
     const [isListening, setIsListening] = useState(false);
     const [isSupported, setIsSupported] = useState(false);
     const [permissionState, setPermissionState] = useState<PermissionState | 'unknown'>('unknown');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recognitionRef = useRef<any>(null);
-    const transcriptRef = useRef<string>('');
+    const accumulatedTranscriptRef = useRef<string>(''); // Buffer for full session
     const isRecognitionActiveRef = useRef<boolean>(false);
 
     useEffect(() => {
@@ -27,8 +28,6 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange, languag
     }, [isListening, onStateChange]);
 
     useEffect(() => {
-        // Update language on the fly if recognition is inactive, 
-        // or just let the next startListening pick it up.
         if (recognitionRef.current) {
             recognitionRef.current.lang = language;
         }
@@ -51,21 +50,21 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange, languag
     // Use refs to keep latest callbacks without triggering re-effects
     const onTranscriptRef = useRef(onTranscript);
     const onErrorRef = useRef(onError);
+    const onInterimTranscriptRef = useRef(onInterimTranscript);
 
     useEffect(() => {
         onTranscriptRef.current = onTranscript;
         onErrorRef.current = onError;
-    }, [onTranscript, onError]);
+        onInterimTranscriptRef.current = onInterimTranscript;
+    }, [onTranscript, onError, onInterimTranscript]);
 
     useEffect(() => {
-        // Check if browser supports Speech Recognition
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
         if (SpeechRecognition) {
             setIsSupported(true);
 
-            // Initialize speech recognition
             const recognition = new SpeechRecognition();
             recognition.continuous = true;
             recognition.interimResults = true;
@@ -73,28 +72,30 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange, languag
 
             recognition.onstart = () => {
                 console.log('Speech recognition started');
+                accumulatedTranscriptRef.current = '';  // Reset buffer on new session
                 isRecognitionActiveRef.current = true;
                 setIsListening(true);
             };
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             recognition.onresult = (event: any) => {
-                let finalTranscript = '';
+                let interimTranscript = '';
 
                 for (let i = event.resultIndex; i < event.results.length; i++) {
                     const transcript = event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
-                        finalTranscript += transcript + ' ';
+                        // Accumulate final results — do NOT send yet
+                        accumulatedTranscriptRef.current += transcript + ' ';
+                    } else {
+                        // Build interim for live preview
+                        interimTranscript += transcript;
                     }
                 }
 
-                // Update the accumulated transcript
-                if (finalTranscript) {
-                    transcriptRef.current += finalTranscript;
-                    // Send immediately for better responsiveness
-                    if (onTranscriptRef.current) {
-                        onTranscriptRef.current(finalTranscript);
-                    }
+                // Live preview: show accumulated + current interim in input box
+                const liveText = accumulatedTranscriptRef.current + interimTranscript;
+                if (onInterimTranscriptRef.current && liveText.trim()) {
+                    onInterimTranscriptRef.current(liveText.trim());
                 }
             };
 
@@ -111,7 +112,7 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange, languag
                         setPermissionState('denied');
                         break;
                     case 'no-speech':
-                        return; // Ignore no-speech errors to keep listening
+                        return;
                     case 'network':
                         errorMessage = 'Network error. Check connection.';
                         break;
@@ -130,6 +131,13 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange, languag
                 console.log('Speech recognition ended');
                 isRecognitionActiveRef.current = false;
                 setIsListening(false);
+
+                // Only NOW send the complete accumulated transcript
+                const fullTranscript = accumulatedTranscriptRef.current.trim();
+                if (fullTranscript && onTranscriptRef.current) {
+                    onTranscriptRef.current(fullTranscript);
+                }
+                accumulatedTranscriptRef.current = '';
             };
 
             recognitionRef.current = recognition;
@@ -159,7 +167,7 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange, languag
     const requestMicrophoneAccess = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            stream.getTracks().forEach(track => track.stop()); // Close immediately
+            stream.getTracks().forEach(track => track.stop());
             return true;
         } catch (err) {
             console.error("Microphone access denied:", err);
@@ -169,7 +177,6 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange, languag
     };
 
     const startListening = async () => {
-        // Explicit permission check/request
         if (permissionState === 'denied') {
             if (onError) onError("Microphone permission is blocked. Please enable it in browser settings.");
             return;
@@ -181,8 +188,7 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange, languag
         }
 
         try {
-            transcriptRef.current = '';
-            // Ensure language is set before starting
+            accumulatedTranscriptRef.current = '';
             if (recognitionRef.current) {
                 recognitionRef.current.lang = language;
             }
@@ -196,6 +202,7 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange, languag
     const stopListening = () => {
         try {
             recognitionRef.current.stop();
+            // onend will fire and send the full transcript
         } catch (e) {
             console.error('Error stopping recognition:', e);
         }
@@ -203,7 +210,6 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange, languag
 
     const toggleListening = async () => {
         if (!recognitionRef.current) return;
-
         if (isListening) {
             stopListening();
         } else {
@@ -223,7 +229,7 @@ export function VoiceInputButton({ onTranscript, onError, onStateChange, languag
                     : 'bg-transparent text-muted-foreground hover:bg-primary/10 hover:text-primary'
                 }
             `}
-            title={isListening ? 'Stop recording' : 'Start voice input'}
+            title={isListening ? 'Stop recording — will send full transcript' : 'Start voice input'}
             type="button"
         >
             {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}

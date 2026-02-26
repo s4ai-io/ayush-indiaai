@@ -167,24 +167,32 @@ export default function DoctorDashboard() {
                         </div>
                     </div>
 
-                    {/* Search */}
-                    <div className="relative w-full md:w-72">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                        <input
-                            type="text"
-                            placeholder={activeTab === 'pending' ? 'Search name, mobile, ID…' : 'Search patient, disease, city…'}
-                            value={searchQuery}
-                            onChange={e => setSearchQuery(e.target.value)}
-                            className="w-full h-10 pl-9 pr-9 rounded-xl border border-input bg-card text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary shadow-sm transition-all"
-                        />
-                        {searchQuery && (
-                            <button
-                                onClick={() => setSearchQuery('')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                            >
-                                <X className="w-4 h-4" />
+                    {/* Search and New Consultation Action */}
+                    <div className="flex flex-col md:flex-row w-full md:w-auto gap-3 items-center">
+                        <div className="relative w-full md:w-72">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                            <input
+                                type="text"
+                                placeholder={activeTab === 'pending' ? 'Search name, mobile, ID…' : 'Search patient, disease, city…'}
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                className="w-full h-10 pl-9 pr-9 rounded-xl border border-input bg-card text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary shadow-sm transition-all"
+                            />
+                            {searchQuery && (
+                                <button
+                                    onClick={() => setSearchQuery('')}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
+                        <Link href="/consultation" className="w-full md:w-auto">
+                            <button className="w-full md:w-auto flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl shadow-sm transition-colors font-medium h-10">
+                                <Stethoscope className="w-4 h-4" />
+                                <span>New Consultation</span>
                             </button>
-                        )}
+                        </Link>
                     </div>
                 </div>
 
@@ -377,10 +385,10 @@ function PatientCard({ patient }: { patient: Patient }) {
                         <span className="block font-medium text-foreground/60">Registered</span>
                         {formatDate(patient.created_at)}
                     </div>
-                    <Link href={`/doctor/treatment/${patient.id}`} className="flex-1">
+                    <Link href={`/consultation?patientId=${patient.id}`} className="flex-1">
                         <button className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 active:scale-95 text-primary-foreground py-2.5 px-4 rounded-xl font-semibold text-sm transition-all shadow-sm hover:shadow-primary/20 hover:shadow-md">
-                            <FileText className="w-4 h-4" />
-                            Diagnose
+                            <Stethoscope className="w-4 h-4" />
+                            Consult
                         </button>
                     </Link>
                 </div>

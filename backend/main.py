@@ -295,21 +295,64 @@ async def get_disease_spread_prediction():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Register CopilotKit Agent Router
 
-from services.registration_agent import registration_agent_router
-app.include_router(registration_agent_router, prefix="/api/copilot/registration", tags=["Copilot Agent"])
 
-# --- Agents ---
+from services.consultation_agent import consultation_agent_router
+app.include_router(consultation_agent_router, prefix="/api/copilot/consultation", tags=["Copilot Agent"])
 
-from services.doctor_agent import doctor_agent_router
-app.include_router(doctor_agent_router, prefix="/api/copilot/doctor", tags=["Copilot Agent"])
+from utils.validators import RegistrationData, ConsultationData
 
-from services.treatment_agent import treatment_agent_router
-app.include_router(treatment_agent_router, prefix="/api/copilot/treatment", tags=["Copilot Agent"])
+@app.post("/api/consultations", tags=["Consultations"])
+async def create_consultation(data: ConsultationData):
+    """
+    Save a new consultation (visit) for a patient.
+    """
+    try:
+        visit_id = csv_service.create_consultation(data.patientId, data.assessment.model_dump())
+        return {
+            "status": "success",
+            "message": "Consultation saved successfully",
+            "visitId": visit_id
+        }
+    except Exception as e:
+        print(f"Error creating consultation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-from utils.validators import RegistrationData
 
+@app.get("/api/consultations/{visit_id}/treatment", tags=["Consultations"])
+async def get_consultation_context(visit_id: str):
+    """
+    Get the context (symptoms, diagnosis, notes) for a specific visit ID 
+    to populate the treatment generation page.
+    """
+    try:
+        record = csv_service.get_medical_record_by_id(visit_id)
+        if not record:
+            raise HTTPException(status_code=404, detail="Visit not found")
+            
+        patient_id = record.get("patient_id")
+        patient = csv_service.get_patient_by_id(patient_id)
+        
+        first_name = patient.get("first_name", "") if patient else "Unknown"
+        last_name = patient.get("last_name", "") if patient else ""
+        
+        return {
+            "patientId": patient_id,
+            "patientName": f"{first_name} {last_name}".strip(),
+            "patientMobile": patient.get("mobile", "Unknown") if patient else "Unknown",
+            "symptoms": record.get("symptoms", ""),
+            "diagnosis": record.get("diagnosis", ""),
+            "doctorNotes": record.get("notes", ""),
+            "prakriti": record.get("prakriti", ""),
+            "vikriti": record.get("vikriti", ""),
+            "severity": record.get("severity", ""),
+            "comorbidities": record.get("comorbidities", "")
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error fetching visit context: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 @app.post("/api/patients", tags=["Patient Management"])
 async def create_patient(data: RegistrationData):
     """
@@ -330,6 +373,21 @@ async def create_patient(data: RegistrationData):
         }
     except Exception as e:
         print(f"Error creating patient: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/patients/search", tags=["Patient Management"])
+async def search_patients(q: str):
+    """
+    Search patients by name or mobile number.
+    """
+    try:
+        if not q or len(q) < 3:
+            return []
+        results = csv_service.search_patients(query=q)
+        return results
+    except Exception as e:
+        print(f"Error searching patients: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -379,6 +437,30 @@ async def get_patient_diagnoses(patient_id: str):
         return diagnoses
     except Exception as e:
         print(f"Error fetching diagnoses: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/patients/{patient_id}/history", tags=["Patient Management"])
+async def get_patient_history(patient_id: str):
+    """
+    Get full visit history for a patient.
+    For now, this delegates to the existing `get_patient_diagnoses` which fetches Medical Records + Treatments.
+    """
+    try:
+        patient = csv_service.get_patient_by_id(patient_id)
+        if not patient:
+            raise HTTPException(status_code=404, detail="Patient not found")
+            
+        history = csv_service.get_patient_diagnoses(patient_id)
+        return {
+            "patientId": patient_id,
+            "patientName": f'{getattr(patient, "first_name", "")} {getattr(patient, "last_name", "")}'.strip(),
+            "history": history
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error fetching patient history: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -84,6 +84,7 @@ class TreatmentRecommendation(BaseModel):
 class PrescriptionRequest(BaseModel):
     """Full prescription payload when doctor clicks 'Save & Prescribe'"""
     patientId: str = Field(..., description="Patient UUID")
+    visitId: Optional[str] = Field(None, description="Existing visit/medical record ID")
     disease: Optional[str] = Field("", description="Diagnosed disease")
     symptoms: Optional[str] = Field("", description="Patient symptoms text")
     severity: int = Field(5, ge=1, le=10, description="Severity 1-10")
@@ -191,6 +192,22 @@ class OtherInfo(BaseModel):
         if v:
             v = v.strip().upper()
         return v
+
+class ClinicalAssessment(BaseModel):
+    symptoms: str = ""
+    diagnosis: str = ""
+    prakriti: Optional[str] = None
+    vikriti: Optional[str] = None
+    severity: Optional[int] = 5
+    comorbidities: Optional[str] = None
+    notes: Optional[str] = ""
+
+class ConsultationData(BaseModel):
+    visitId: Optional[str] = None
+    patientId: str
+    assessment: ClinicalAssessment
+    timestamp: Optional[str] = None
+
 
 class RegistrationData(BaseModel):
     basicInfo: BasicInfo = BasicInfo()

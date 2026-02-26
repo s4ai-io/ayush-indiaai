@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, TrendingUp, Activity, HeartPulse, UserPlus, Stethoscope, Menu, X } from "lucide-react";
+import { LayoutDashboard, TrendingUp, Activity, HeartPulse, UserPlus, Stethoscope, Menu, X, Users } from "lucide-react";
 
 export function AppSidebar() {
     const pathname = usePathname();
@@ -72,6 +72,14 @@ export function AppSidebar() {
                         >
                             <UserPlus className="h-5 w-5" />
                             <span>New Registration</span>
+                        </Link>
+                        <Link
+                            href="/patients"
+                            onClick={() => setIsExpanded(false)}
+                            className={cn("flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-colors text-sm font-medium", pathname === "/patients" ? "bg-white/20 text-white shadow-sm" : "text-white/80 hover:bg-white/10 hover:text-white")}
+                        >
+                            <Users className="h-5 w-5" />
+                            <span>Patient Directory</span>
                         </Link>
                     </div>
 
