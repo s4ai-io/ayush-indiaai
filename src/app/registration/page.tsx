@@ -83,7 +83,7 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
     const [isOtherInfoExpanded, setIsOtherInfoExpanded] = useState(true);
     const [voiceError, setVoiceError] = useState<string | null>(null);
     const [isListening, setIsListening] = useState(false);
-    const [selectedLanguage, setSelectedLanguage] = useState("en-IN");
+    const [selectedLanguage, setSelectedLanguage] = useState("hi-IN");
     const [chatInputNode, setChatInputNode] = useState<Element | null>(null);
     const [showNewChatConfirm, setShowNewChatConfirm] = useState(false);
     const router = useRouter();
@@ -524,9 +524,7 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
                         <VoiceInputButton
                             onTranscript={handleVoiceTranscript}
                             onError={(err) => setVoiceError(err)}
-                            onStateChange={setIsListening}
                             language={selectedLanguage}
-                            isActive={isChatOpen}
                         />
                         {isListening && (
                             <span className="absolute top-0 right-0 flex h-2 w-2 -mt-0.5 -mr-0.5">

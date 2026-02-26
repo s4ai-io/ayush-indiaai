@@ -41,7 +41,7 @@ interface DiagnosisData {
 }
 
 function DiagnosisForm({ patient }: { patient: Patient }) {
-    const [selectedLanguage, setSelectedLanguage] = useState("en-US");
+    const [selectedLanguage, setSelectedLanguage] = useState("hi-IN");
     const [isListening, setIsListening] = useState(false);
     const [voiceError, setVoiceError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
@@ -279,7 +279,6 @@ function DiagnosisForm({ patient }: { patient: Patient }) {
                     <VoiceInputButton
                         onTranscript={handleVoiceTranscript}
                         onError={(err) => setVoiceError(err)}
-                        onStateChange={setIsListening}
                         language={selectedLanguage}
                     />
                 </div>

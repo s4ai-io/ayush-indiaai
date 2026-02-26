@@ -35,7 +35,7 @@ function ConsultationForm({ isChatOpen }: { isChatOpen: boolean }) {
     const [searchResult, setSearchResult] = useState<PatientRegistrationData | null>(null);
 
     // --- State: Copilot Ambient Listening ---
-    const [selectedLanguage, setSelectedLanguage] = useState("en-US");
+    const [selectedLanguage, setSelectedLanguage] = useState("hi-IN");
     const [isListening, setIsListening] = useState(false);
     const [voiceError, setVoiceError] = useState<string | null>(null);
     const [proposedData, setProposedData] = useState<any>(null);
@@ -817,11 +817,8 @@ function ConsultationForm({ isChatOpen }: { isChatOpen: boolean }) {
                     <div className="absolute bottom-1.5 right-12 z-[1000] pointer-events-auto">
                         <VoiceInputButton
                             onTranscript={handleVoiceTranscript}
-                            onInterimTranscript={handleInterimTranscript}
                             onError={(err) => setVoiceError(err)}
-                            onStateChange={setIsListening}
                             language={selectedLanguage}
-                            isActive={isChatOpen}
                         />
                         {isListening && (
                             <span className="absolute top-0 right-0 flex h-2 w-2 -mt-0.5 -mr-0.5">
