@@ -27,7 +27,7 @@ export default function LandingPage() {
                         <p className="text-sm text-slate-500 min-h-[60px]">
                             Register new patients using voice-enabled forms and manage the daily patient queue.
                         </p>
-                        <Link href="/consultation" className="block">
+                        <Link href="/registration" className="block">
                             <Button className="w-full bg-blue-600 hover:bg-blue-700">
                                 Enter Reception
                                 <ArrowRight className="ml-2 h-4 w-4" />

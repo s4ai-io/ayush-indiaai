@@ -158,7 +158,7 @@ export default function PatientsDirectoryPage() {
                                 className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             />
                         </div>
-                        <Link href="/consultation" className="w-full sm:w-auto">
+                        <Link href="/registration" className="w-full sm:w-auto">
                             <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm">
                                 <UserPlus className="w-4 h-4 mr-2" /> Register New Patient
                             </Button>

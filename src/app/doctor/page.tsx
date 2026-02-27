@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { getRegistrations } from '../actions/getRegistrations';
 import {
     Search, User, FileText, Activity, MapPin, Briefcase,
@@ -10,6 +11,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { API_BASE } from '@/lib/config';
+
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -186,7 +188,7 @@ export default function DoctorDashboard() {
                                 </button>
                             )}
                         </div>
-                        <Link href="/consultation" className="w-full md:w-auto">
+                        <Link href="/registration" className="w-full md:w-auto">
                             <button className="w-full md:w-auto flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl shadow-sm transition-colors font-medium h-10">
                                 <Stethoscope className="w-4 h-4" />
                                 <span>New Consultation</span>
@@ -305,8 +307,35 @@ function TabButton({ active, onClick, icon, label, count, activeColor }: {
 }
 
 function PatientCard({ patient }: { patient: Patient }) {
+    const router = useRouter();
+    const [starting, setStarting] = useState(false);
     const location = formatLocation(patient.city, patient.state);
     const hasMobile = patient.mobile && patient.mobile.trim().length > 0;
+
+    const handleConsult = async () => {
+        setStarting(true);
+        try {
+            const res = await fetch(`${API_BASE}/api/consultations`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    patientId: patient.id,
+                    assessment: {
+                        symptoms: '', diagnosis: '', notes: '',
+                        prakriti: '', vikriti: '', severity: 5, comorbidities: ''
+                    }
+                })
+            });
+            if (!res.ok) throw new Error('Failed to create visit');
+            const data = await res.json();
+            router.push(`/doctor/treatment/${data.visitId}`);
+        } catch (err) {
+            console.error('Failed to start consultation:', err);
+            alert('Could not start consultation. Please try again.');
+        } finally {
+            setStarting(false);
+        }
+    };
 
     // Gender accent color
     const accentClass = patient.gender === 'Female'
@@ -384,17 +413,20 @@ function PatientCard({ patient }: { patient: Patient }) {
                         <span className="block font-medium text-foreground/60">Registered</span>
                         {formatDate(patient.created_at)}
                     </div>
-                    <Link href={`/consultation?patientId=${patient.id}`} className="flex-1">
-                        <button className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 active:scale-95 text-primary-foreground py-2.5 px-4 rounded-xl font-semibold text-sm transition-all shadow-sm hover:shadow-primary/20 hover:shadow-md">
-                            <Stethoscope className="w-4 h-4" />
-                            Consult
-                        </button>
-                    </Link>
+                    <button
+                        onClick={handleConsult}
+                        disabled={starting}
+                        className="flex-1 flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 active:scale-95 text-primary-foreground py-2.5 px-4 rounded-xl font-semibold text-sm transition-all shadow-sm hover:shadow-primary/20 hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                        {starting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Stethoscope className="w-4 h-4" />}
+                        {starting ? 'Starting...' : 'Consult'}
+                    </button>
                 </div>
             </div>
         </div>
     );
 }
+
 
 function CompletedCard({ d, isExpanded, isLoadingDetails, details, onToggle }: {
     d: CompletedDiagnosis;

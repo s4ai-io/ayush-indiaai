@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, TrendingUp, Activity, HeartPulse, UserPlus, Stethoscope, Menu, X, Users } from "lucide-react";
+import { LayoutDashboard, Activity, UserPlus, Stethoscope, Menu, X, Users } from "lucide-react";
 
 export function AppSidebar() {
     const pathname = usePathname();
@@ -96,7 +96,7 @@ export function AppSidebar() {
                         </Link>
                     </div>
 
-                    {/* Intelligence */}
+                    {/* Public Health */}
                     <div className="space-y-2">
                         <h2 className="px-4 text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">Public Health</h2>
                         <Link
@@ -106,22 +106,6 @@ export function AppSidebar() {
                         >
                             <Activity className="h-5 w-5" />
                             <span>Outbreak Monitor</span>
-                        </Link>
-                        <Link
-                            href="/trends"
-                            onClick={() => setIsExpanded(false)}
-                            className={cn("flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-colors text-sm font-medium", pathname === "/trends" ? "bg-white/20 text-white shadow-sm" : "text-white/80 hover:bg-white/10 hover:text-white")}
-                        >
-                            <TrendingUp className="h-5 w-5" />
-                            <span>Disease Trends</span>
-                        </Link>
-                        <Link
-                            href="/forecasting"
-                            onClick={() => setIsExpanded(false)}
-                            className={cn("flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-colors text-sm font-medium", pathname === "/forecasting" ? "bg-white/20 text-white shadow-sm" : "text-white/80 hover:bg-white/10 hover:text-white")}
-                        >
-                            <LayoutDashboard className="h-5 w-5" />
-                            <span>Risk Forecast</span>
                         </Link>
                     </div>
 
