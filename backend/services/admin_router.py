@@ -52,23 +52,40 @@ async def evaluate_accuracy():
                 # 1. Match against medical_records.csv by symptoms (using fuzzy matching)
                 matched_row = pd.DataFrame()
                 if not df_medical.empty and 'symptoms' in df_medical.columns:
-                    import difflib
+                    import re
                     
                     df_medical['symptoms'] = df_medical['symptoms'].fillna('')
                     
                     best_match_idx = -1
-                    best_ratio = 0.0
+                    best_score = 0.0
+                    
+                    # Extract words > 3 chars from ground truth symptoms
+                    gt_words = {w for w in re.findall(r'\w+', symptoms_str.lower()) if len(w) > 3}
                     
                     for idx, row in df_medical.iterrows():
-                        record_symptoms = str(row['symptoms'])
-                        ratio = difflib.SequenceMatcher(None, symptoms_str.lower(), record_symptoms.lower()).ratio()
-                        if ratio > best_ratio:
-                            best_ratio = ratio
+                        record_symptoms = str(row['symptoms']).lower()
+                        record_words = {w for w in re.findall(r'\w+', record_symptoms) if len(w) > 3}
+                        
+                        # Calculate overlap score
+                        if not gt_words or not record_words:
+                            continue
+                            
+                        # Find intersection
+                        intersection = gt_words.intersection(record_words)
+                        
+                        # Use Sørensen–Dice coefficient or simple overlap ratio (intersection / min_len)
+                        # We use overlap ratio over the smaller set to allow subset matching
+                        min_len = min(len(gt_words), len(record_words))
+                        score = len(intersection) / min_len if min_len > 0 else 0
+                        
+                        if score > best_score:
+                            best_score = score
                             best_match_idx = idx
                             
-                    # Threshold for a match (can be adjusted)
-                    if best_ratio > 0.6 and best_match_idx != -1:
+                    # Threshold for a match (e.g. at least 40% of the words in the smaller set must overlap)
+                    if best_score >= 0.4 and best_match_idx != -1:
                         matched_row = df_medical.iloc[[best_match_idx]]
+                        best_ratio = best_score
 
                 if not matched_row.empty:
                     # 2. Extract diagnosis as predicted_disease
