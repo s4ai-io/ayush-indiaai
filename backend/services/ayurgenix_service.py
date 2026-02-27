@@ -10,6 +10,10 @@ import os
 import re
 import pandas as pd
 import numpy as np
+import difflib
+import json
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 # Base directory
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -23,6 +27,9 @@ class AyurGenixService:
     def __init__(self):
         self.df = None
         self.initialized = False
+        self.vectorizer = TfidfVectorizer(analyzer='char', ngram_range=(2, 3), lowercase=True)
+        self.tfidf_matrix = None
+        self.all_diseases = []
 
     # ------------------------------------------------------------------
     # Initialization
@@ -59,6 +66,11 @@ class AyurGenixService:
             self.df['search_namc'] = self.df['NAMC_term'].str.lower().str.strip()
             self.df['search_disease'] = self.df['Disease'].str.lower().str.strip()
 
+            # Initialize TF-IDF for fuzzy matching
+            self.all_diseases = self.get_disease_list()
+            if self.all_diseases:
+                self.tfidf_matrix = self.vectorizer.fit_transform(self.all_diseases)
+
             self.initialized = True
             print(f"✓ AyurGenix Service loaded: {len(self.df)} codified diseases")
             return True
@@ -81,13 +93,44 @@ class AyurGenixService:
 
     def get_disease_list(self) -> list:
         """Return all disease names from the dataset (original casing)."""
-        if not self.initialized or self.df is None:
+        if self.df is None:
             return []
         
         # Prefer English name, fallback to Disease
         diseases = self.df['Name English'].tolist() + self.df['Disease'].tolist()
         # Filter out empty strings and return unique sorted list
         return sorted(list(set([d.strip() for d in diseases if d and isinstance(d, str) and d.strip()])))
+
+    def get_suggestions(self, query: str, limit: int = 3) -> list:
+        """
+        Return fuzzy-matched suggestions for a disease name.
+        Uses TF-IDF + Cosine Similarity for robust matching.
+        """
+        if not self.initialized or self.tfidf_matrix is None or not self.all_diseases:
+            return []
+        
+        query_lower = query.strip().lower()
+        if not query_lower:
+            return []
+            
+        # Transform query and compute similarity
+        query_vec = self.vectorizer.transform([query])
+        similarities = cosine_similarity(query_vec, self.tfidf_matrix).flatten()
+        
+        # Get top-N indices
+        top_indices = similarities.argsort()[-limit:][::-1]
+        
+        # Filter by a small threshold to avoid completely irrelevant matches
+        matches = []
+        for idx in top_indices:
+            if similarities[idx] > 0.1: # Threshold for basic relevance
+                matches.append(self.all_diseases[idx])
+        
+        # Fallback to difflib if TF-IDF is too sparse or fails
+        if not matches:
+             matches = difflib.get_close_matches(query, self.all_diseases, n=limit, cutoff=0.3)
+             
+        return matches
 
     # ------------------------------------------------------------------
     # Core Recommendation Logic

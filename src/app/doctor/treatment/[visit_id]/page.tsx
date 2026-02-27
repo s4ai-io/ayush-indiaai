@@ -131,6 +131,8 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
     const [newDietItem, setNewDietItem] = useState('');
     const [addingLifestyle, setAddingLifestyle] = useState(false);
     const [newLifestyleItem, setNewLifestyleItem] = useState('');
+    const [suggestedDiseases, setSuggestedDiseases] = useState<string[]>([]);
+    const [selectedSuggestion, setSelectedSuggestion] = useState<string | null>(null);
 
     // Voice / CopilotKit portal
     const [selectedLanguage, setSelectedLanguage] = useState('hi-IN');
@@ -276,6 +278,47 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
 
     const handleDiscardProposed = () => {
         setProposedData(null);
+        setSuggestedDiseases([]);
+        setSelectedSuggestion(null);
+    };
+
+    useEffect(() => {
+        const fetchSuggestions = async () => {
+            if (proposedData?.disease) {
+                try {
+                    const res = await fetch(`${API_URL}/api/diseases/suggestions?q=${encodeURIComponent(proposedData.disease)}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        setSuggestedDiseases(data.suggestions || []);
+                    }
+                } catch (err) {
+                    console.error("Error fetching suggestions:", err);
+                }
+            } else {
+                setSuggestedDiseases([]);
+            }
+        };
+        fetchSuggestions();
+    }, [proposedData?.disease, API_URL]);
+
+    const handleProceedWithUpdated = () => {
+        if (!proposedData) return;
+        const finalDisease = selectedSuggestion || proposedData.disease;
+
+        setDisease(finalDisease);
+        if (proposedData.symptoms) setSymptoms(proposedData.symptoms);
+        if (proposedData.comorbidity) setMedicalHistory(proposedData.comorbidity);
+        if (proposedData.doshas) setVikriti(proposedData.doshas);
+        if (proposedData.prakriti) setPrakriti(proposedData.prakriti);
+
+        if (proposedData.herbs) setDoctorHerbs(proposedData.herbs.split(',').map((h: string) => h.trim()).filter(Boolean));
+        if (proposedData.yoga) setDoctorYoga(proposedData.yoga.split(',').map((y: string) => y.trim()).filter(Boolean));
+        if (proposedData.diet) setDoctorDiet(proposedData.diet.split(',').map((d: string) => d.trim()).filter(Boolean));
+        if (proposedData.lifestyle) setDoctorLifestyle(proposedData.lifestyle.split(',').map((l: string) => l.trim()).filter(Boolean));
+
+        setProposedData(null);
+        setSuggestedDiseases([]);
+        setSelectedSuggestion(null);
     };
 
     useCopilotAction({
@@ -485,19 +528,52 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                         {proposedData.herbs && <li><strong>Herbs:</strong> {proposedData.herbs}</li>}
                                         {proposedData.yoga && <li><strong>Yoga:</strong> {proposedData.yoga}</li>}
                                         {proposedData.diet && <li><strong>Diet:</strong> {proposedData.diet}</li>}
+                                        {proposedData.diet && <li><strong>Diet:</strong> {proposedData.diet}</li>}
                                         {proposedData.lifestyle && <li><strong>Lifestyle:</strong> {proposedData.lifestyle}</li>}
                                     </ul>
                                 </div>
                             </div>
+
+                            {suggestedDiseases.length > 0 && (
+                                <div className="mb-6 animate-in fade-in slide-in-from-left-4 duration-500">
+                                    <label className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-2 block flex items-center gap-1.5 font-sans">
+                                        <Sparkles className="w-3.5 h-3.5" /> Standardized Disease Matches (Select One)
+                                    </label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {suggestedDiseases.map((sug) => (
+                                            <button
+                                                key={sug}
+                                                onClick={() => setSelectedSuggestion(sug === selectedSuggestion ? null : sug)}
+                                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all border-2 ${selectedSuggestion === sug
+                                                        ? "bg-amber-600 border-amber-700 text-white shadow-md scale-105"
+                                                        : "bg-white border-amber-200 text-amber-700 hover:border-amber-400 hover:bg-amber-50"
+                                                    }`}
+                                            >
+                                                {sug}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="flex gap-4">
                                 <Button
                                     type="button"
                                     variant="default"
                                     onClick={handleAcceptProposed}
-                                    className="bg-amber-600 hover:bg-amber-700 text-white"
+                                    className="bg-amber-600 hover:bg-amber-700 text-white shadow-sm font-semibold"
                                 >
                                     <CheckCircle className="w-4 h-4 mr-2" />
-                                    Accept & Fill Form
+                                    Accept Raw Info
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    onClick={handleProceedWithUpdated}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-md font-bold px-6 border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 transition-all"
+                                >
+                                    <RefreshCw className="w-4 h-4 mr-2" />
+                                    Proceed with Updated Disease
                                 </Button>
                                 <Button
                                     type="button"

@@ -125,36 +125,36 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
         description: "Extract user details from the conversation and propose them to be filled in the registration form.",
         parameters: [
             {
-                name: "contactInfo", type: "object",
+                name: "contactInfo", type: "object", required: false,
                 attributes: [
-                    { name: "mobileNumber", type: "string", description: "10-digit mobile phone number. Extract ONLY digits, ignore spaces, hyphens, +91." },
-                    { name: "address", type: "string", description: "Residential address" },
-                    { name: "city", type: "string", description: "Must exactly match: New Delhi, Mumbai, Bangalore, Ahmedabad, Lucknow" },
-                    { name: "state", type: "string", description: "Must exactly match: Delhi, Maharashtra, Karnataka, Gujarat, Uttar Pradesh" },
-                    { name: "pincode", type: "string", description: "6-digit postal pincode" },
+                    { name: "mobileNumber", type: "string", description: "10-digit mobile phone number. Extract ONLY digits, ignore spaces, hyphens, +91.", required: false },
+                    { name: "address", type: "string", description: "Residential address", required: false },
+                    { name: "city", type: "string", description: "Must exactly match: New Delhi, Mumbai, Bangalore, Ahmedabad, Lucknow", required: false },
+                    { name: "state", type: "string", description: "Must exactly match: Delhi, Maharashtra, Karnataka, Gujarat, Uttar Pradesh", required: false },
+                    { name: "pincode", type: "string", description: "6-digit postal pincode", required: false },
                 ],
             },
             {
-                name: "basicInfo", type: "object",
+                name: "basicInfo", type: "object", required: false,
                 attributes: [
-                    { name: "firstName", type: "string" },
-                    { name: "lastName", type: "string" },
-                    { name: "gender", type: "string", description: "Male, Female, or Transgender" },
-                    { name: "age", type: "string" },
-                    { name: "maritalStatus", type: "string", description: "Must exactly match: Married, Unmarried, Divorcee, Widow" },
+                    { name: "firstName", type: "string", required: false },
+                    { name: "lastName", type: "string", required: false },
+                    { name: "gender", type: "string", description: "Male, Female, or Transgender", required: false },
+                    { name: "age", type: "string", required: false },
+                    { name: "maritalStatus", type: "string", description: "Must exactly match: Married, Unmarried, Divorcee, Widow", required: false },
                 ],
             },
             {
-                name: "otherInfo", type: "object",
+                name: "otherInfo", type: "object", required: false,
                 attributes: [
-                    { name: "occupation", type: "string" },
-                    { name: "bloodGroup", type: "string", description: "Must exactly match: A+, A-, B+, B-, O+, O-, AB+, AB-" },
-                    { name: "idType", type: "string", description: "Must exactly match: Aadhar, PAN Card, Voter ID" },
-                    { name: "idNumber", type: "string" },
+                    { name: "occupation", type: "string", required: false },
+                    { name: "bloodGroup", type: "string", description: "Must exactly match: A+, A-, B+, B-, O+, O-, AB+, AB-", required: false },
+                    { name: "idType", type: "string", description: "Must exactly match: Aadhar, PAN Card, Voter ID", required: false },
+                    { name: "idNumber", type: "string", required: false },
                 ],
             },
         ],
-        handler: async (args: Partial<RegistrationData>) => {
+        handler: async (args: any) => {
             setProposedData((prev: any) => {
                 const mergeObj = (existing: any, incoming: any) => {
                     if (!incoming) return existing || undefined;

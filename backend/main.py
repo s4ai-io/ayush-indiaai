@@ -109,6 +109,24 @@ async def get_disease_list(q: str = None):
     return {"diseases": diseases}
 
 
+@app.get("/api/diseases/suggestions", tags=["Treatment Recommendations"])
+async def get_disease_suggestions(q: str = None, limit: int = 3):
+    """
+    Get fuzzy-matched suggestions for a disease name.
+    
+    Args:
+        q: The disease name to find matches for
+        limit: Max number of suggestions (default 3)
+        
+    Returns:
+        List of suggested disease name strings
+    """
+    if not q:
+        return {"suggestions": []}
+    suggestions = ayurgenix_service.get_suggestions(q, limit=limit)
+    return {"suggestions": suggestions}
+
+
 @app.post("/api/recommend", response_model=TreatmentRecommendation, tags=["Treatment Recommendations"])
 async def get_recommendation(patient: PatientProfile):
     """

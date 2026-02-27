@@ -80,11 +80,11 @@ function ConsultationForm({ isChatOpen }: { isChatOpen: boolean }) {
                 name: "basicInfo", type: "object", required: false,
                 description: "Patient's basic personal information extracted from the conversation",
                 attributes: [
-                    { name: "firstName", type: "string", description: "Patient's first name" },
-                    { name: "lastName", type: "string", description: "Patient's last name or surname" },
-                    { name: "gender", type: "string", description: "Must be exactly: 'Male', 'Female', or 'Transgender'" },
-                    { name: "age", type: "string", description: "Patient's age in years as a string (e.g. '34')" },
-                    // { name: "maritalStatus", type: "string", description: "Must be exactly: 'Married', 'Unmarried', 'Divorcee', or 'Widow'" },
+                    { name: "firstName", type: "string", description: "Patient's first name", required: false },
+                    { name: "lastName", type: "string", description: "Patient's last name or surname", required: false },
+                    { name: "gender", type: "string", description: "Must be exactly: 'Male', 'Female', or 'Transgender'", required: false },
+                    { name: "age", type: "string", description: "Patient's age in years as a string (e.g. '34')", required: false },
+                    // { name: "maritalStatus", type: "string", description: "Must be exactly: 'Married', 'Unmarried', 'Divorcee', or 'Widow'", required: false },
                 ],
             },
             /*
@@ -92,21 +92,21 @@ function ConsultationForm({ isChatOpen }: { isChatOpen: boolean }) {
                 name: "contactInfo", type: "object", required: false,
                 description: "Patient's contact and address details extracted from the conversation",
                 attributes: [
-                    { name: "mobile", type: "string", description: "10-digit mobile number. Extract ONLY digits, strip spaces, hyphens, and +91 country code" },
-                    { name: "address", type: "string", description: "Full street/residential address" },
-                    { name: "city", type: "string", description: "City name (e.g. Surat, Mumbai, Ahmedabad)" },
-                    { name: "state", type: "string", description: "Indian state name (e.g. Gujarat, Maharashtra)" },
-                    { name: "pincode", type: "string", description: "6-digit Indian postal pincode" },
+                    { name: "mobile", type: "string", description: "10-digit mobile number. Extract ONLY digits, strip spaces, hyphens, and +91 country code", required: false },
+                    { name: "address", type: "string", description: "Full street/residential address", required: false },
+                    { name: "city", type: "string", description: "City name (e.g. Surat, Mumbai, Ahmedabad)", required: false },
+                    { name: "state", type: "string", description: "Indian state name (e.g. Gujarat, Maharashtra)", required: false },
+                    { name: "pincode", type: "string", description: "6-digit Indian postal pincode", required: false },
                 ],
             },
             {
                 name: "otherInfo", type: "object", required: false,
                 description: "Other personal information like occupation and ID details",
                 attributes: [
-                    { name: "occupation", type: "string", description: "Patient's profession or job (e.g. Software Engineer, Farmer)" },
-                    { name: "bloodGroup", type: "string", description: "Must be exactly one of: A+, A-, B+, B-, O+, O-, AB+, AB-" },
-                    { name: "idType", type: "string", description: "Must be exactly: 'Aadhar', 'PAN Card', or 'Voter ID'" },
-                    { name: "idNumber", type: "string", description: "The ID document number" },
+                    { name: "occupation", type: "string", description: "Patient's profession or job (e.g. Software Engineer, Farmer)", required: false },
+                    { name: "bloodGroup", type: "string", description: "Must be exactly one of: A+, A-, B+, B-, O+, O-, AB+, AB-", required: false },
+                    { name: "idType", type: "string", description: "Must be exactly: 'Aadhar', 'PAN Card', or 'Voter ID'", required: false },
+                    { name: "idNumber", type: "string", description: "The ID document number", required: false },
                 ],
             },
             */
@@ -114,17 +114,17 @@ function ConsultationForm({ isChatOpen }: { isChatOpen: boolean }) {
                 name: "assessment", type: "object", required: false,
                 description: "Clinical assessment and Ayurvedic evaluation from the doctor",
                 attributes: [
-                    { name: "symptoms", type: "string", description: "Patient's presenting complaints, symptoms and duration" },
-                    { name: "diagnosis", type: "string", description: "Doctor's provisional clinical diagnosis" },
-                    { name: "notes", type: "string", description: "Any additional clinical observations by the doctor" },
-                    { name: "prakriti", type: "string", description: "Ayurvedic constitutional type. One of: Vata, Pitta, Kapha, Vata-Pitta, Pitta-Kapha, Vata-Kapha, Tridosha" },
-                    { name: "vikriti", type: "string", description: "Current doshic imbalance. One of: Vata, Pitta, Kapha, Vata-Pitta, Pitta-Kapha, Vata-Kapha" },
-                    { name: "severity", type: "number", description: "Severity score from 1 (mild) to 10 (severe)" },
-                    { name: "comorbidities", type: "string", description: "Any existing conditions or comorbidities the patient has" },
+                    { name: "symptoms", type: "string", description: "Patient's presenting complaints, symptoms and duration", required: false },
+                    { name: "diagnosis", type: "string", description: "Doctor's provisional clinical diagnosis", required: false },
+                    { name: "notes", type: "string", description: "Any additional clinical observations by the doctor", required: false },
+                    { name: "prakriti", type: "string", description: "Ayurvedic constitutional type. One of: Vata, Pitta, Kapha, Vata-Pitta, Pitta-Kapha, Vata-Kapha, Tridosha", required: false },
+                    { name: "vikriti", type: "string", description: "Current doshic imbalance. One of: Vata, Pitta, Kapha, Vata-Pitta, Pitta-Kapha, Vata-Kapha", required: false },
+                    { name: "severity", type: "number", description: "Severity score from 1 (mild) to 10 (severe)", required: false },
+                    { name: "comorbidities", type: "string", description: "Any existing conditions or comorbidities the patient has", required: false },
                 ],
             },
         ],
-        handler: async (args) => {
+        handler: async (args: any) => {
             setProposedData((prev: any) => {
                 // Deep merge: new fields WIN over — but empty/null fields do NOT clear existing ones
                 const mergeObj = (existing: any, incoming: any) => {
