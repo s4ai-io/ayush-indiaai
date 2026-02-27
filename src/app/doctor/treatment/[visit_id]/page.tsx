@@ -391,7 +391,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                 body: JSON.stringify({
                     patientId: visitCtx?.patientId || '',
                     visitId,
-                    disease, symptoms, prakriti, vikriti,
+                    disease, symptoms, prakriti, vikriti, comorbidities: medicalHistory,
                     treatmentPlan,
                     doctorNotes,
                     rating,

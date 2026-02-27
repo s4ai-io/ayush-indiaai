@@ -86,6 +86,7 @@ class PrescriptionRequest(BaseModel):
     visitId: Optional[str] = Field(None, description="Existing visit/medical record ID")
     disease: Optional[str] = Field("", description="Diagnosed disease")
     symptoms: Optional[str] = Field("", description="Patient symptoms text")
+    comorbidities: Optional[str] = Field("", description="Patient comorbidities/medical history")
     prakriti: str = Field("Vata", description="Patient prakriti")
     vikriti: str = Field("Vata", description="Patient vikriti")
     treatmentPlan: Optional[dict] = Field(None, description="Full AI treatment plan JSON")

@@ -124,6 +124,19 @@ export function AppSidebar() {
                             <span>Risk Forecast</span>
                         </Link>
                     </div>
+
+                    {/* Admin */}
+                    <div className="space-y-2">
+                        <h2 className="px-4 text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">Admin</h2>
+                        <Link
+                            href="/admin/accuracy"
+                            onClick={() => setIsExpanded(false)}
+                            className={cn("flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-colors text-sm font-medium", pathname === "/admin/accuracy" ? "bg-white/20 text-white shadow-sm" : "text-white/80 hover:bg-white/10 hover:text-white")}
+                        >
+                            <LayoutDashboard className="h-5 w-5" />
+                            <span>Accuracy Evaluator</span>
+                        </Link>
+                    </div>
                 </nav>
 
                 {/* Footer */}

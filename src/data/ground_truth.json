@@ -1,0 +1,166 @@
+[
+  {
+    "Disease": "Asthma / Chronic Cough (Kapha Respiratory Disorder)",
+    "Symptoms": [
+      "Chest heaviness",
+      "Excess mucus production",
+      "Breathlessness at night",
+      "Difficulty breathing"
+    ],
+    "Comorbidity": [
+      "Kapha accumulation in lungs",
+      "Obstructed airways"
+    ],
+    "Doshas": ["Kapha (increased)", "Vata (obstructed)"],
+    "Prakriti": "Kapha dominant"
+  },
+  {
+    "Disease": "Acne with Burning Sensation (Pitta Skin Disorder)",
+    "Symptoms": [
+      "Red pimples",
+      "Burning sensation on face",
+      "Redness in eyes",
+      "Body warmth"
+    ],
+    "Comorbidity": [
+      "Impure blood (Rakta dushti)",
+      "Excess body heat"
+    ],
+    "Doshas": ["Pitta (aggravated)"],
+    "Prakriti": "Pitta dominant"
+  },
+  {
+    "Disease": "Insomnia with Anxiety",
+    "Symptoms": [
+      "Disturbed/light sleep",
+      "Excessive thoughts",
+      "Anxiety",
+      "Fast pulse",
+      "Dryness in body"
+    ],
+    "Comorbidity": [
+      "Mental stress",
+      "Excess caffeine intake"
+    ],
+    "Doshas": ["Vata (aggravated)"],
+    "Prakriti": "Vata dominant"
+  },
+  {
+    "Disease": "Pandu Roga (Anemia)",
+    "Symptoms": [
+      "General weakness",
+      "Fatigue on exertion",
+      "Pale eyes and nails",
+      "Tingling in limbs",
+      "Loss of appetite"
+    ],
+    "Comorbidity": [
+      "Rakta dhatu deficiency",
+      "Possible liver weakness"
+    ],
+    "Doshas": ["Pitta imbalance", "Vata involvement"],
+    "Prakriti": "Pitta-Vata dominant"
+  },
+  {
+    "Disease": "Madhumeha (Diabetes)",
+    "Symptoms": [
+      "Excessive thirst",
+      "Frequent urination",
+      "Weakness",
+      "Fatigue"
+    ],
+    "Comorbidity": [
+      "Excess Kapha",
+      "Medo dhatu (fat) increase",
+      "Low digestive fire (Mandagni)"
+    ],
+    "Doshas": ["Kapha (aggravated)"],
+    "Prakriti": "Kapha dominant"
+  },
+  {
+    "Disease": "Migraine (Suryaavarta / Shirshoola)",
+    "Symptoms": [
+      "Unilateral headache",
+      "Nausea",
+      "Headache aggravated by sunlight",
+      "Acidity"
+    ],
+    "Comorbidity": [
+      "Irregular meals",
+      "Hyperacidity"
+    ],
+    "Doshas": ["Pitta (aggravated)"],
+    "Prakriti": "Pitta dominant"
+  },
+  {
+    "Disease": "Asrigdara (Menstrual Disorder)",
+    "Symptoms": [
+      "Excess menstrual bleeding",
+      "Lower abdominal pain"
+    ],
+    "Comorbidity": [
+      "Excess body heat",
+      "Irregular diet"
+    ],
+    "Doshas": ["Pitta (aggravated)", "Vata (associated)"],
+    "Prakriti": "Pitta dominant"
+  },
+  {
+    "Disease": "Sthoulya (Obesity)",
+    "Symptoms": [
+      "Rapid weight gain",
+      "Exertional breathlessness",
+      "Sedentary lifestyle"
+    ],
+    "Comorbidity": [
+      "Medo dhatu excess",
+      "Blocked Vata channels"
+    ],
+    "Doshas": ["Kapha (aggravated)", "Vata obstruction"],
+    "Prakriti": "Kapha dominant"
+  },
+  {
+    "Disease": "Kati Shoola (Low Back Pain)",
+    "Symptoms": [
+      "Lower back pain",
+      "Stiffness after sitting",
+      "Difficulty bending"
+    ],
+    "Comorbidity": [
+      "Degeneration of spinal fluids",
+      "Prolonged bike travel"
+    ],
+    "Doshas": ["Vata (aggravated)"],
+    "Prakriti": "Vata dominant"
+  },
+  {
+    "Disease": "Agni Mandya (Indigestion / Loss of Appetite)",
+    "Symptoms": [
+      "Heaviness in abdomen",
+      "Loss of appetite",
+      "Bitter taste in mouth"
+    ],
+    "Comorbidity": [
+      "Ama accumulation",
+      "Daytime sleeping habit"
+    ],
+    "Doshas": ["Kapha (aggravated)", "Ama presence"],
+    "Prakriti": "Kapha dominant"
+  },
+  {
+    "Disease": "Jwara (Fever due to Ama)",
+    "Symptoms": [
+      "Fever",
+      "Body ache",
+      "Headache",
+      "Loss of appetite",
+      "White-coated tongue",
+      "Rapid pulse"
+    ],
+    "Comorbidity": [
+      "Ama accumulation"
+    ],
+    "Doshas": ["Kapha (associated)", "Pitta (fever component)"],
+    "Prakriti": "Kapha-Pitta dominant"
+  }
+]

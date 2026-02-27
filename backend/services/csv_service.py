@@ -225,6 +225,18 @@ class CSVService:
                         if disease:
                             r["diagnosis"] = disease
                         
+                        # Update additional fields that might be finalized during prescription
+                        if symptoms:
+                            r["symptoms"] = symptoms
+                        if data.get("prakriti"):
+                            r["prakriti"] = data.get("prakriti")
+                        if data.get("vikriti"):
+                            r["vikriti"] = data.get("vikriti")
+                        if data.get("severity") is not None:
+                            r["severity"] = str(data.get("severity"))
+                        if data.get("comorbidities"):
+                            r["comorbidities"] = data.get("comorbidities")
+                        
                         record_found = True
                         disease = disease or r.get("diagnosis", "")
                         break
