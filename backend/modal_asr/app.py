@@ -24,7 +24,7 @@ image = (
 app = modal.App("ai4bharat-asr-multilingual", image=image)
 
 # Define the model to download
-MODEL_ID = "ai4bharat/indic-conformer-600m-multilingual"
+ASR_MODEL_ID = "ai4bharat/indic-conformer-600m-multilingual"
 
 # Cache the weights so we don't download them on every cold start
 @app.cls(
@@ -39,13 +39,13 @@ class ASRModel:
         import torch
         from transformers import AutoModel
         
-        print(f"Loading custom model from {MODEL_ID}...")
+        print(f"Loading custom model from {ASR_MODEL_ID}...")
         
         # Determine the device to run on
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         print(f"Using device: {self.device}")
         
-        self.model = AutoModel.from_pretrained(MODEL_ID, trust_remote_code=True)
+        self.model = AutoModel.from_pretrained(ASR_MODEL_ID, trust_remote_code=True)
         # We don't need to explicitly move to device here; the custom implementation handles ONNX sessions internally
         print("Model loaded successfully.")
 

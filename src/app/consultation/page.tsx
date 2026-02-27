@@ -84,9 +84,10 @@ function ConsultationForm({ isChatOpen }: { isChatOpen: boolean }) {
                     { name: "lastName", type: "string", description: "Patient's last name or surname" },
                     { name: "gender", type: "string", description: "Must be exactly: 'Male', 'Female', or 'Transgender'" },
                     { name: "age", type: "string", description: "Patient's age in years as a string (e.g. '34')" },
-                    { name: "maritalStatus", type: "string", description: "Must be exactly: 'Married', 'Unmarried', 'Divorcee', or 'Widow'" },
+                    // { name: "maritalStatus", type: "string", description: "Must be exactly: 'Married', 'Unmarried', 'Divorcee', or 'Widow'" },
                 ],
             },
+            /*
             {
                 name: "contactInfo", type: "object", required: false,
                 description: "Patient's contact and address details extracted from the conversation",
@@ -108,6 +109,7 @@ function ConsultationForm({ isChatOpen }: { isChatOpen: boolean }) {
                     { name: "idNumber", type: "string", description: "The ID document number" },
                 ],
             },
+            */
             {
                 name: "assessment", type: "object", required: false,
                 description: "Clinical assessment and Ayurvedic evaluation from the doctor",
@@ -137,8 +139,8 @@ function ConsultationForm({ isChatOpen }: { isChatOpen: boolean }) {
                 };
                 return {
                     basicInfo: mergeObj(prev?.basicInfo, args.basicInfo),
-                    contactInfo: mergeObj(prev?.contactInfo, args.contactInfo),
-                    otherInfo: mergeObj(prev?.otherInfo, args.otherInfo),
+                    // contactInfo: mergeObj(prev?.contactInfo, args.contactInfo),
+                    // otherInfo: mergeObj(prev?.otherInfo, args.otherInfo),
                     assessment: mergeObj(prev?.assessment, args.assessment),
                 };
             });
@@ -282,12 +284,14 @@ function ConsultationForm({ isChatOpen }: { isChatOpen: boolean }) {
         if (proposedData.basicInfo) {
             setRegistrationData(prev => ({ ...prev, basicInfo: { ...prev.basicInfo, ...proposedData.basicInfo } }));
         }
+        /*
         if (proposedData.contactInfo) {
             setRegistrationData(prev => ({ ...prev, contactInfo: { ...prev.contactInfo, ...proposedData.contactInfo } }));
         }
         if (proposedData.otherInfo) {
             setRegistrationData(prev => ({ ...prev, otherInfo: { ...prev.otherInfo, ...proposedData.otherInfo } }));
         }
+        */
         if (proposedData.assessment) {
             setConsultationData(prev => ({ ...prev, ...proposedData.assessment }));
         }
@@ -304,11 +308,12 @@ function ConsultationForm({ isChatOpen }: { isChatOpen: boolean }) {
             if (!registrationData.basicInfo.firstName.trim()) return "Please enter the patient's first name.";
             if (!registrationData.basicInfo.lastName.trim()) return "Please enter the patient's last name.";
             if (!registrationData.basicInfo.gender) return "Please select a gender.";
-            if (!registrationData.basicInfo.maritalStatus) return "Please select a marital status.";
+            // if (!registrationData.basicInfo.maritalStatus) return "Please select a marital status.";
 
             const ageNum = Number(registrationData.basicInfo.age);
             if (isNaN(ageNum) || ageNum <= 0 || ageNum > 120) return "Please enter a valid age (1–120).";
 
+            /* Temporarily disabled contact & other info validation
             const mobileRegex = /^[6-9]\d{9}$/;
             if (!mobileRegex.test(registrationData.contactInfo.mobile)) return "Please enter a valid 10-digit Indian mobile number.";
 
@@ -322,6 +327,7 @@ function ConsultationForm({ isChatOpen }: { isChatOpen: boolean }) {
                 if (idType === "PAN Card" && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(idNumber)) return "Please enter a valid PAN number (e.g., ABCDE1234F).";
                 if (idType === "Voter ID" && !/^[A-Z]{3}[0-9]{7}$/.test(idNumber)) return "Please enter a valid Voter ID (e.g., ABC1234567).";
             }
+            */
         } else {
             if (!searchResult?.id) return "Must select an existing patient before saving a consultation.";
         }
@@ -399,8 +405,9 @@ function ConsultationForm({ isChatOpen }: { isChatOpen: boolean }) {
                                 {proposedData.basicInfo?.firstName && <li><strong>Name:</strong> {proposedData.basicInfo.firstName} {proposedData.basicInfo.lastName || ''}</li>}
                                 {proposedData.basicInfo?.age && <li><strong>Age:</strong> {proposedData.basicInfo.age}</li>}
                                 {proposedData.basicInfo?.gender && <li><strong>Gender:</strong> {proposedData.basicInfo.gender}</li>}
-                                {proposedData.basicInfo?.maritalStatus && <li><strong>Marital Status:</strong> {proposedData.basicInfo.maritalStatus}</li>}
+                                {/* {proposedData.basicInfo?.maritalStatus && <li><strong>Marital Status:</strong> {proposedData.basicInfo.maritalStatus}</li>} */}
 
+                                {/*
                                 {proposedData.contactInfo?.mobile && <li><strong>Mobile:</strong> {proposedData.contactInfo.mobile}</li>}
                                 {proposedData.contactInfo?.address && <li><strong>Address:</strong> {proposedData.contactInfo.address}</li>}
                                 {proposedData.contactInfo?.city && <li><strong>City:</strong> {proposedData.contactInfo.city}</li>}
@@ -410,6 +417,7 @@ function ConsultationForm({ isChatOpen }: { isChatOpen: boolean }) {
                                 {proposedData.otherInfo?.occupation && <li><strong>Occupation:</strong> {proposedData.otherInfo.occupation}</li>}
                                 {proposedData.otherInfo?.bloodGroup && <li><strong>Blood Group:</strong> {proposedData.otherInfo.bloodGroup}</li>}
                                 {proposedData.otherInfo?.idType && <li><strong>ID Type:</strong> {proposedData.otherInfo.idType} ({proposedData.otherInfo.idNumber})</li>}
+                                */}
 
                                 {proposedData.assessment?.symptoms && <li><strong>Symptoms:</strong> {proposedData.assessment.symptoms}</li>}
                                 {proposedData.assessment?.diagnosis && <li><strong>Diagnosis:</strong> {proposedData.assessment.diagnosis}</li>}
@@ -454,53 +462,14 @@ function ConsultationForm({ isChatOpen }: { isChatOpen: boolean }) {
                                 <UserPlus className="w-5 h-5 mr-2 text-emerald-600" />
                                 Patient Details
                             </h2>
-                            <div className="flex space-x-2 p-1 bg-white rounded-lg shadow-sm border">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsExistingPatient(false)}
-                                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${!isExistingPatient ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
-                                >
-                                    New Patient
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsExistingPatient(true)}
-                                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${isExistingPatient ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
-                                >
-                                    Existing Patient
-                                </button>
-                            </div>
                         </div>
-
-                        {isExistingPatient ? (
-                            <div className="w-full max-w-md">
-                                <PatientSearchCombobox
-                                    onSelect={handlePatientSelect}
-                                    placeholder="Search patients by name or mobile (e.g., Utsav)"
-                                />
-                            </div>
-                        ) : (
-                            <p className="text-sm text-slate-500">
-                                Please fill out the registration form below to create a new patient profile.
-                            </p>
-                        )}
+                        <p className="text-sm text-slate-500">
+                            Please fill out the registration form below to create a new patient profile.
+                        </p>
                     </div>
 
-                    {/* Show Patient Details IF existing patient is selected AND found */}
-                    {isExistingPatient && searchResult && (
-                        <div className="p-6 bg-emerald-50/50">
-                            <h3 className="text-lg font-semibold text-emerald-800 mb-2">Patient Profile Confirmed</h3>
-                            <div className="grid grid-cols-2 gap-4 text-sm text-slate-700">
-                                <div><span className="font-semibold">Name:</span> {searchResult.basicInfo.firstName} {searchResult.basicInfo.lastName}</div>
-                                <div><span className="font-semibold">Mobile:</span> {searchResult.contactInfo.mobile}</div>
-                                <div><span className="font-semibold">Gender:</span> {searchResult.basicInfo.gender}</div>
-                                <div><span className="font-semibold">Age:</span> {searchResult.basicInfo.age}</div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Show Registration Form IF new patient is selected */}
-                    {!isExistingPatient && (
+                    {/* Registration Form */}
+                    {(
                         <div className="p-0 border-t border-emerald-100 divide-y divide-emerald-50">
 
                             {/* Basic Info */}
@@ -537,6 +506,7 @@ function ConsultationForm({ isChatOpen }: { isChatOpen: boolean }) {
                                                 </SelectContent>
                                             </Select>
                                         </div>
+                                        {/* 
                                         <div className="space-y-2 md:col-span-2">
                                             <Label>Marital Status *</Label>
                                             <Select value={registrationData.basicInfo.maritalStatus} onValueChange={(v) => handleRegistrationChange('basicInfo', 'maritalStatus', v)}>
@@ -549,112 +519,26 @@ function ConsultationForm({ isChatOpen }: { isChatOpen: boolean }) {
                                                 </SelectContent>
                                             </Select>
                                         </div>
+                                        */}
                                     </div>
                                 )}
                             </div>
 
-                            {/* Contact Info */}
+                            {/* Contact Info (Temporarily Disabled) */}
+                            {/* 
                             <div className="p-6">
                                 <button type="button" onClick={() => toggleSection('contact')} className="flex items-center justify-between w-full mb-4">
-                                    <h3 className="text-lg font-semibold text-slate-800 flex items-center">
-                                        <Phone className="w-5 h-5 mr-2 text-emerald-500" /> Contact Details
-                                    </h3>
-                                    {expandedSections.contact ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
-                                </button>
-
-                                {expandedSections.contact && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <Label>Mobile Number *</Label>
-                                            <Input required type="tel" value={registrationData.contactInfo.mobile} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRegistrationChange('contactInfo', 'mobile', e.target.value)} />
-                                        </div>
-                                        <div className="space-y-2 md:col-span-2">
-                                            <Label>Address</Label>
-                                            <Input value={registrationData.contactInfo.address || ''} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRegistrationChange('contactInfo', 'address', e.target.value)} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>State</Label>
-                                            <Select value={registrationData.contactInfo.state} onValueChange={(v) => handleRegistrationChange('contactInfo', 'state', v)}>
-                                                <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="Delhi">Delhi</SelectItem>
-                                                    <SelectItem value="Maharashtra">Maharashtra</SelectItem>
-                                                    <SelectItem value="Karnataka">Karnataka</SelectItem>
-                                                    <SelectItem value="Gujarat">Gujarat</SelectItem>
-                                                    <SelectItem value="Uttar Pradesh">Uttar Pradesh</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>City</Label>
-                                            <Select value={registrationData.contactInfo.city} onValueChange={(v) => handleRegistrationChange('contactInfo', 'city', v)}>
-                                                <SelectTrigger><SelectValue placeholder="Select city" /></SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="New Delhi">New Delhi</SelectItem>
-                                                    <SelectItem value="Mumbai">Mumbai</SelectItem>
-                                                    <SelectItem value="Bangalore">Bangalore</SelectItem>
-                                                    <SelectItem value="Ahmedabad">Ahmedabad</SelectItem>
-                                                    <SelectItem value="Lucknow">Lucknow</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Pincode</Label>
-                                            <Input value={registrationData.contactInfo.pincode || ''} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRegistrationChange('contactInfo', 'pincode', e.target.value)} />
-                                        </div>
-                                    </div>
-                                )}
+                                ...
                             </div>
+                            */}
 
-                            {/* Other Info */}
+                            {/* Other Info (Temporarily Disabled) */}
+                            {/* 
                             <div className="p-6">
                                 <button type="button" onClick={() => toggleSection('other')} className="flex items-center justify-between w-full mb-4">
-                                    <h3 className="text-lg font-semibold text-slate-800 flex items-center">
-                                        <FileText className="w-5 h-5 mr-2 text-emerald-500" /> Other Details
-                                    </h3>
-                                    {expandedSections.other ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
-                                </button>
-
-                                {expandedSections.other && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <Label>Occupation</Label>
-                                            <Input value={registrationData.otherInfo.occupation || ''} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRegistrationChange('otherInfo', 'occupation', e.target.value)} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Blood Group</Label>
-                                            <Select value={registrationData.otherInfo.bloodGroup} onValueChange={(v) => handleRegistrationChange('otherInfo', 'bloodGroup', v)}>
-                                                <SelectTrigger><SelectValue placeholder="Select blood group" /></SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="A+">A+</SelectItem>
-                                                    <SelectItem value="A-">A-</SelectItem>
-                                                    <SelectItem value="B+">B+</SelectItem>
-                                                    <SelectItem value="B-">B-</SelectItem>
-                                                    <SelectItem value="O+">O+</SelectItem>
-                                                    <SelectItem value="O-">O-</SelectItem>
-                                                    <SelectItem value="AB+">AB+</SelectItem>
-                                                    <SelectItem value="AB-">AB-</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>ID Type</Label>
-                                            <Select value={registrationData.otherInfo.idType} onValueChange={(v) => handleRegistrationChange('otherInfo', 'idType', v)}>
-                                                <SelectTrigger><SelectValue placeholder="Select ID Type" /></SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="Aadhar">Aadhar</SelectItem>
-                                                    <SelectItem value="PAN Card">PAN Card</SelectItem>
-                                                    <SelectItem value="Voter ID">Voter ID</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>ID Number</Label>
-                                            <Input value={registrationData.otherInfo.idNumber || ''} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRegistrationChange('otherInfo', 'idNumber', e.target.value)} />
-                                        </div>
-                                    </div>
-                                )}
+                                ...
                             </div>
+                            */}
                         </div>
                     )}
                 </div>
@@ -764,7 +648,7 @@ function ConsultationForm({ isChatOpen }: { isChatOpen: boolean }) {
                 <div className="flex justify-end pt-4 pb-12">
                     <Button
                         type="submit"
-                        disabled={isSubmitting || (isExistingPatient && !searchResult)}
+                        disabled={isSubmitting}
                         className="bg-slate-900 hover:bg-slate-800 text-white min-w-[200px] h-12 text-lg font-medium shadow-md"
                     >
                         {isSubmitting ? 'Saving...' : 'Save & Proceed to Treatment'}
@@ -854,8 +738,8 @@ export default function ConsultationPage() {
                 clickOutsideToClose={false}
                 onSetOpen={(open) => setIsChatOpen(open)}
                 labels={{
-                    title: "Ambient Scribe",
-                    initial: "Listening to the consultation... Please speak.",
+                    title: "🩺 Clinical AI Scribe",
+                    initial: "Speak naturally during the consultation — I'll listen and extract all patient details automatically. You can also type here to ask me anything.",
                 }}
             >
                 <div className="flex-1 h-full min-h-screen overflow-y-auto bg-gradient-to-br from-background via-muted/10 to-background">

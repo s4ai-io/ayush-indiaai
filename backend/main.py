@@ -298,7 +298,12 @@ async def get_disease_spread_prediction():
 
 
 from services.consultation_agent import consultation_agent_router
+from services.registration_agent import registration_agent_router
+from services.treatment_agent import treatment_agent_router
+
 app.include_router(consultation_agent_router, prefix="/api/copilot/consultation", tags=["Copilot Agent"])
+app.include_router(registration_agent_router, prefix="/api/copilot/registration", tags=["Copilot Agent"])
+app.include_router(treatment_agent_router, prefix="/api/copilot/treatment", tags=["Copilot Agent"])
 
 from utils.validators import RegistrationData, ConsultationData
 
@@ -333,19 +338,21 @@ async def get_consultation_context(visit_id: str):
         patient_id = record.get("patient_id")
         patient = csv_service.get_patient_by_id(patient_id)
         
-        first_name = patient.get("first_name", "") if patient else "Unknown"
-        last_name = patient.get("last_name", "") if patient else ""
+        # _DictObj exposes fields as attributes, not dict keys
+        first_name = getattr(patient, "first_name", "Unknown") if patient else "Unknown"
+        last_name  = getattr(patient, "last_name",  "") if patient else ""
+        mobile     = getattr(patient, "mobile",     "Unknown") if patient else "Unknown"
         
         return {
             "patientId": patient_id,
             "patientName": f"{first_name} {last_name}".strip(),
-            "patientMobile": patient.get("mobile", "Unknown") if patient else "Unknown",
-            "symptoms": record.get("symptoms", ""),
-            "diagnosis": record.get("diagnosis", ""),
-            "doctorNotes": record.get("notes", ""),
-            "prakriti": record.get("prakriti", ""),
-            "vikriti": record.get("vikriti", ""),
-            "severity": record.get("severity", ""),
+            "patientMobile": mobile,
+            "symptoms":     record.get("symptoms", ""),
+            "diagnosis":    record.get("diagnosis", ""),
+            "doctorNotes":  record.get("notes", ""),
+            "prakriti":     record.get("prakriti", ""),
+            "vikriti":      record.get("vikriti", ""),
+            "severity":     record.get("severity", ""),
             "comorbidities": record.get("comorbidities", "")
         }
     except HTTPException:
@@ -353,6 +360,96 @@ async def get_consultation_context(visit_id: str):
     except Exception as e:
         print(f"Error fetching visit context: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+
+@app.get("/api/visits/{visit_id}", tags=["Consultations"])
+async def get_visit_details(visit_id: str):
+    """
+    Get complete details for a single visit — patient info + medical record + AYUSH treatment.
+    Used for the read-only Visit Details page.
+    """
+    try:
+        import json as _json
+
+        record = csv_service.get_medical_record_by_id(visit_id)
+        if not record:
+            raise HTTPException(status_code=404, detail="Visit not found")
+
+        patient_id = record.get("patient_id")
+        patient = csv_service.get_patient_by_id(patient_id)
+
+        # Safely parse prescription JSON
+        raw_prescription = record.get("prescription", "")
+        try:
+            prescription = _json.loads(raw_prescription) if raw_prescription and raw_prescription != "{}" else {}
+        except Exception:
+            prescription = {}
+
+        # Look up linked AYUSH treatment
+        from services.csv_service import _read_csv, AYUSH_TREATMENTS_CSV, TREATMENT_FEEDBACK_CSV, _safe_json_parse
+        treatments = _read_csv(AYUSH_TREATMENTS_CSV)
+        ayush = next((t for t in treatments if t.get("medical_record_id") == visit_id), None)
+
+        feedbacks = _read_csv(TREATMENT_FEEDBACK_CSV)
+        feedback = next((f for f in feedbacks if f.get("medical_record_id") == visit_id), None)
+
+        # _DictObj stores fields as attributes, not dict keys — use getattr()
+        g = lambda attr, d='': str(getattr(patient, attr, d) or d) if patient else d
+        return {
+            # Patient demographics
+            "patient": {
+                "id": patient_id,
+                "firstName":     g("first_name"),
+                "lastName":      g("last_name"),
+                "gender":        g("gender"),
+                "age":           g("age"),
+                "maritalStatus": g("marital_status"),
+                "mobile":        g("mobile"),
+                "address":       g("address"),
+                "city":          g("city"),
+                "state":         g("state"),
+                "pincode":       g("pincode"),
+                "bloodGroup":    g("blood_group"),
+                "occupation":    g("occupation"),
+                "idType":        g("id_type"),
+                "idNumber":      g("id_number"),
+            },
+            # Clinical assessment
+            "visit": {
+                "id": visit_id,
+                "visitDate": record.get("visit_date", ""),
+                "symptoms": record.get("symptoms", ""),
+                "diagnosis": record.get("diagnosis", ""),
+                "prakriti": record.get("prakriti", ""),
+                "vikriti": record.get("vikriti", ""),
+                "severity": record.get("severity", ""),
+                "comorbidities": record.get("comorbidities", ""),
+                "notes": record.get("notes", ""),
+                "prescription": prescription,
+            },
+            # AYUSH treatment plan
+            "treatment": {
+                "herbs": ayush.get("herbs_prescribed", "") if ayush else "",
+                "yoga": ayush.get("yoga_prescribed", "") if ayush else "",
+                "diet": ayush.get("diet_plan", "") if ayush else "",
+                "durationWeeks": ayush.get("treatment_duration_weeks", "") if ayush else "",
+                "predictedImprovement": ayush.get("improvement_percentage", "") if ayush else "",
+                "outcome": ayush.get("outcome", "") if ayush else "",
+            },
+            # Doctor feedback (if any)
+            "feedback": {
+                "rating": feedback.get("doctor_rating", "") if feedback else "",
+                "comments": feedback.get("doctor_comments", "") if feedback else "",
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error fetching visit details: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/api/patients", tags=["Patient Management"])
 async def create_patient(data: RegistrationData):
     """

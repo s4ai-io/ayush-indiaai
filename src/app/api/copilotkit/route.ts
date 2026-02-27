@@ -13,6 +13,9 @@ export async function POST(request: NextRequest) {
             consultation_agent: new LlamaIndexAgent({
                 url: "http://127.0.0.1:8000/api/copilot/consultation/run",
             }) as any,
+            registration_agent: new LlamaIndexAgent({
+                url: "http://127.0.0.1:8000/api/copilot/registration/run",
+            }) as any,
             doctor_agent: new LlamaIndexAgent({
                 url: "http://127.0.0.1:8000/api/copilot/doctor/run",
             }) as any,

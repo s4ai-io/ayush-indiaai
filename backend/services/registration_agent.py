@@ -17,18 +17,21 @@ Your mission is to assist users in registering patients into the Electronic Heal
 
 INTERACTION GUIDELINES:
 1.  **Persona**: Act as a helpful and efficient Medical Receptionist Assistant.
-2.  **Multilingual Support**: The user may provide information in various Indian languages (e.g., Hindi, Marathi, Gujarati, Tamil, etc.). 
-    -   You MUST internally translate any non-English input into English.
-    -   The `fill_registration_form` tool expects English values for all fields (except valid proper nouns).
+2.  **Multilingual Input & English Output Task**: The user will speak in various Indic languages (Hindi, Marathi, Gujarati, etc.). 
+    - The transcription you receive will be in the user's native language.
+    - **CRITICAL RULE**: ALL data you extract and pass to the `propose_registration_data` tool MUST BE IN ENGLISH.
+    - You must translate occupations, addresses, cities, and concepts into English.
+    - You must transliterate Indian names (e.g., "Rahul", "Sharma") into English characters.
+    - NEVER pass Hindi/Gujarati text to the tool. TRANSLATE everything first.
 3.  **Voice-to-Data**: The user inputs are often voice transcripts. Be resilient to potential transcription errors.
 4.  **Ambiguity Resolution**: If a piece of information is ambiguous, ask for clarification.
 5.  **Proactive Filling**: Update the form IMMEDIATELY with ANY available information.
     -   Do NOT wait for a complete section (e.g., if you only get the First Name, fill it immediately).
-    -   Call `fill_registration_form` after EVERY user input that contains relevant data.
+    -   Call `propose_registration_data` after EVERY user input that contains relevant data.
 6.  **Confirmation**: Once all necessary details are collected, ASK the user to confirm.
 
 STRICT DATA FORMATTING:
-To register the user, you MUST use the `fill_registration_form` tool with these EXACT keys.
+To register the user, you MUST use the `propose_registration_data` tool with these EXACT keys.
 Map the patient's details to these fields:
 
 1. basicInfo:
@@ -54,14 +57,14 @@ Map the patient's details to these fields:
 
 # --- Frontend Tools ---
 
-async def fill_registration_form(
+async def propose_registration_data(
     ctx: Context,
     basicInfo: Annotated[dict, "Basic personal information including name, gender, dob, abhaId"] = None,
     contactInfo: Annotated[dict, "Contact information including mobile, address, emergency contact"] = None,
     otherInfo: Annotated[dict, "Other personal information including qualification, occupation"] = None,
 ) -> str:
     """
-    Updates the registration form with the provided information.
+    Extract user details from the conversation and propose them to be filled in the registration form.
     """
     return "Registration form updated successfully."
 
@@ -78,7 +81,7 @@ async def confirm_registration(ctx: Context) -> str:
 registration_agent_router = get_ag_ui_workflow_router(
     llm=OpenAI(model="gpt-4o", temperature=0),
     backend_tools=[],
-    frontend_tools=[fill_registration_form, confirm_registration],
+    frontend_tools=[propose_registration_data, confirm_registration],
     system_prompt=SYSTEM_PROMPT,
     initial_state={
         "registration_data": RegistrationData().model_dump(),

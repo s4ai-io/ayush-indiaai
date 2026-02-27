@@ -81,6 +81,7 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
     const [isBasicInfoExpanded, setIsBasicInfoExpanded] = useState(true);
     const [isContactExpanded, setIsContactExpanded] = useState(true);
     const [isOtherInfoExpanded, setIsOtherInfoExpanded] = useState(true);
+    const [proposedData, setProposedData] = useState<any>(null);
     const [voiceError, setVoiceError] = useState<string | null>(null);
     const [isListening, setIsListening] = useState(false);
     const [selectedLanguage, setSelectedLanguage] = useState("hi-IN");
@@ -105,7 +106,10 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
 
     const handleNewChat = (clearForm: boolean) => {
         resetChat();
-        if (clearForm) setFormData(INITIAL_DATA);
+        if (clearForm) {
+            setFormData(INITIAL_DATA);
+            setProposedData(null);
+        }
         setShowNewChatConfirm(false);
     };
 
@@ -117,8 +121,8 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
     useCopilotReadable({ description: "The current state of the registration form.", value: formData });
 
     useCopilotAction({
-        name: "fill_registration_form",
-        description: "Fill the registration form with user details.",
+        name: "propose_registration_data",
+        description: "Extract user details from the conversation and propose them to be filled in the registration form.",
         parameters: [
             {
                 name: "contactInfo", type: "object",
@@ -151,33 +155,62 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
             },
         ],
         handler: async (args: Partial<RegistrationData>) => {
-            setStatus("Auto-filling form…");
-            setStatusType("loading");
-            const updatedData = { ...formData };
-            if (args.basicInfo) {
-                updatedData.basicInfo = { ...updatedData.basicInfo, ...args.basicInfo };
-                updatedData.basicInfo.age = String(Number(updatedData.basicInfo.age) || 0);
-                setIsBasicInfoExpanded(true);
-            }
-            if (args.contactInfo) {
-                let mobile = args.contactInfo.mobileNumber || "";
-                if (mobile) {
-                    mobile = mobile.replace(/\D/g, '');
+            setProposedData((prev: any) => {
+                const mergeObj = (existing: any, incoming: any) => {
+                    if (!incoming) return existing || undefined;
+                    const merged = { ...(existing || {}) };
+                    for (const key in incoming) {
+                        if (incoming[key] !== null && incoming[key] !== undefined && incoming[key] !== '') {
+                            merged[key] = incoming[key];
+                        }
+                    }
+                    return merged;
+                };
+
+                // Format mobile number before merging
+                const incomingContact = { ...args.contactInfo };
+                if (incomingContact.mobileNumber) {
+                    let mobile = incomingContact.mobileNumber.replace(/\D/g, '');
                     if (mobile.length > 10) mobile = mobile.substring(mobile.length - 10);
+                    incomingContact.mobileNumber = mobile;
                 }
-                args.contactInfo.mobileNumber = mobile;
-                updatedData.contactInfo = { ...updatedData.contactInfo, ...args.contactInfo };
-                setIsContactExpanded(true);
-            }
-            if (args.otherInfo) {
-                updatedData.otherInfo = { ...updatedData.otherInfo, ...args.otherInfo };
-                setIsOtherInfoExpanded(true);
-            }
-            setFormData(updatedData);
-            setTimeout(() => setStatus(null), 2000);
-            return "Registration form updated successfully.";
+
+                // Format age
+                const incomingBasic = { ...args.basicInfo };
+                if (incomingBasic.age) {
+                    incomingBasic.age = String(Number(incomingBasic.age) || 0);
+                }
+
+                return {
+                    basicInfo: mergeObj(prev?.basicInfo, incomingBasic),
+                    contactInfo: mergeObj(prev?.contactInfo, incomingContact),
+                    otherInfo: mergeObj(prev?.otherInfo, args.otherInfo),
+                };
+            });
+            return "Registration data proposed successfully for user review.";
         },
     });
+
+    const handleAcceptProposed = () => {
+        if (!proposedData) return;
+
+        setFormData(prev => ({
+            ...prev,
+            basicInfo: { ...prev.basicInfo, ...proposedData.basicInfo },
+            contactInfo: { ...prev.contactInfo, ...proposedData.contactInfo },
+            otherInfo: { ...prev.otherInfo, ...proposedData.otherInfo }
+        }));
+
+        if (proposedData.basicInfo) setIsBasicInfoExpanded(true);
+        if (proposedData.contactInfo) setIsContactExpanded(true);
+        if (proposedData.otherInfo) setIsOtherInfoExpanded(true);
+
+        setProposedData(null);
+    };
+
+    const handleDiscardProposed = () => {
+        setProposedData(null);
+    };
 
     const handleChange = (section: keyof RegistrationData, field: string, value: any) => {
         setFormData((prev) => {
@@ -271,6 +304,54 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
                     ))}
                 </div>
             </div>
+
+            {proposedData && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 shadow-sm mb-8 animate-in slide-in-from-top-4">
+                    <h3 className="text-lg font-semibold text-amber-800 mb-4 flex items-center">
+                        <CheckCircle2 className="w-5 h-5 mr-2" /> AI Extracted Data Available for Review
+                    </h3>
+                    <div className="text-sm text-slate-700 space-y-2 mb-6">
+                        <p>The AI listener has extracted the following details from the conversation:</p>
+                        <div className="bg-white p-4 rounded-lg border border-amber-100 max-h-64 overflow-y-auto w-full">
+                            <ul className="list-disc list-inside space-y-1">
+                                {proposedData.basicInfo?.firstName && <li><strong>Name:</strong> {proposedData.basicInfo.firstName} {proposedData.basicInfo.lastName || ''}</li>}
+                                {proposedData.basicInfo?.age && <li><strong>Age:</strong> {proposedData.basicInfo.age}</li>}
+                                {proposedData.basicInfo?.gender && <li><strong>Gender:</strong> {proposedData.basicInfo.gender}</li>}
+                                {proposedData.basicInfo?.maritalStatus && <li><strong>Marital Status:</strong> {proposedData.basicInfo.maritalStatus}</li>}
+
+                                {proposedData.contactInfo?.mobileNumber && <li><strong>Mobile:</strong> {proposedData.contactInfo.mobileNumber}</li>}
+                                {proposedData.contactInfo?.address && <li><strong>Address:</strong> {proposedData.contactInfo.address}</li>}
+                                {proposedData.contactInfo?.city && <li><strong>City:</strong> {proposedData.contactInfo.city}</li>}
+                                {proposedData.contactInfo?.state && <li><strong>State:</strong> {proposedData.contactInfo.state}</li>}
+                                {proposedData.contactInfo?.pincode && <li><strong>Pincode:</strong> {proposedData.contactInfo.pincode}</li>}
+
+                                {proposedData.otherInfo?.occupation && <li><strong>Occupation:</strong> {proposedData.otherInfo.occupation}</li>}
+                                {proposedData.otherInfo?.bloodGroup && <li><strong>Blood Group:</strong> {proposedData.otherInfo.bloodGroup}</li>}
+                                {proposedData.otherInfo?.idType && <li><strong>ID Type:</strong> {proposedData.otherInfo.idType} ({proposedData.otherInfo.idNumber})</li>}
+                            </ul>
+                        </div>
+                    </div>
+                    <div className="flex gap-4">
+                        <button
+                            type="button"
+                            onClick={handleAcceptProposed}
+                            className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                        >
+                            <CheckCircle2 className="w-4 h-4" />
+                            Accept & Fill Form
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleDiscardProposed}
+                            className="flex items-center gap-2 border border-amber-300 text-amber-700 hover:bg-amber-100 px-4 py-2 rounded-lg font-medium transition-colors"
+                        >
+                            <AlertCircle className="w-4 h-4" />
+                            Discard
+                        </button>
+                    </div>
+                </div>
+            )
+            }
 
             {/* ── Basic Info ── */}
             <Section
@@ -480,72 +561,76 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
             </div>
 
             {/* ── All chat controls portalled into .copilotKitInput ── */}
-            {chatInputNode && createPortal(
-                <>
-                    {/* New Chat button + inline confirm — sits just above the input box */}
-                    <div className="absolute -top-11 left-0 right-0 flex items-center justify-center z-[1000] pointer-events-auto">
-                        {!showNewChatConfirm ? (
-                            <button
-                                type="button"
-                                onClick={() => setShowNewChatConfirm(true)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-background/90 backdrop-blur border border-border text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 shadow-sm transition-all duration-150"
-                            >
-                                <RefreshCw className="w-3.5 h-3.5" />
-                                New Chat
-                            </button>
-                        ) : (
-                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/95 backdrop-blur border border-border shadow-md text-xs font-medium">
-                                <span className="text-muted-foreground">Clear form too?</span>
+            {
+                chatInputNode && createPortal(
+                    <>
+                        {/* New Chat button + inline confirm — sits just above the input box */}
+                        <div className="absolute -top-11 left-0 right-0 flex items-center justify-center z-[1000] pointer-events-auto">
+                            {!showNewChatConfirm ? (
                                 <button
                                     type="button"
-                                    onClick={() => handleNewChat(true)}
-                                    className="px-2.5 py-1 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20 transition-colors"
-                                >Yes, clear</button>
-                                <button
-                                    type="button"
-                                    onClick={() => handleNewChat(false)}
-                                    className="px-2.5 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 transition-colors"
-                                >Keep form</button>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowNewChatConfirm(false)}
-                                    className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-muted text-muted-foreground transition-colors"
-                                ><X className="w-3 h-3" /></button>
-                            </div>
-                        )}
-                    </div>
+                                    onClick={() => setShowNewChatConfirm(true)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-background/90 backdrop-blur border border-border text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 shadow-sm transition-all duration-150"
+                                >
+                                    <RefreshCw className="w-3.5 h-3.5" />
+                                    New Chat
+                                </button>
+                            ) : (
+                                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/95 backdrop-blur border border-border shadow-md text-xs font-medium">
+                                    <span className="text-muted-foreground">Clear form too?</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleNewChat(true)}
+                                        className="px-2.5 py-1 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20 transition-colors"
+                                    >Yes, clear</button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleNewChat(false)}
+                                        className="px-2.5 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 transition-colors"
+                                    >Keep form</button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowNewChatConfirm(false)}
+                                        className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-muted text-muted-foreground transition-colors"
+                                    ><X className="w-3 h-3" /></button>
+                                </div>
+                            )}
+                        </div>
 
-                    {/* Language selector — left of input */}
-                    <div className="absolute bottom-1.5 left-1 z-[1000] pointer-events-auto">
-                        <LanguageSelector selectedLanguage={selectedLanguage} onLanguageChange={setSelectedLanguage} />
-                    </div>
-                    {/* Voice button — right of input */}
-                    <div className="absolute bottom-1.5 right-12 z-[1000] pointer-events-auto">
-                        <VoiceInputButton
-                            onTranscript={handleVoiceTranscript}
-                            onError={(err) => setVoiceError(err)}
-                            language={selectedLanguage}
-                        />
-                        {isListening && (
-                            <span className="absolute top-0 right-0 flex h-2 w-2 -mt-0.5 -mr-0.5">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive" />
-                            </span>
-                        )}
-                    </div>
-                </>,
-                chatInputNode
-            )}
+                        {/* Language selector — left of input */}
+                        <div className="absolute bottom-1.5 left-1 z-[1000] pointer-events-auto">
+                            <LanguageSelector selectedLanguage={selectedLanguage} onLanguageChange={setSelectedLanguage} />
+                        </div>
+                        {/* Voice button — right of input */}
+                        <div className="absolute bottom-1.5 right-12 z-[1000] pointer-events-auto">
+                            <VoiceInputButton
+                                onTranscript={handleVoiceTranscript}
+                                onError={(err) => setVoiceError(err)}
+                                language={selectedLanguage}
+                            />
+                            {isListening && (
+                                <span className="absolute top-0 right-0 flex h-2 w-2 -mt-0.5 -mr-0.5">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive" />
+                                </span>
+                            )}
+                        </div>
+                    </>,
+                    chatInputNode
+                )
+            }
 
             {/* Voice Error */}
-            {isChatOpen && voiceError && (
-                <div className="fixed bottom-24 right-4 z-[1000]">
-                    <div className="bg-destructive/10 text-destructive px-3 py-1.5 rounded-lg border border-destructive/20 shadow-sm text-xs animate-in fade-in slide-in-from-bottom-4">
-                        {voiceError}
+            {
+                isChatOpen && voiceError && (
+                    <div className="fixed bottom-24 right-4 z-[1000]">
+                        <div className="bg-destructive/10 text-destructive px-3 py-1.5 rounded-lg border border-destructive/20 shadow-sm text-xs animate-in fade-in slide-in-from-bottom-4">
+                            {voiceError}
+                        </div>
                     </div>
-                </div>
-            )}
-        </form>
+                )
+            }
+        </form >
     );
 }
 

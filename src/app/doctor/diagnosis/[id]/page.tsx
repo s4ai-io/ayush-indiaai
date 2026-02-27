@@ -1,14 +1,10 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { use, useEffect, useState } from 'react';
 import { getPatient } from '@/app/actions/getPatient';
 import { saveDiagnosis } from '@/app/actions/saveDiagnosis';
 import { VoiceInputButton } from '@/components/VoiceInputButton';
 import { LanguageSelector } from '@/components/LanguageSelector';
-import { CopilotKit, useCopilotChat, useCopilotReadable, useCopilotAction } from "@copilotkit/react-core";
-import { CopilotSidebar } from "@copilotkit/react-ui";
-import { TextMessage, MessageRole } from "@copilotkit/runtime-client-gql";
-import "@copilotkit/react-ui/styles.css";
 import Link from 'next/link';
 import { User, Activity, FileText, Pill, Save, Sparkles, ArrowRight } from 'lucide-react';
 
@@ -55,49 +51,9 @@ function DiagnosisForm({ patient }: { patient: Patient }) {
         notes: ''
     });
 
-    const { appendMessage } = useCopilotChat();
-
-    useCopilotReadable({
-        description: "Current patient details and diagnosis form state.",
-        value: { patient, diagnosisData },
-    });
-
-    useCopilotAction({
-        name: "update_diagnosis",
-        description: "Update the diagnosis, symptoms, or prescription based on doctor's voice notes.",
-        parameters: [
-            { name: "symptoms", type: "string" },
-            { name: "diagnosis", type: "string" },
-            { name: "notes", type: "string" },
-            {
-                name: "prescription",
-                type: "object[]",
-                attributes: [
-                    { name: "medicine", type: "string" },
-                    { name: "dosage", type: "string" },
-                    { name: "frequency", type: "string" },
-                    { name: "duration", type: "string" },
-                ]
-            }
-        ],
-        handler: async (args: Partial<DiagnosisData>) => {
-            setDiagnosisData((prev) => ({
-                ...prev,
-                ...args,
-                prescription: args.prescription ? [...prev.prescription, ...args.prescription] : prev.prescription
-            }));
-            return "Diagnosis updated.";
-        }
-    });
-
     const handleVoiceTranscript = async (transcript: string) => {
         setVoiceError(null);
-        await appendMessage(
-            new TextMessage({
-                role: MessageRole.User,
-                content: transcript
-            })
-        );
+        console.log('Voice transcript (no chat):', transcript);
     };
 
     const handleSave = async () => {
@@ -124,7 +80,7 @@ function DiagnosisForm({ patient }: { patient: Patient }) {
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex justify-between items-start">
                     <div className="flex gap-4">
                         <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-2xl">
-                            {patient.basicInfo.firstName[0]}{patient.basicInfo.lastName[0]}
+                            {patient.basicInfo.firstName?.[0] ?? '?'}{patient.basicInfo.lastName?.[0] ?? ''}
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold text-slate-900">{patient.basicInfo.firstName} {patient.basicInfo.lastName}</h1>
@@ -304,19 +260,5 @@ export default function DiagnosisPage({ params }: { params: Promise<{ id: string
     if (loading) return <div className="p-8 text-center text-slate-500">Loading patient details...</div>;
     if (!patient) return <div className="p-8 text-center text-red-500">Patient not found.</div>;
 
-    return (
-        <CopilotKit runtimeUrl="/api/copilotkit" agent="doctor_agent">
-            <CopilotSidebar
-                instructions="You are a medical scribe. Help the doctor document the diagnosis and prescription."
-                defaultOpen={true}
-                clickOutsideToClose={false}
-                labels={{
-                    title: "Medical Scribe",
-                    initial: "Ready to record diagnosis. Please speak.",
-                }}
-            >
-                <DiagnosisForm patient={patient} />
-            </CopilotSidebar>
-        </CopilotKit>
-    );
+    return <DiagnosisForm patient={patient} />;
 }

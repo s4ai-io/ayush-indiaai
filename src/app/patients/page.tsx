@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
     Search, UserPlus, Stethoscope, ChevronRight,
@@ -20,9 +21,11 @@ interface PatientDirectoryItem {
 }
 
 export default function PatientsDirectoryPage() {
+    const router = useRouter();
     const [patients, setPatients] = useState<PatientDirectoryItem[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
+    const [startingConsultationId, setStartingConsultationId] = useState<string | null>(null);
 
     const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
     const [patientHistory, setPatientHistory] = useState<any[]>([]);
@@ -98,6 +101,32 @@ export default function PatientsDirectoryPage() {
             setPatientHistory([]);
         } finally {
             setHistoryLoading(false);
+        }
+    };
+
+    const handleStartConsultation = async (patientId: string) => {
+        setStartingConsultationId(patientId);
+        try {
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const res = await fetch(`${API_URL}/api/consultations`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    patientId,
+                    assessment: {
+                        symptoms: '', diagnosis: '', notes: '',
+                        prakriti: '', vikriti: '', severity: 5, comorbidities: ''
+                    }
+                })
+            });
+            if (!res.ok) throw new Error('Failed to create visit');
+            const data = await res.json();
+            router.push(`/doctor/treatment/${data.visitId}`);
+        } catch (err) {
+            console.error('Failed to start consultation:', err);
+            alert('Could not start consultation. Please try again.');
+        } finally {
+            setStartingConsultationId(null);
         }
     };
 
@@ -201,11 +230,16 @@ export default function PatientsDirectoryPage() {
                                                     </div>
 
                                                     {/* Directly jump to start a consultation for THIS patient */}
-                                                    <Link href={`/consultation?patientId=${patientDetail.id}`}>
-                                                        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                                                            <Stethoscope className="w-4 h-4 mr-2" /> Start Consultation
-                                                        </Button>
-                                                    </Link>
+                                                    <Button
+                                                        onClick={() => handleStartConsultation(patientDetail.id)}
+                                                        disabled={startingConsultationId === patientDetail.id}
+                                                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                                    >
+                                                        {startingConsultationId === patientDetail.id
+                                                            ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Starting...</>
+                                                            : <><Stethoscope className="w-4 h-4 mr-2" /> Start Consultation</>
+                                                        }
+                                                    </Button>
                                                 </div>
                                             </div>
 
@@ -242,9 +276,9 @@ export default function PatientsDirectoryPage() {
                                                                     </div>
                                                                     <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
                                                                         <span className="text-xs text-slate-400">Consulted by {visit.doctor}</span>
-                                                                        <Button variant="ghost" size="sm" className="h-8 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50">
-                                                                            View full details <ChevronRight className="w-3 h-3 ml-1" />
-                                                                        </Button>
+                                                                        <Link href={`/visits/${visit.visit_id}`} className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 px-2 py-1 rounded-md transition-colors">
+                                                                            View full details <ChevronRight className="w-3 h-3" />
+                                                                        </Link>
                                                                     </div>
                                                                 </div>
                                                             </div>
