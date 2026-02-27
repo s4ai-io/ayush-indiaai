@@ -8,6 +8,9 @@ import uvicorn
 import os
 import json
 import csv
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from utils.validators import (
     PatientProfile,
@@ -53,14 +56,12 @@ app = FastAPI(
 )
 
 # Configure CORS
+_raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001")
+_allowed_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3000",
-        "*", # Allow all for network testing
-    ],
+    allow_origins=_allowed_origins + ["*"],  # Keep wildcard for local network testing
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -592,10 +593,12 @@ async def get_completed_diagnoses():
 
 
 if __name__ == "__main__":
+    host = os.getenv("BACKEND_HOST", "0.0.0.0")
+    port = int(os.getenv("BACKEND_PORT", "8000"))
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",
-        port=8000,
+        host=host,
+        port=port,
         reload=True,
         log_level="info"
     )

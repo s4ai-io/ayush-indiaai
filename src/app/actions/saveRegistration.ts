@@ -6,6 +6,7 @@ import { generateAbhaId } from '@/lib/mockAbdmService';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+
 interface RegistrationData {
     basicInfo?: {
         abhaId?: string;

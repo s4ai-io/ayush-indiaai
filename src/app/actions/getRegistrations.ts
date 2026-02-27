@@ -1,10 +1,12 @@
 'use server';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 export async function getRegistrations(status?: 'pending' | 'completed') {
     try {
         const url = status
-            ? `http://127.0.0.1:8000/api/patients?status=${status}`
-            : 'http://127.0.0.1:8000/api/patients';
+            ? `${API_URL}/api/patients?status=${status}`
+            : `${API_URL}/api/patients`;
         const response = await fetch(url, {
             cache: 'no-store'
         });

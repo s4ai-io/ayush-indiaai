@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, Activity, MapPin, TrendingUp } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { API_BASE } from '@/lib/config';
 
 // Types
 interface TrendData {
@@ -45,22 +46,22 @@ export default function PublicHealthDashboard() {
         const fetchData = async () => {
             try {
                 // Fetch Trends
-                const trendsRes = await fetch('http://localhost:8000/api/analytics/trends');
+                const trendsRes = await fetch(`${API_BASE}/api/analytics/trends`);
                 const trendsData = await trendsRes.json();
                 setTrends(trendsData);
 
                 // Fetch Alerts
-                const alertsRes = await fetch('http://localhost:8000/api/analytics/alerts');
+                const alertsRes = await fetch(`${API_BASE}/api/analytics/alerts`);
                 const alertsData = await alertsRes.json();
                 setAlerts(alertsData);
 
                 // Fetch Hotspots (Dengue default for demo)
-                const hotspotsRes = await fetch('http://localhost:8000/api/analytics/hotspots?disease=Dengue');
+                const hotspotsRes = await fetch(`${API_BASE}/api/analytics/hotspots?disease=Dengue`);
                 const hotspotsData = await hotspotsRes.json();
                 setHotspots(hotspotsData);
 
                 // Fetch Predictions
-                const predRes = await fetch('http://localhost:8000/api/analytics/predictions');
+                const predRes = await fetch(`${API_BASE}/api/analytics/predictions`);
                 const predData = await predRes.json();
                 setPredictions(predData);
 

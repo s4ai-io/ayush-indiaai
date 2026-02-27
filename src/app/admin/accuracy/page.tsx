@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, RefreshCw, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { API_BASE } from '@/lib/config';
 
 interface EvaluationResult {
     expected: string;
@@ -35,7 +36,7 @@ export default function AccuracyEvaluatorPage() {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch("http://localhost:8000/api/admin/evaluate");
+            const response = await fetch(`${API_BASE}/api/admin/evaluate`);
             if (!response.ok) {
                 throw new Error(`Evaluation failed with status: ${response.status}`);
             }

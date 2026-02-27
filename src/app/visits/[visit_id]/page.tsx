@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from 'react';
 import Link from 'next/link';
+import { API_BASE } from '@/lib/config';
 import {
     User, Stethoscope, Leaf, Activity, FileText, Star,
     Phone, MapPin, Calendar, ArrowLeft, Loader2,
@@ -126,8 +127,7 @@ export default function VisitDetailsPage({ params }: { params: Promise<{ visit_i
     useEffect(() => {
         const fetchDetails = async () => {
             try {
-                const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-                const res = await fetch(`${API}/api/visits/${visit_id}`, { cache: 'no-store' });
+                const res = await fetch(`${API_BASE}/api/visits/${visit_id}`, { cache: 'no-store' });
                 if (!res.ok) throw new Error(`Status ${res.status}`);
                 setData(await res.json());
             } catch (err: any) {

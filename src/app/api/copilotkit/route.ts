@@ -7,20 +7,22 @@ import {
 import { LlamaIndexAgent } from "@ag-ui/llamaindex";
 import { NextRequest } from "next/server";
 
+const BACKEND = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 export async function POST(request: NextRequest) {
     const runtime = new CopilotRuntime({
         agents: {
             consultation_agent: new LlamaIndexAgent({
-                url: "http://127.0.0.1:8000/api/copilot/consultation/run",
+                url: `${BACKEND}/api/copilot/consultation/run`,
             }) as any,
             registration_agent: new LlamaIndexAgent({
-                url: "http://127.0.0.1:8000/api/copilot/registration/run",
+                url: `${BACKEND}/api/copilot/registration/run`,
             }) as any,
             doctor_agent: new LlamaIndexAgent({
-                url: "http://127.0.0.1:8000/api/copilot/doctor/run",
+                url: `${BACKEND}/api/copilot/doctor/run`,
             }) as any,
             treatment_agent: new LlamaIndexAgent({
-                url: "http://127.0.0.1:8000/api/copilot/treatment/run",
+                url: `${BACKEND}/api/copilot/treatment/run`,
             }) as any,
         },
     });

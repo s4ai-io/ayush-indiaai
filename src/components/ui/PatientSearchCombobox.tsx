@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, Loader2, User, Phone, X } from 'lucide-react';
+import { API_BASE } from '@/lib/config';
 
 export interface PatientSearchResult {
     id: string;
@@ -58,8 +59,7 @@ export function PatientSearchCombobox({
 
             setLoading(true);
             try {
-                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-                const res = await fetch(`${API_URL}/api/patients/search?q=${encodeURIComponent(searchQuery)}`);
+                const res = await fetch(`${API_BASE}/api/patients/search?q=${encodeURIComponent(searchQuery)}`);
                 if (res.ok) {
                     const data = await res.json();
                     setResults(data || []);

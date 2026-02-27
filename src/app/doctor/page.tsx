@@ -9,6 +9,7 @@ import {
     Phone, PhoneOff, Users, TrendingUp, X, Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
+import { API_BASE } from '@/lib/config';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -78,8 +79,6 @@ function formatDate(iso: string): string {
 function initials(name: string): string {
     return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 }
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 

@@ -2,7 +2,8 @@
 
 export async function getPatient(id: string) {
     try {
-        const response = await fetch(`http://127.0.0.1:8000/api/patients/${id}`, {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const response = await fetch(`${API_URL}/api/patients/${id}`, {
             cache: 'no-store'
         });
         if (!response.ok) {

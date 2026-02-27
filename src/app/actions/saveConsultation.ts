@@ -5,6 +5,7 @@ import { generateAbhaId } from '@/lib/mockAbdmService';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+
 /**
  * Saves a new patient registration.
  * This should hit the backend `/api/patients` to create a new patient row and return the generated ID.

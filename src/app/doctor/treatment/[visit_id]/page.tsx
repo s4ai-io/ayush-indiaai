@@ -20,6 +20,7 @@ import { DiseaseSearchDropdown } from '@/components/ui/DiseaseSearchDropdown';
 import { useRouter } from "next/navigation";
 import { VoiceInputButton } from "@/components/VoiceInputButton";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { API_BASE } from '@/lib/config';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface VisitPatient {
@@ -90,7 +91,6 @@ export default function TreatmentPage({ params }: { params: Promise<{ visit_id: 
 // ─── Inner page content ───────────────────────────────────────────────────────
 function TreatmentPageContent({ visitId }: { visitId: string }) {
     const router = useRouter();
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
     // Visit / patient state
     const [visitCtx, setVisitCtx] = useState<VisitContext | null>(null);
@@ -171,7 +171,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
         const fetchVisit = async () => {
             try {
                 // Use the full visit endpoint to get patient demographics too
-                const res = await fetch(`${API_URL}/api/visits/${visitId}`, { cache: 'no-store' });
+                const res = await fetch(`${API_BASE}/api/visits/${visitId}`, { cache: 'no-store' });
                 if (!res.ok) throw new Error('Visit not found');
                 const data = await res.json();
 
@@ -198,7 +198,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
             } catch {
                 // fallback to the lighter endpoint
                 try {
-                    const res2 = await fetch(`${API_URL}/api/consultations/${visitId}/treatment`);
+                    const res2 = await fetch(`${API_BASE}/api/consultations/${visitId}/treatment`);
                     if (res2.ok) {
                         const d = await res2.json();
                         setVisitCtx({
@@ -286,7 +286,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
         const fetchSuggestions = async () => {
             if (proposedData?.disease) {
                 try {
-                    const res = await fetch(`${API_URL}/api/diseases/suggestions?q=${encodeURIComponent(proposedData.disease)}`);
+                    const res = await fetch(`${API_BASE}/api/diseases/suggestions?q=${encodeURIComponent(proposedData.disease)}`);
                     if (res.ok) {
                         const data = await res.json();
                         setSuggestedDiseases(data.suggestions || []);
@@ -299,7 +299,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
             }
         };
         fetchSuggestions();
-    }, [proposedData?.disease, API_URL]);
+    }, [proposedData?.disease]);
 
     const handleProceedWithUpdated = () => {
         if (!proposedData) return;
@@ -428,7 +428,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
     const submitPrescription = async () => {
         setIsSubmitting(true);
         try {
-            const res = await fetch(`${API_URL}/api/prescribe`, {
+            const res = await fetch(`${API_BASE}/api/prescribe`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -545,8 +545,8 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                                 key={sug}
                                                 onClick={() => setSelectedSuggestion(sug === selectedSuggestion ? null : sug)}
                                                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all border-2 ${selectedSuggestion === sug
-                                                        ? "bg-amber-600 border-amber-700 text-white shadow-md scale-105"
-                                                        : "bg-white border-amber-200 text-amber-700 hover:border-amber-400 hover:bg-amber-50"
+                                                    ? "bg-amber-600 border-amber-700 text-white shadow-md scale-105"
+                                                    : "bg-white border-amber-200 text-amber-700 hover:border-amber-400 hover:bg-amber-50"
                                                     }`}
                                             >
                                                 {sug}
@@ -1111,7 +1111,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                         <LanguageSelector selectedLanguage={selectedLanguage} onLanguageChange={setSelectedLanguage} />
                     </div>
                     <div className="absolute bottom-1.5 right-12 z-[1000] pointer-events-auto">
-                        <VoiceInputButton onTranscript={handleVoiceTranscript} language={selectedLanguage} isListening={isListening} setIsListening={setIsListening} />
+                        <VoiceInputButton onTranscript={handleVoiceTranscript} onError={(err) => { console.error('Voice error:', err); }} language={selectedLanguage} />
                     </div>
                 </>,
                 chatInputNode

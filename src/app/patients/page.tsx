@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { API_BASE } from '@/lib/config';
 import {
     Search, UserPlus, Stethoscope, ChevronRight,
     Calendar, Phone, Activity, FileText, X, Loader2
@@ -35,8 +36,7 @@ export default function PatientsDirectoryPage() {
         const fetchPatients = async () => {
             setLoading(true);
             try {
-                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-                const response = await fetch(`${API_URL}/api/patients`);
+                const response = await fetch(`${API_BASE}/api/patients`);
                 if (!response.ok) throw new Error("Failed connecting to patient API.");
                 const data = await response.json();
 
@@ -66,8 +66,7 @@ export default function PatientsDirectoryPage() {
         setSelectedPatientId(patientId);
         setHistoryLoading(true);
         try {
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-            const response = await fetch(`${API_URL}/api/patients/${patientId}/history`);
+            const response = await fetch(`${API_BASE}/api/patients/${patientId}/history`);
             if (!response.ok) throw new Error("Failed resolving patient history.");
 
             const data = await response.json();
@@ -107,8 +106,7 @@ export default function PatientsDirectoryPage() {
     const handleStartConsultation = async (patientId: string) => {
         setStartingConsultationId(patientId);
         try {
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-            const res = await fetch(`${API_URL}/api/consultations`, {
+            const res = await fetch(`${API_BASE}/api/consultations`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
