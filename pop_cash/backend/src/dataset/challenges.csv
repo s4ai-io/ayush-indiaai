@@ -1,6 +1,0 @@
-challenge_id,challenge_name,description,challenge_type,target_value,reward_popcoins,duration_days,start_date,end_date,is_active,difficulty
-CH001,Weekend Warrior,Complete 3 payments this weekend,Transaction Count,3,100,2,2025-12-02,2025-12-04,True,Easy
-CH002,Streak Master,Make payments 5 days in a row,Consecutive Days,5,200,7,2025-12-03,2025-12-10,True,Medium
-CH003,UPI Champion,Use UPI 10 times this month,Payment Method,10,150,30,2025-12-03,2026-01-02,True,Medium
-CH004,Big Spender,Spend ₹5000 in a week,Spending Amount,5000,250,7,2025-12-01,2025-12-08,True,Hard
-CH005,Bill Master,Pay 5 bills this month,Transaction Type,5,120,30,2025-12-03,2026-01-02,True,Easy
