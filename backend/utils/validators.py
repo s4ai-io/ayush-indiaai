@@ -28,7 +28,6 @@ class PatientProfile(BaseModel):
     disease: str = Field(..., min_length=1, description="Primary health condition (required)")
     symptoms: Optional[str] = Field(None, description="Patient symptoms (optional)")
     medical_history: Optional[str] = Field(None, description="Patient medical history or comorbidities")
-    severity: int = Field(..., ge=1, le=10, description="Condition severity (1-10)")
     bmi: Optional[float] = Field(None, ge=10, le=50, description="Body Mass Index")
     
     @field_validator('gender')
@@ -87,7 +86,6 @@ class PrescriptionRequest(BaseModel):
     visitId: Optional[str] = Field(None, description="Existing visit/medical record ID")
     disease: Optional[str] = Field("", description="Diagnosed disease")
     symptoms: Optional[str] = Field("", description="Patient symptoms text")
-    severity: int = Field(5, ge=1, le=10, description="Severity 1-10")
     prakriti: str = Field("Vata", description="Patient prakriti")
     vikriti: str = Field("Vata", description="Patient vikriti")
     treatmentPlan: Optional[dict] = Field(None, description="Full AI treatment plan JSON")
@@ -198,7 +196,6 @@ class ClinicalAssessment(BaseModel):
     diagnosis: str = ""
     prakriti: Optional[str] = None
     vikriti: Optional[str] = None
-    severity: Optional[int] = 5
     comorbidities: Optional[str] = None
     notes: Optional[str] = ""
 

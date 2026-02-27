@@ -57,11 +57,14 @@ interface TreatmentPlan {
     medical_intervention?: string;
     doshas_affected?: string;
     source_disease?: string;
-    match_confidence?: number;
-    match_method?: string;
     predicted_improvement: number;
     recommended_duration_weeks: number;
     explainability: string[];
+    namc_code?: string;
+    namc_term?: string;
+    namc_term_devanagari?: string;
+    no_match_found?: boolean;
+    message?: string;
 }
 
 // ─── Outer shell (CopilotKit provider) ───────────────────────────────────────
@@ -100,10 +103,15 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
     // Clinical assessment — pre-filled from visit, editable
     const [disease, setDisease] = useState('');
     const [symptoms, setSymptoms] = useState('');
-    const [severity, setSeverity] = useState(5);
     const [medicalHistory, setMedicalHistory] = useState('');
     const [prakriti, setPrakriti] = useState('');
     const [vikriti, setVikriti] = useState('');
+
+    // Doctor prescribed manual inputs mapped from Agent
+    const [doctorHerbs, setDoctorHerbs] = useState<string[]>([]);
+    const [doctorYoga, setDoctorYoga] = useState<string[]>([]);
+    const [doctorDiet, setDoctorDiet] = useState<string[]>([]);
+    const [doctorLifestyle, setDoctorLifestyle] = useState<string[]>([]);
 
     // Doctor prescription / feedback
     const [doctorNotes, setDoctorNotes] = useState('');
@@ -147,9 +155,10 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
     const handleNewChat = (clearForm: boolean) => {
         resetChat();
         if (clearForm) {
-            setDisease(''); setSymptoms(''); setSeverity(5); setMedicalHistory('');
+            setDisease(''); setSymptoms(''); setMedicalHistory('');
             setVikriti(''); setPrakriti(''); setTreatmentPlan(null);
             setDoctorNotes(''); setRating(null); setFeedback('');
+            setDoctorHerbs([]); setDoctorYoga([]); setDoctorDiet([]); setDoctorLifestyle([]);
             setProposedData(null);
         }
         setShowNewChatConfirm(false);
@@ -181,7 +190,6 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                 // Pre-fill clinical assessment from visit
                 setDisease(data.visit?.diagnosis || '');
                 setSymptoms(data.visit?.symptoms || '');
-                setSeverity(parseInt(data.visit?.severity) || 5);
                 setMedicalHistory(data.visit?.comorbidities || '');
                 setPrakriti(data.visit?.prakriti || '');
                 setVikriti(data.visit?.vikriti || '');
@@ -200,7 +208,6 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                         });
                         setDisease(d.diagnosis || '');
                         setSymptoms(d.symptoms || '');
-                        setSeverity(parseInt(d.severity) || 5);
                         setMedicalHistory(d.comorbidities || '');
                         setPrakriti(d.prakriti || '');
                         setVikriti(d.vikriti || '');
@@ -216,7 +223,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
     // ── CopilotKit readable + actions ──────────────────────────────────────
     useCopilotReadable({
         description: "Current clinical assessment form state",
-        value: { disease, symptoms, severity, medicalHistory, vikriti, prakriti },
+        value: { disease, symptoms, medicalHistory, vikriti, prakriti },
     });
 
     useCopilotAction({
@@ -225,10 +232,13 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
         parameters: [
             { name: "disease", type: "string", description: "Disease name" },
             { name: "symptoms", type: "string", description: "Comma-separated symptoms" },
-            { name: "severity", type: "number", description: "Severity 1-10" },
             { name: "comorbidity", type: "string", description: "Medical history / comorbidities" },
             { name: "doshas", type: "string", description: "Current dosha imbalance: Vata, Pitta, or Kapha" },
             { name: "prakriti", type: "string", description: "Constitution: Vata, Pitta, Kapha, Vata-Pitta, Pitta-Kapha, Vata-Kapha" },
+            { name: "herbs", type: "string", description: "Doctor prescribed herbs" },
+            { name: "yoga", type: "string", description: "Doctor prescribed yoga" },
+            { name: "diet", type: "string", description: "Doctor prescribed diet" },
+            { name: "lifestyle", type: "string", description: "Doctor prescribed lifestyle" },
         ],
         handler: async (args: any) => {
             setProposedData((prev: any) => {
@@ -252,10 +262,15 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
         if (!proposedData) return;
         if (proposedData.disease) setDisease(proposedData.disease);
         if (proposedData.symptoms) setSymptoms(proposedData.symptoms);
-        if (proposedData.severity) setSeverity(Number(proposedData.severity));
         if (proposedData.comorbidity) setMedicalHistory(proposedData.comorbidity);
         if (proposedData.doshas) setVikriti(proposedData.doshas);
         if (proposedData.prakriti) setPrakriti(proposedData.prakriti);
+
+        if (proposedData.herbs) setDoctorHerbs(proposedData.herbs.split(',').map((h: string) => h.trim()).filter(Boolean));
+        if (proposedData.yoga) setDoctorYoga(proposedData.yoga.split(',').map((y: string) => y.trim()).filter(Boolean));
+        if (proposedData.diet) setDoctorDiet(proposedData.diet.split(',').map((d: string) => d.trim()).filter(Boolean));
+        if (proposedData.lifestyle) setDoctorLifestyle(proposedData.lifestyle.split(',').map((l: string) => l.trim()).filter(Boolean));
+
         setProposedData(null);
     };
 
@@ -314,13 +329,51 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                     gender: visitCtx?.patient?.gender || '',
                     prakriti, vikriti, disease,
                     symptoms: symptoms || undefined,
-                    medical_history: medicalHistory || undefined,
-                    severity,
-                    bmi: 24.0,
+                    medical_history: medicalHistory || undefined
                 }),
             });
             if (!res.ok) throw new Error('Failed to generate plan');
-            setTreatmentPlan(await res.json());
+            const generatedPlan = await res.json();
+
+            if (!generatedPlan.no_match_found) {
+                // Merge doctor specifics
+                if (doctorHerbs.length > 0) {
+                    generatedPlan.herbs = generatedPlan.herbs || [];
+                    const existingNames = generatedPlan.herbs.map((h: any) => h.name.toLowerCase());
+                    doctorHerbs.forEach(herb => {
+                        if (!existingNames.includes(herb.toLowerCase())) {
+                            generatedPlan.herbs.unshift({ name: herb, dosage: 'As prescribed', benefits: 'Added by doctor' });
+                        }
+                    });
+                }
+                if (doctorYoga.length > 0) {
+                    generatedPlan.yoga = generatedPlan.yoga || [];
+                    const existingNames = generatedPlan.yoga.map((y: any) => y.practice.toLowerCase());
+                    doctorYoga.forEach(yoga => {
+                        if (!existingNames.includes(yoga.toLowerCase())) {
+                            generatedPlan.yoga.unshift({ practice: yoga, duration: 'As prescribed', benefits: 'Added by doctor' });
+                        }
+                    });
+                }
+                if (doctorDiet.length > 0) {
+                    generatedPlan.diet = generatedPlan.diet || [];
+                    doctorDiet.forEach(diet => {
+                        if (!generatedPlan.diet.some((d: string) => d.toLowerCase() === diet.toLowerCase())) {
+                            generatedPlan.diet.unshift(diet);
+                        }
+                    });
+                }
+                if (doctorLifestyle.length > 0) {
+                    generatedPlan.lifestyle = generatedPlan.lifestyle || [];
+                    doctorLifestyle.forEach(lifestyle => {
+                        if (!generatedPlan.lifestyle.some((l: string) => l.toLowerCase() === lifestyle.toLowerCase())) {
+                            generatedPlan.lifestyle.unshift(lifestyle);
+                        }
+                    });
+                }
+            }
+
+            setTreatmentPlan(generatedPlan);
         } catch {
             alert("Error generating treatment plan.");
         } finally {
@@ -338,7 +391,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                 body: JSON.stringify({
                     patientId: visitCtx?.patientId || '',
                     visitId,
-                    disease, symptoms, severity, prakriti, vikriti,
+                    disease, symptoms, prakriti, vikriti,
                     treatmentPlan,
                     doctorNotes,
                     rating,
@@ -356,20 +409,14 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
         }
     };
 
-    // ── Confidence badge ───────────────────────────────────────────────────
+    // ── NAMC Code Badge ───────────────────────────────────────────────────
     const getConfidenceBadge = () => {
-        if (!treatmentPlan?.match_confidence) return null;
-        const confidence = Math.round(treatmentPlan.match_confidence * 100);
-        const method = treatmentPlan.match_method;
-        let color = "bg-green-100 text-green-800 border-green-200";
-        let label = "Exact Match";
-        if (method === "fuzzy") { color = "bg-amber-100 text-amber-800 border-amber-200"; label = "Fuzzy Match"; }
-        else if (method === "symptom_similarity") { color = "bg-blue-100 text-blue-800 border-blue-200"; label = "Symptom Match"; }
+        if (!treatmentPlan?.namc_code) return null;
         return (
-            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${color}`}>
+            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border bg-emerald-100 text-emerald-800 border-emerald-200`}>
                 <Target className="w-3 h-3" />
-                {label} • {confidence}%
-                {treatmentPlan.source_disease && <span className="font-normal ml-1">→ {treatmentPlan.source_disease}</span>}
+                NAMC: {treatmentPlan.namc_code}
+                {treatmentPlan.namc_term && <span className="font-normal ml-1">→ {treatmentPlan.namc_term} {treatmentPlan.namc_term_devanagari ? `(${treatmentPlan.namc_term_devanagari})` : ''}</span>}
             </div>
         );
     };
@@ -430,10 +477,15 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                     <ul className="list-disc list-inside space-y-1">
                                         {proposedData.disease && <li><strong>Disease:</strong> {proposedData.disease}</li>}
                                         {proposedData.symptoms && <li><strong>Symptoms:</strong> {proposedData.symptoms}</li>}
-                                        {proposedData.severity && <li><strong>Severity:</strong> {proposedData.severity}/10</li>}
+                                        {proposedData.comorbidity && <li><strong>Comorbidity:</strong> {proposedData.comorbidity}</li>}
+                                        {proposedData.doshas && <li><strong>Doshas:</strong> {proposedData.doshas}</li>}
                                         {proposedData.comorbidity && <li><strong>Comorbidity:</strong> {proposedData.comorbidity}</li>}
                                         {proposedData.doshas && <li><strong>Doshas:</strong> {proposedData.doshas}</li>}
                                         {proposedData.prakriti && <li><strong>Prakriti:</strong> {proposedData.prakriti}</li>}
+                                        {proposedData.herbs && <li><strong>Herbs:</strong> {proposedData.herbs}</li>}
+                                        {proposedData.yoga && <li><strong>Yoga:</strong> {proposedData.yoga}</li>}
+                                        {proposedData.diet && <li><strong>Diet:</strong> {proposedData.diet}</li>}
+                                        {proposedData.lifestyle && <li><strong>Lifestyle:</strong> {proposedData.lifestyle}</li>}
                                     </ul>
                                 </div>
                             </div>
@@ -491,17 +543,6 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                             placeholder="e.g. excessive thirst, frequent urination, fatigue..."
                                             rows={3}
                                         />
-                                    </div>
-
-                                    {/* Severity */}
-                                    <div className="space-y-3 pt-2">
-                                        <label className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center justify-between">
-                                            <span>Severity (1–10)</span>
-                                            <span className={`px-2 py-0.5 rounded-full font-bold text-xs ${severity > 7 ? 'bg-red-100 text-red-700' : severity > 4 ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
-                                                {severity} / 10
-                                            </span>
-                                        </label>
-                                        <Slider value={[severity]} onValueChange={v => setSeverity(v[0])} max={10} min={1} step={1} className="cursor-pointer" />
                                     </div>
 
                                     {/* Comorbidity */}
@@ -625,8 +666,64 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                         </p>
                                     </div>
                                 </div>
+                            ) : treatmentPlan.no_match_found ? (
+                                <div className="h-full border-2 border-dashed border-amber-200/60 rounded-3xl flex flex-col items-center justify-center text-amber-600 min-h-[500px] bg-amber-50/30 backdrop-blur-sm relative overflow-hidden">
+                                    <div className="relative z-10 flex flex-col items-center text-center p-6">
+                                        <AlertTriangle className="w-16 h-16 text-amber-400 mb-6" />
+                                        <h3 className="text-2xl font-bold text-amber-800 tracking-tight mb-2">No Matches Found</h3>
+                                        <p className="text-amber-700 max-w-md leading-relaxed">
+                                            {treatmentPlan.message || "No matches found with National Ayurveda Morbidity Codes."}
+                                        </p>
+                                        <Button variant="outline" onClick={() => setTreatmentPlan(null)} className="mt-6 border-amber-300 text-amber-700 hover:bg-amber-100">
+                                            Clear Result
+                                        </Button>
+                                    </div>
+                                </div>
                             ) : (
                                 <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
+                                    {/* Explainability / NAMC Details Banner */}
+                                    {/* 
+                                    <Card className="bg-gradient-to-br from-slate-900 to-slate-800 text-slate-100 border-none shadow-xl overflow-hidden relative rounded-2xl">
+                                        <div className="absolute -top-4 -right-4 p-3 opacity-10">
+                                            <Brain className="w-32 h-32 text-white" />
+                                        </div>
+                                        <CardHeader className="pb-3 border-b border-white/5 bg-black/10">
+                                            <CardTitle className="text-lg flex items-center gap-2 text-primary tracking-wide">
+                                                <Sparkles className="w-5 h-5 text-primary animate-pulse" /> AI Clinical Rationale
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4 pt-5 relative z-10 px-5 pb-6">
+                                            <div className="mb-4">{getConfidenceBadge()}</div>
+                                            <div className="space-y-2">
+                                                {(treatmentPlan.explainability || []).map((reason: string, idx: number) => (
+                                                    <div key={idx} className="flex gap-2 text-sm text-slate-300">
+                                                        <CheckCircle className="w-4 h-4 text-green-400 shrink-0 mt-0.5" /> {reason}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="pt-4 border-t border-white/10 grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <span className="text-xs text-slate-400 uppercase tracking-wider">Improvement</span>
+                                                    <div className="text-green-400 font-bold text-2xl flex items-center gap-1">
+                                                        <TrendingUp className="w-5 h-5" /> {treatmentPlan.predicted_improvement}%
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <span className="text-xs text-slate-400 uppercase tracking-wider">Duration</span>
+                                                    <div className="font-bold text-xl flex items-center gap-1">
+                                                        <Clock className="w-4 h-4 text-slate-400" /> {treatmentPlan.recommended_duration_weeks} Weeks
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {treatmentPlan.doshas_affected && (
+                                                <div className="pt-3 border-t border-white/10">
+                                                    <span className="text-xs text-slate-400 uppercase tracking-wider">Doshas Affected</span>
+                                                    <div className="text-purple-300 font-semibold mt-1">{treatmentPlan.doshas_affected}</div>
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                    */}
 
                                     {/* Herbal Interventions */}
                                     <Card className="overflow-hidden border-none shadow-md ring-1 ring-emerald-100 bg-white/90 rounded-2xl">
@@ -635,20 +732,19 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                             <CardTitle className="flex items-center gap-2 text-emerald-900 text-lg">
                                                 <div className="p-1.5 bg-emerald-100 rounded-lg text-emerald-600"><Leaf className="w-4 h-4" /></div>
                                                 Herbal Interventions
-                                                {treatmentPlan.formulation && (
-                                                    <Badge variant="outline" className="text-emerald-700 border-emerald-300 bg-emerald-50 ml-2 text-xs">{treatmentPlan.formulation}</Badge>
-                                                )}
                                                 <button onClick={() => setAddingHerb(true)} className="ml-auto w-8 h-8 rounded-full bg-emerald-100 hover:bg-emerald-200 flex items-center justify-center text-emerald-700 transition-transform hover:scale-105 shadow-sm">
                                                     <Plus className="w-4 h-4" strokeWidth={3} />
                                                 </button>
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent className="grid gap-3 pt-5 px-5 pb-5">
-                                            {treatmentPlan.herbs.map((herb, idx) => (
+                                            {(treatmentPlan.herbs || []).length === 0 && !addingHerb && (
+                                                <p className="text-sm text-slate-400 italic py-2">No herbal interventions specified for this condition.</p>
+                                            )}
+                                            {(treatmentPlan.herbs || []).map((herb: any, idx: number) => (
                                                 <div key={idx} className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
                                                     <div>
                                                         <h4 className="font-bold text-slate-900">{herb.name}</h4>
-                                                        {herb.dosage && <p className="text-xs text-slate-500">{herb.dosage}</p>}
                                                         {herb.benefits && <p className="text-xs text-slate-400 mt-0.5">{herb.benefits}</p>}
                                                     </div>
                                                     <button onClick={() => deleteHerb(idx)} className="w-8 h-8 rounded-full bg-slate-50 hover:bg-red-50 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors">
@@ -679,7 +775,10 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent className="grid gap-3 pt-5 px-5 pb-5">
-                                            {treatmentPlan.yoga.map((yoga, idx) => (
+                                            {(treatmentPlan.yoga || []).length === 0 && !addingYoga && (
+                                                <p className="text-sm text-slate-400 italic py-2">No targeted yoga practices specified.</p>
+                                            )}
+                                            {(treatmentPlan.yoga || []).map((yoga: any, idx: number) => (
                                                 <div key={idx} className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
                                                     <div>
                                                         <h4 className="font-bold text-slate-900">{yoga.practice}</h4>
@@ -717,7 +816,10 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                             </CardHeader>
                                             <CardContent className="pt-4 px-5 pb-5">
                                                 <ul className="space-y-2.5">
-                                                    {treatmentPlan.diet.map((item, idx) => (
+                                                    {(treatmentPlan.diet || []).length === 0 && !addingDiet && (
+                                                        <li className="text-sm text-slate-400 italic py-2">No dietary guidelines specified.</li>
+                                                    )}
+                                                    {(treatmentPlan.diet || []).map((item: string, idx: number) => (
                                                         <li key={idx} className="flex items-center gap-3 text-sm text-slate-700 bg-amber-50/50 p-2.5 rounded-lg">
                                                             <span className="text-amber-500 font-bold">•</span>
                                                             <span className="flex-1">{item}</span>
@@ -749,7 +851,10 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                             </CardHeader>
                                             <CardContent className="pt-4 px-5 pb-5">
                                                 <ul className="space-y-2.5">
-                                                    {treatmentPlan.lifestyle.map((item, idx) => (
+                                                    {(treatmentPlan.lifestyle || []).length === 0 && !addingLifestyle && (
+                                                        <li className="text-sm text-slate-400 italic py-2">No lifestyle changes specified.</li>
+                                                    )}
+                                                    {(treatmentPlan.lifestyle || []).map((item: string, idx: number) => (
                                                         <li key={idx} className="flex items-center gap-3 text-sm text-slate-700 bg-indigo-50/50 p-2.5 rounded-lg">
                                                             <span className="text-indigo-500 font-bold">•</span>
                                                             <span className="flex-1">{item}</span>

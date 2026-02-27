@@ -3,6 +3,7 @@ from typing import Annotated, Dict, Any, List
 from llama_index.core.workflow import Context
 from llama_index.llms.openai import OpenAI
 from llama_index.protocols.ag_ui.router import get_ag_ui_workflow_router
+from utils.llm_config import get_llm
 import os
 from dotenv import load_dotenv
 
@@ -80,7 +81,7 @@ async def propose_consultation_data(
 # --- Agent Definition ---
 
 consultation_agent_router = get_ag_ui_workflow_router(
-    llm=OpenAI(model="gpt-4o", temperature=0),
+    llm=get_llm(),
     backend_tools=[],
     frontend_tools=[propose_consultation_data],
     system_prompt=SYSTEM_PROMPT,

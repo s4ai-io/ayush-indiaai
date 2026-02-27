@@ -3,6 +3,7 @@ from typing import Annotated, Dict, Any, List
 from llama_index.core.workflow import Context
 from llama_index.llms.openai import OpenAI
 from llama_index.protocols.ag_ui.router import get_ag_ui_workflow_router
+from utils.llm_config import get_llm
 import os
 from dotenv import load_dotenv
 
@@ -26,17 +27,19 @@ INTERACTION GUIDELINES:
 4.  **Proactive Filling**: Update the form IMMEDIATELY with ANY available information.
     -   Do NOT wait for all fields. If you only get the disease name, fill it immediately.
     -   Call `propose_clinical_assessment` after EVERY user input that contains relevant data.
-5.  **Auto-Generate**: Once key fields (disease, doshas, prakriti) are filled, suggest generating the AI plan.
 
 STRICT DATA FORMATTING:
 Use `propose_clinical_assessment` with these EXACT fields:
 
 - disease: string (disease name, e.g. "Diabetes", "Asthma")
 - symptoms: string (comma-separated symptoms, e.g. "fatigue, frequent urination")
-- severity: number (1-10 scale, default 5)
 - comorbidity: string (medical history/comorbidities, e.g. "hypertension, obesity")
 - doshas: string (MUST be exactly one of: "Vata", "Pitta", "Kapha")
 - prakriti: string (MUST be exactly one of: "Vata", "Pitta", "Kapha", "Vata-Pitta", "Pitta-Kapha", "Vata-Kapha")
+- herbs: string (comma-separated herbs suggested by the doctor e.g. "Ashwagandha, Tulsi")
+- yoga: string (comma-separated yoga practices suggested by the doctor e.g. "Surya Namaskar, Pranayama")
+- diet: string (comma-separated dietary suggestions e.g. "Avoid spicy food, drink warm water")
+- lifestyle: string (comma-separated lifestyle suggestions e.g. "Sleep early, avoid day sleep")
 
 DOSHA INFERENCE:
 If the doctor doesn't explicitly mention doshas, infer from the disease/symptoms:
@@ -44,7 +47,7 @@ If the doctor doesn't explicitly mention doshas, infer from the disease/symptoms
 - Pitta conditions: inflammation, acidity, skin rashes, fever, liver issues
 - Kapha conditions: obesity, diabetes, congestion, lethargy, water retention
 
-After filling the form, ask the doctor to confirm and then call `generate_treatment_plan` to trigger the AI plan.
+After filling the form, ask the doctor to review the UI and click the Generate button manually. Do NOT attempt to generate it yourself.
 """
 
 # --- Frontend Tools ---
@@ -53,30 +56,25 @@ async def propose_clinical_assessment(
     ctx: Context,
     disease: Annotated[str, "Disease name (e.g. Diabetes, Asthma)"] = None,
     symptoms: Annotated[str, "Comma-separated patient symptoms"] = None,
-    severity: Annotated[int, "Severity on a 1-10 scale"] = None,
     comorbidity: Annotated[str, "Patient medical history / comorbidities"] = None,
     doshas: Annotated[str, "Current dosha imbalance: Vata, Pitta, or Kapha"] = None,
     prakriti: Annotated[str, "Patient constitution: Vata, Pitta, Kapha, Vata-Pitta, Pitta-Kapha, or Vata-Kapha"] = None,
+    herbs: Annotated[str, "Comma-separated doctor prescribed herbs"] = None,
+    yoga: Annotated[str, "Comma-separated doctor prescribed yoga practices"] = None,
+    diet: Annotated[str, "Comma-separated doctor prescribed diet suggestions"] = None,
+    lifestyle: Annotated[str, "Comma-separated doctor prescribed lifestyle suggestions"] = None,
 ) -> str:
     """
     Extract the doctor's spoken notes and propose them to be added into the clinical assessment.
     """
     return "Clinical assessment proposed successfully for review."
 
-
-async def generate_treatment_plan(ctx: Context) -> str:
-    """
-    Trigger AI treatment plan generation based on current form data.
-    """
-    return "Treatment plan generation triggered."
-
-
 # --- Agent Definition ---
 
 treatment_agent_router = get_ag_ui_workflow_router(
-    llm=OpenAI(model="gpt-4o", temperature=0),
+    llm=get_llm(),
     backend_tools=[],
-    frontend_tools=[propose_clinical_assessment, generate_treatment_plan],
+    frontend_tools=[propose_clinical_assessment],
     system_prompt=SYSTEM_PROMPT,
     initial_state={},
 )
