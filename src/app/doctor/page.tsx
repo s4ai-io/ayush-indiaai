@@ -11,57 +11,11 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { API_BASE } from '@/lib/config';
+import type { PatientRecord, CompletedDiagnosis, DiagnosisDetail } from '@/types';
 
+// Re-alias for local readability
+type Patient = PatientRecord;
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-interface Patient {
-    id: string;
-    first_name: string;
-    last_name: string;
-    gender: string;
-    age: number;
-    marital_status: string;
-    mobile: string;
-    address: string;
-    city: string;
-    state: string;
-    pincode: string;
-    blood_group: string;
-    occupation: string;
-    id_type: string;
-    id_number: string;
-    created_at: string;
-    diagnosis_done: boolean;
-}
-
-interface CompletedDiagnosis {
-    record_id: string;
-    patient_id: string;
-    patient_name: string;
-    patient_age: number;
-    patient_gender: string;
-    patient_city: string;
-    patient_mobile: string;
-    diagnosis: string;
-    symptoms: string;
-    visit_date: string;
-}
-
-interface DiagnosisDetail {
-    id: string;
-    diagnosis: string;
-    symptoms: string;
-    notes: string;
-    prescription: any;
-    visit_date: string;
-    herbs: string;
-    yoga: string;
-    diet: string;
-    duration_weeks: number;
-    improvement: number;
-    outcome: string;
-}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

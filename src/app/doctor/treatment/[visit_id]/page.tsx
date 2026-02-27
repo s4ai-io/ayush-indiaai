@@ -21,52 +21,9 @@ import { useRouter } from "next/navigation";
 import { VoiceInputButton } from "@/components/VoiceInputButton";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { API_BASE } from '@/lib/config';
+import type { VisitPatient, VisitContext, TreatmentPlan } from '@/types';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface VisitPatient {
-    id: string;
-    firstName: string;
-    lastName: string;
-    gender: string;
-    age: string;
-    mobile: string;
-}
 
-interface VisitContext {
-    patientId: string;
-    patientName: string;
-    patientMobile: string;
-    symptoms: string;
-    diagnosis: string;
-    doctorNotes: string;
-    prakriti: string;
-    vikriti: string;
-    severity: string;
-    comorbidities: string;
-    patient?: VisitPatient;
-}
-
-interface TreatmentPlan {
-    herbs: { name: string; dosage: string; benefits: string }[];
-    yoga: { practice: string; duration: string; benefits: string }[];
-    diet: string[];
-    lifestyle: string[];
-    formulation?: string;
-    prevention: string[];
-    prognosis?: string;
-    complications: string[];
-    medical_intervention?: string;
-    doshas_affected?: string;
-    source_disease?: string;
-    predicted_improvement: number;
-    recommended_duration_weeks: number;
-    explainability: string[];
-    namc_code?: string;
-    namc_term?: string;
-    namc_term_devanagari?: string;
-    no_match_found?: boolean;
-    message?: string;
-}
 
 // ─── Outer shell (CopilotKit provider) ───────────────────────────────────────
 export default function TreatmentPage({ params }: { params: Promise<{ visit_id: string }> }) {

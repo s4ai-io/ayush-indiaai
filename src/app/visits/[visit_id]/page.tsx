@@ -8,51 +8,9 @@ import {
     Phone, MapPin, Calendar, ArrowLeft, Loader2,
     Heart, Pill, BookOpen, Clock, TrendingUp
 } from 'lucide-react';
+import type { VisitDetails } from '@/types';
 
-// ─── Types ───────────────────────────────────────────────────────
-interface VisitDetails {
-    patient: {
-        id: string;
-        firstName: string;
-        lastName: string;
-        gender: string;
-        age: string;
-        maritalStatus: string;
-        mobile: string;
-        address: string;
-        city: string;
-        state: string;
-        pincode: string;
-        bloodGroup: string;
-        occupation: string;
-        idType: string;
-        idNumber: string;
-    };
-    visit: {
-        id: string;
-        visitDate: string;
-        symptoms: string;
-        diagnosis: string;
-        prakriti: string;
-        vikriti: string;
-        severity: string;
-        comorbidities: string;
-        notes: string;
-        prescription: Record<string, any>;
-    };
-    treatment: {
-        herbs: string;
-        yoga: string;
-        diet: string;
-        durationWeeks: string;
-        predictedImprovement: string;
-        outcome: string;
-    };
-    feedback: {
-        rating: string;
-        comments: string;
-    };
-}
+
 
 // ─── Helpers ─────────────────────────────────────────────────────
 function Field({ label, value }: { label: string; value?: string | number | null }) {
@@ -235,15 +193,16 @@ export default function VisitDetailsPage({ params }: { params: Promise<{ visit_i
                 </Section>
 
                 {/* Prescription (if present) */}
-                {v.prescription && (v.prescription.doctor_notes || v.prescription.ai_plan) && (
+                {Boolean(v.prescription) && Boolean((v.prescription as Record<string, unknown>).doctor_notes || (v.prescription as Record<string, unknown>).ai_plan) && (
                     <Section icon={<Pill className="w-4 h-4 text-violet-600" />} title="Prescription" accent="violet">
-                        {v.prescription.doctor_notes && (
+                        {Boolean((v.prescription as Record<string, unknown>).doctor_notes) && (
                             <div className="col-span-2 md:col-span-3">
-                                <Field label="Doctor Prescription" value={v.prescription.doctor_notes} />
+                                <Field label="Doctor Prescription" value={(v.prescription as Record<string, string>).doctor_notes} />
                             </div>
                         )}
                     </Section>
                 )}
+
 
                 {/* AYUSH Treatment Plan */}
                 {(t.herbs || t.yoga || t.diet) && (

@@ -7,33 +7,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, Activity, MapPin, TrendingUp } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { API_BASE } from '@/lib/config';
+import type { TrendData, AlertData, HotspotData, PredictionData } from '@/types/public-health';
 
-// Types
-interface TrendData {
-    date: string;
-    [key: string]: number | string;
-}
-
-interface AlertData {
-    disease: string;
-    severity: string;
-    message: string;
-    date: string;
-}
-
-interface HotspotData {
-    city: string;
-    pincode: string;
-    diagnosis: string;
-    count: number;
-}
-
-interface PredictionData {
-    pincode: string;
-    predicted_cases: number;
-    risk_level: string;
-    day_offset: number;
-}
 
 export default function PublicHealthDashboard() {
     const [trends, setTrends] = useState<TrendData[]>([]);

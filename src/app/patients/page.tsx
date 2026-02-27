@@ -9,17 +9,8 @@ import {
     Calendar, Phone, Activity, FileText, X, Loader2
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import type { PatientDirectoryItem } from '@/types';
 
-interface PatientDirectoryItem {
-    id: string;
-    first_name: string;
-    last_name: string;
-    mobile: string;
-    gender: string;
-    age: number;
-    city: string;
-    visited: boolean;
-}
 
 export default function PatientsDirectoryPage() {
     const router = useRouter();

@@ -1,21 +1,13 @@
 'use server';
 
-import fs from 'fs/promises';
-import path from 'path';
 import { generateAbhaId } from '@/lib/mockAbdmService';
+import type { PatientRegistrationData } from '@/types/clinical';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 
-interface RegistrationData {
-    basicInfo?: {
-        abhaId?: string;
-        [key: string]: unknown;
-    };
-    [key: string]: unknown;
-}
 
-export async function saveRegistration(data: RegistrationData) {
+export async function saveRegistration(data: PatientRegistrationData) {
     try {
         // Mock ABDM Integration: Generate ABHA ID if not provided
         if (data.basicInfo && !data.basicInfo.abhaId) {

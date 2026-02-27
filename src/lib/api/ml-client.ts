@@ -1,36 +1,45 @@
 /**
  * ML API Client for AYUSH Application
- * Provides type-safe access to the Python ML backend
+ * Provides type-safe access to the Python ML backend.
+ *
+ * All shared types are now defined in src/types/ and re-exported here for
+ * backward compatibility with any code that imports from this file.
  */
 
-// ============================================================================
-// Type Definitions
-// ============================================================================
+// Import for local use within this file's function signatures
+import type {
+    PatientProfile,
+    ForecastDataPoint,
+    ForecastResponse,
+    EmergingTrend,
+    TrendsResponse,
+    HealthCheckResponse,
+} from '@/types/ml';
 
-export interface HerbRecommendation {
-    name: string;
-    dosage: string;
-    benefits: string;
-}
+import type {
+    HerbRecommendation,
+    YogaRecommendation,
+} from '@/types/clinical';
 
-export interface YogaRecommendation {
-    practice: string;
-    duration: string;
-    benefits: string;
-}
+// Re-export for backward compatibility
+export type {
+    PatientProfile,
+    ForecastDataPoint,
+    ForecastResponse,
+    EmergingTrend,
+    TrendsResponse,
+    HealthCheckResponse,
+} from '@/types/ml';
 
-export interface PatientProfile {
-    age: number;
-    gender: 'Male' | 'Female';
-    prakriti: string;
-    vikriti: string;
-    disease: string;
-    symptoms?: string;
-    medical_history?: string; // Comorbidity
-    severity: number; // 1-10
-    bmi?: number;
-}
+export type {
+    HerbRecommendation,
+    YogaRecommendation,
+} from '@/types/clinical';
 
+/**
+ * TreatmentRecommendation is ml-client-specific — a lighter shape used
+ * in the intermediate ML pipeline. The full plan is TreatmentPlan in @/types/clinical.
+ */
 export interface TreatmentRecommendation {
     herbs: HerbRecommendation[];
     yoga: YogaRecommendation[];
@@ -38,41 +47,6 @@ export interface TreatmentRecommendation {
     lifestyle: string[];
     predicted_improvement?: number;
     recommended_duration_weeks?: number;
-}
-
-export interface ForecastDataPoint {
-    month: string;
-    predicted_cases: number;
-    confidence_lower?: number;
-    confidence_upper?: number;
-}
-
-export interface ForecastResponse {
-    disease: string;
-    forecast_months: number;
-    forecast_data: ForecastDataPoint[];
-    trend: 'increasing' | 'decreasing' | 'stable';
-    risk_level: 'low' | 'moderate' | 'high';
-}
-
-export interface EmergingTrend {
-    disease: string;
-    category: string;
-    current_cases: number;
-    growth_rate: number;
-    risk_score: number;
-    alert_level: 'low' | 'medium' | 'high' | 'critical';
-}
-
-export interface TrendsResponse {
-    trends: EmergingTrend[];
-    generated_at: string;
-}
-
-export interface HealthCheckResponse {
-    status: string;
-    models_loaded: boolean;
-    version: string;
 }
 
 // ============================================================================
