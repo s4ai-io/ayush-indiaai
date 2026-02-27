@@ -22,7 +22,7 @@ vllm_image = (
     .apt_install("git")
     .apt_install("wget")
     .uv_pip_install(
-        "vllm>=0.12.0",
+        "vllm==0.7.2",
         "uv",
         "huggingface_hub[hf_transfer]==0.34.4",
         "flashinfer-python==0.5.3",
@@ -97,9 +97,9 @@ def serve():
     # Enable optimizations
     "--enable-chunked-prefill",
     
-    # Enable tool/function calling support (REQUIRED for FunctionAgent)
+    # Enable tool/function calling support
     "--enable-auto-tool-choice",
-    "--tool-call-parser", "hermes",  # or "mistral" depending on model
+    "--tool-call-parser", "hermes",  
 ]
 
     # enforce-eager disables both Torch compilation and CUDA graph capture

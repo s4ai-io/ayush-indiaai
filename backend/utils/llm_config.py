@@ -1,5 +1,6 @@
 import os
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai_like import OpenAILike
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,14 +19,17 @@ def get_llm():
         # vLLM usually accepts a dummy key if auth is disabled
         api_key = os.getenv("VLLM_API_KEY", "dummy-key")
         
-        return OpenAI(
+        return OpenAILike(
             model=model,
             api_base=api_base,
             api_key=api_key,
-            temperature=0
+            temperature=0,
+            is_chat_model=True,
+            is_function_calling_model=True,
+            timeout=1200.0  # Increased timeout for local models that might be slower
         )
     else:
         # Default standard OpenAI
         model = os.getenv("LLM_MODEL", "gpt-4o")
         # It picks up OPENAI_API_KEY automatically from environment
-        return OpenAI(model=model, temperature=0)
+        return OpenAI(model=model, temperature=0.0)
