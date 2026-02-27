@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# AYUSH India AI — Complete Setup Script
-# Sets up Python backend, PostgreSQL database, and Next.js frontend.
+# AYUSH India AI — Full Stack Setup
+# Sets up the Python backend (venv + deps) and Next.js frontend.
+# No database required — all persistence is CSV-based.
 
 set -e  # Exit on error
 
@@ -23,71 +24,75 @@ if [ ! -f "package.json" ]; then
 fi
 
 # ------------------------------------------------------------------
-# Step 1: Python Backend & Database
+# Step 1: Python Backend
 # ------------------------------------------------------------------
-echo -e "${YELLOW}Step 1: Setting up Python Backend & Database...${NC}"
+echo -e "${YELLOW}Step 1: Setting up Python Backend...${NC}"
 
 cd backend
 
 # Check Python
 if ! command -v python3 &> /dev/null; then
-    echo -e "${RED}Error: Python 3 is required.${NC}"
+    echo -e "${RED}Error: Python 3.10+ is required.${NC}"
     exit 1
 fi
 
-# Create Venv
+# Create venv
 if [ ! -d "venv" ]; then
     echo "Creating virtual environment..."
     python3 -m venv venv
 fi
 
-# Activate Venv
+# Activate venv
 source venv/bin/activate
 echo "Virtual environment activated."
 
-# Install Dependencies
+# Install dependencies
 echo "Installing Python dependencies..."
 pip install --upgrade pip > /dev/null
 pip install -r requirements.txt
 
 # Create .env if missing
 if [ ! -f ".env" ]; then
-    echo "Creating backend/.env file..."
-    cat > .env << EOF
-DATABASE_URL=postgresql://utsav:postgres@localhost/ayush_db
-# OPENAI_API_KEY=your_key_here
+    echo "Creating backend/.env from template..."
+    cat > .env << 'EOF'
+# ── LLM ───────────────────────────────────────────────────────────────
+# Binding: "openai" | "vllm"
+LLM_BINDING=vllm
+LLM_MODEL=microsoft/phi-4
+
+# vLLM endpoint (only used when LLM_BINDING=vllm)
+VLLM_API_HOST=https://<your-modal-endpoint>/v1
+VLLM_API_KEY=dummy-key
+
+# OpenAI (used when LLM_BINDING=openai)
+OPENAI_API_KEY=sk-...
+
+# ── Server ─────────────────────────────────────────────────────────────
+BACKEND_HOST=0.0.0.0
+BACKEND_PORT=8000
+
+# ── CORS ───────────────────────────────────────────────────────────────
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
 EOF
-    echo -e "${GREEN}✓ Created backend/.env${NC}"
+    echo -e "${GREEN}✓ Created backend/.env — update LLM keys before starting${NC}"
 else
     echo -e "${GREEN}✓ backend/.env exists${NC}"
 fi
 
-# Check PostgreSQL
-echo "Checking PostgreSQL connection..."
-if pg_isready -q; then
-    echo -e "${GREEN}✓ PostgreSQL is running${NC}"
-    
-    # Check/Create Database
-    if psql -lqt | cut -d \| -f 1 | grep -qw ayush_db; then
-        echo -e "${GREEN}✓ Database 'ayush_db' exists${NC}"
+# Check required data files
+echo "Checking data files..."
+MISSING=0
+for f in "data/patients.csv" "data/AyurGenixAI_Dataset.csv" "data/medical_records.csv"; do
+    if [ -f "$f" ]; then
+        echo -e "  ${GREEN}✓ $f${NC}"
     else
-        echo "Creating database 'ayush_db'..."
-        createdb ayush_db || echo "If creation failed, you might need to run 'createdb ayush_db' manually."
+        echo -e "  ${YELLOW}⚠ Missing: $f (some features may not work)${NC}"
+        MISSING=$((MISSING + 1))
     fi
+done
 
-    # Run Migrations
-    echo "Running Data Migration..."
-    python migrate_data.py
-
-else
-    echo -e "${RED}⚠ PostgreSQL is NOT running. Please start it and run 'python migrate_data.py' manually.${NC}"
-fi
-
-# Check ML Models
-if [ ! -f "models/outcome_model.pkl" ] && [ -f "ayush_ml_pipeline.py" ]; then
-    echo "Training ML models (first run)..."
-    python ayush_ml_pipeline.py
-    echo -e "${GREEN}✓ Models trained${NC}"
+if [ $MISSING -gt 0 ]; then
+    echo -e "${YELLOW}  → Data files live in backend/data/. See README for details.${NC}"
 fi
 
 cd ..
@@ -101,22 +106,32 @@ echo -e "${YELLOW}Step 2: Setting up Next.js Frontend...${NC}"
 
 # Check Node.js
 if ! command -v npm &> /dev/null; then
-    echo -e "${RED}Error: Node.js/npm is required.${NC}"
+    echo -e "${RED}Error: Node.js/npm is required (v18+).${NC}"
     exit 1
 fi
 
-# Install Deps
+# Install dependencies
 echo "Installing Node.js dependencies..."
 npm install
 
 # Create .env.local if missing
 if [ ! -f ".env.local" ]; then
-    echo "Creating .env.local..."
-    cat > .env.local << EOF
+    echo "Creating .env.local from template..."
+    cat > .env.local << 'EOF'
+# Python FastAPI backend URL
 NEXT_PUBLIC_API_URL=http://localhost:8000
 PYTHON_BACKEND_URL=http://localhost:8000
+
+# CopilotKit runtime (Next.js API route)
+NEXT_PUBLIC_COPILOT_URL=/api/copilotkit
+
+# Modal.run ASR & Translation endpoints
+MODAL_ASR_URL=https://<your-modal-asr-endpoint>/transcribe
+MODAL_TRANSLATE_URL=https://<your-modal-translate-endpoint>/translate
 EOF
-    echo -e "${GREEN}✓ Created .env.local${NC}"
+    echo -e "${GREEN}✓ Created .env.local — update Modal endpoint URLs before starting${NC}"
+else
+    echo -e "${GREEN}✓ .env.local exists${NC}"
 fi
 
 echo -e "${GREEN}✓ Frontend setup complete${NC}"
@@ -126,14 +141,16 @@ echo ""
 # Done
 # ------------------------------------------------------------------
 echo "=========================================="
-echo -e "${GREEN}SETUP PREPARATION COMPLETE!${NC}"
+echo -e "${GREEN}SETUP COMPLETE!${NC}"
 echo "=========================================="
 echo ""
-echo "To start the application run these two commands in separate terminals:"
+echo "Start the app with two terminals:"
 echo ""
-echo -e "${YELLOW}1. Backend:${NC}"
-echo "   cd backend && source venv/bin/activate && uvicorn main:app --reload --port 8000"
+echo -e "${YELLOW}Terminal 1 — Backend:${NC}"
+echo "  cd backend && ./run.sh"
+echo "  → http://localhost:8000  (API docs at /docs)"
 echo ""
-echo -e "${YELLOW}2. Frontend:${NC}"
-echo "   npm run dev"
+echo -e "${YELLOW}Terminal 2 — Frontend:${NC}"
+echo "  npm run dev"
+echo "  → http://localhost:3000"
 echo ""
