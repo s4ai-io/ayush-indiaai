@@ -54,10 +54,14 @@ class PatientProfile(BaseModel):
 class TreatmentRecommendation(BaseModel):
     """Treatment recommendation response from AyurGenix dataset"""
     # Core treatment recommendations
-    herbs: List[HerbRecommendation]
-    yoga: List[YogaRecommendation]
-    diet: List[str]
-    lifestyle: List[str]
+    herbs: List[HerbRecommendation] = Field(default_factory=list)
+    yoga: List[YogaRecommendation] = Field(default_factory=list)
+    diet: List[str] = Field(default_factory=list)
+    lifestyle: List[str] = Field(default_factory=list)
+
+    # Fallback fields
+    no_match_found: bool = False
+    message: str = ""
     
     # AyurGenix-specific fields
     formulation: Optional[str] = Field(None, description="Ayurvedic formulation with dosage")

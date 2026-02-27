@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logInteractionToTxt } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
     try {
@@ -33,6 +34,12 @@ export async function POST(req: NextRequest) {
         if (!response.ok) {
             const errorText = await response.text();
             console.error('Modal Translation API Error:', errorText);
+            logInteractionToTxt(
+                'Translation (Modal)',
+                `Source: ${src_lang}\nText: ${text}`,
+                undefined,
+                `Modal API Error: ${response.statusText}\n${errorText}`
+            );
             return NextResponse.json(
                 { error: `Translation API Error: ${response.statusText}` },
                 { status: response.status }
@@ -40,10 +47,26 @@ export async function POST(req: NextRequest) {
         }
 
         const data = await response.json();
+        logInteractionToTxt(
+            'Translation (Modal)',
+            `Source: ${src_lang}\nText: ${text}`,
+            JSON.stringify(data, null, 2)
+        );
         return NextResponse.json(data);
 
     } catch (error: any) {
         console.error('Error in /api/translate:', error);
+        let inputSummary = "Translation Request";
+        try {
+            const body = await req.clone().json();
+            inputSummary = `Source: ${body?.src_lang}\nText: ${body?.text}`;
+        } catch (_) { }
+        logInteractionToTxt(
+            'Translation (Modal)',
+            inputSummary,
+            undefined,
+            error.message || String(error)
+        );
         return NextResponse.json(
             { error: 'Internal server error during translation' },
             { status: 500 }

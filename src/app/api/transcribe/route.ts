@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logInteractionToTxt } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
     try {
@@ -36,6 +37,12 @@ export async function POST(req: NextRequest) {
         if (!response.ok) {
             const errorText = await response.text();
             console.error('Modal API Error:', errorText);
+            logInteractionToTxt(
+                'Transcription (Modal)',
+                `File: ${audioFile.name || 'audio.webm'}\nLanguage: ${language || 'N/A'}`,
+                undefined,
+                `Modal API Error: ${response.statusText}\n${errorText}`
+            );
             return NextResponse.json(
                 { error: `Modal API Error: ${response.statusText}` },
                 { status: response.status }
@@ -43,10 +50,21 @@ export async function POST(req: NextRequest) {
         }
 
         const data = await response.json();
+        logInteractionToTxt(
+            'Transcription (Modal)',
+            `File: ${audioFile.name || 'audio.webm'}\nLanguage: ${language || 'N/A'}`,
+            JSON.stringify(data, null, 2)
+        );
         return NextResponse.json(data);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error in /api/transcribe:', error);
+        logInteractionToTxt(
+            'Transcription (Modal)',
+            `Audio Upload`,
+            undefined,
+            error.message || String(error)
+        );
         return NextResponse.json(
             { error: 'Internal server error processing audio' },
             { status: 500 }

@@ -1,8 +1,16 @@
 import os
+import json
+import uuid
+from typing import Any, AsyncGenerator, Dict, List, Optional, Sequence
 from llama_index.llms.openai import OpenAI
+from llama_index.core.llms import LLMMetadata
+from llama_index.core.llms.llm import LLM
+from llama_index.core.tools import BaseTool
 from dotenv import load_dotenv
+from utils.llm_logger import apply_logging_to_llm
 
 load_dotenv()
+
 
 def get_llm():
     """
@@ -10,22 +18,65 @@ def get_llm():
     Supports either standard OpenAI API or an OpenAI-compatible vLLM endpoint (e.g., for Phi-4).
     """
     llm_binding = os.getenv("LLM_BINDING", "openai").lower()
-    
+
     if llm_binding == "vllm":
-        # Connect to a local or remote OpenAI-compatible vLLM endpoint
         model = os.getenv("LLM_MODEL", "microsoft/phi-4")
         api_base = os.getenv("VLLM_API_HOST", "http://localhost:8000/v1")
-        # vLLM usually accepts a dummy key if auth is disabled
         api_key = os.getenv("VLLM_API_KEY", "dummy-key")
-        
-        return OpenAI(
+
+        class VLLMOpenAI(OpenAI):
+            """
+            Patched OpenAI wrapper for vLLM models (e.g. Phi-4) that don't
+            reliably invoke tools when tool_choice='auto'.
+
+            Fix: always send tool_choice='required' when tools are provided,
+            so the model is forced to pick a tool rather than narrating the call.
+            """
+
+            @property
+            def metadata(self) -> LLMMetadata:
+                return LLMMetadata(
+                    context_window=128000,
+                    num_output=self.max_tokens or -1,
+                    is_chat_model=True,
+                    is_function_calling_model=True,
+                    model_name=self.model,
+                )
+
+            def _prepare_chat_with_tools(
+                self,
+                tools: List[BaseTool],
+                user_msg: Optional[Any] = None,
+                chat_history: Optional[Any] = None,
+                verbose: bool = False,
+                allow_parallel_tool_calls: bool = False,
+                tool_choice: Optional[Any] = "auto",
+                **kwargs: Any,
+            ) -> Dict[str, Any]:
+                """Force tool_choice='required' when tools are present."""
+                result = super()._prepare_chat_with_tools(
+                    tools=tools,
+                    user_msg=user_msg,
+                    chat_history=chat_history,
+                    verbose=verbose,
+                    allow_parallel_tool_calls=allow_parallel_tool_calls,
+                    tool_choice=tool_choice,
+                    **kwargs,
+                )
+                # Override: force model to ALWAYS call a tool when tools are present
+                if tools:
+                    result["tool_choice"] = "required"
+                return result
+
+        llm = VLLMOpenAI(
             model=model,
             api_base=api_base,
             api_key=api_key,
-            temperature=0
+            temperature=0,
         )
     else:
         # Default standard OpenAI
         model = os.getenv("LLM_MODEL", "gpt-4o")
-        # It picks up OPENAI_API_KEY automatically from environment
-        return OpenAI(model=model, temperature=0)
+        llm = OpenAI(model=model, temperature=0)
+
+    return apply_logging_to_llm(llm)
