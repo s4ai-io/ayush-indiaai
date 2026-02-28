@@ -101,7 +101,7 @@ ayush-app/
 |---|---|
 | API Framework | **FastAPI** 0.115 + **uvicorn** |
 | Data Validation | **Pydantic v2** |
-| Persistence | **CSV files** (`data/`) via `csv_service.py` |
+| Persistence | **PostgreSQL** via SQLAlchemy (`models.py`) |
 | ML / Recommendation | **Scikit-learn**, **Pandas**, **NumPy** (AyurGenixAI dataset) |
 | Disease Forecasting | **ARIMA**, trend analysis, **NetworkX** GNN |
 | Copilot Agents | **CopilotKit** + **AG-UI Protocol** + **LlamaIndex** |
@@ -128,8 +128,9 @@ ayush-app/
 ### Prerequisites
 - **Python 3.10+**
 - **Node.js 18+** and npm
+- **PostgreSQL** (running locally)
 
-> **No database required.** All persistence is CSV-based.
+> **Database Required.** Data persistence is handled via PostgreSQL, seeded initially from local CSV files.
 
 ---
 
@@ -147,6 +148,12 @@ pip install -r requirements.txt
 
 # Configure environment
 cp .env.example .env            # or create .env manually (see below)
+
+# Set up Database
+# Ensure PostgreSQL is installed and running locally.
+# Create a database named `ayush_db` (or alter DATABASE_URL in .env)
+# Seed the initial data from the CSV files into PostgreSQL:
+python migrate_csv_postgres.py
 
 # Start the backend
 python main.py

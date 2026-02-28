@@ -2,7 +2,7 @@
 
 # AYUSH India AI — Full Stack Setup
 # Sets up the Python backend (venv + deps) and Next.js frontend.
-# No database required — all persistence is CSV-based.
+# Requires PostgreSQL for data persistence.
 
 set -e  # Exit on error
 
@@ -78,6 +78,17 @@ EOF
 else
     echo -e "${GREEN}✓ backend/.env exists${NC}"
 fi
+
+# Setup Database
+echo -e "${YELLOW}Step 1.5: Setup PostgreSQL Database...${NC}"
+echo "Please ensure you have PostgreSQL installed and running locally."
+echo "You must create a database named 'ayush_db'."
+echo "Default connection string is: postgresql://user:password@localhost:5432/ayush_db"
+echo "If your credentials differ, add DATABASE_URL to backend/.env."
+echo ""
+echo "Running data migration script to seed PostgreSQL from CSVs..."
+python migrate_csv_postgres.py || echo -e "${YELLOW}⚠ Migration failed. Please check your PostgreSQL connection.${NC}"
+echo ""
 
 # Check required data files
 echo "Checking data files..."
