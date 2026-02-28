@@ -4,6 +4,7 @@ from llama_index.core.workflow import Context
 from llama_index.llms.openai import OpenAI
 from llama_index.protocols.ag_ui.router import get_ag_ui_workflow_router
 from utils.llm_config import get_llm
+from config import AGENT_TIMEOUT
 import os
 from dotenv import load_dotenv
 
@@ -77,4 +78,5 @@ treatment_agent_router = get_ag_ui_workflow_router(
     frontend_tools=[propose_clinical_assessment],
     system_prompt=SYSTEM_PROMPT,
     initial_state={},
+    timeout=AGENT_TIMEOUT,
 )

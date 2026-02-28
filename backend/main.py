@@ -1,16 +1,26 @@
 """
 FastAPI Backend for AYUSH ML Pipeline
 """
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from contextlib import asynccontextmanager
 import uvicorn
 import os
 import json
 import csv
+import datetime
+import httpx
 from dotenv import load_dotenv
 
 load_dotenv()
+
+from config import (
+    ASR_REQUEST_TIMEOUT, TRANSLATE_REQUEST_TIMEOUT,
+    DEFAULT_BACKEND_HOST, DEFAULT_BACKEND_PORT,
+    DEFAULT_ALLOWED_ORIGINS,
+)
+from utils.run_logger import RunLogger, VOICE_DIR
 
 from utils.validators import (
     PatientProfile,
@@ -56,7 +66,7 @@ app = FastAPI(
 )
 
 # Configure CORS
-_raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001")
+_raw_origins = os.getenv("ALLOWED_ORIGINS", DEFAULT_ALLOWED_ORIGINS)
 _allowed_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
 
 app.add_middleware(
@@ -407,13 +417,16 @@ async def get_visit_details(visit_id: str):
         except Exception:
             prescription = {}
 
-        # Look up linked AYUSH treatment
-        from services.csv_service import _read_csv, AYUSH_TREATMENTS_CSV, TREATMENT_FEEDBACK_CSV, _safe_json_parse
-        treatments = _read_csv(AYUSH_TREATMENTS_CSV)
-        ayush = next((t for t in treatments if t.get("medical_record_id") == visit_id), None)
-
-        feedbacks = _read_csv(TREATMENT_FEEDBACK_CSV)
-        feedback = next((f for f in feedbacks if f.get("medical_record_id") == visit_id), None)
+        # Look up linked AYUSH treatment and feedback from Postgres
+        from models import SessionLocal, AyushTreatment, TreatmentFeedback
+        from services.csv_service import _safe_json_parse
+        with SessionLocal() as db:
+            ayush = db.query(AyushTreatment).filter(
+                AyushTreatment.medical_record_id == visit_id
+            ).first()
+            feedback_row = db.query(TreatmentFeedback).filter(
+                TreatmentFeedback.medical_record_id == visit_id
+            ).first()
 
         # _DictObj stores fields as attributes, not dict keys — use getattr()
         g = lambda attr, d='': str(getattr(patient, attr, d) or d) if patient else d
@@ -451,17 +464,17 @@ async def get_visit_details(visit_id: str):
             },
             # AYUSH treatment plan
             "treatment": {
-                "herbs": ayush.get("herbs_prescribed", "") if ayush else "",
-                "yoga": ayush.get("yoga_prescribed", "") if ayush else "",
-                "diet": ayush.get("diet_plan", "") if ayush else "",
-                "durationWeeks": ayush.get("treatment_duration_weeks", "") if ayush else "",
-                "predictedImprovement": ayush.get("improvement_percentage", "") if ayush else "",
-                "outcome": ayush.get("outcome", "") if ayush else "",
+                "herbs":                ayush.herbs_prescribed if ayush else "",
+                "yoga":                 ayush.yoga_prescribed if ayush else "",
+                "diet":                 ayush.diet_plan if ayush else "",
+                "durationWeeks":        ayush.treatment_duration_weeks if ayush else "",
+                "predictedImprovement": ayush.improvement_percentage if ayush else "",
+                "outcome":              ayush.outcome if ayush else "",
             },
             # Doctor feedback (if any)
             "feedback": {
-                "rating": feedback.get("doctor_rating", "") if feedback else "",
-                "comments": feedback.get("doctor_comments", "") if feedback else "",
+                "rating":   feedback_row.doctor_rating if feedback_row else "",
+                "comments": feedback_row.doctor_comments if feedback_row else "",
             }
         }
     except HTTPException:
@@ -592,9 +605,180 @@ async def get_completed_diagnoses():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ── Voice Pipeline ─────────────────────────────────────────────────────────────
+# Frontend → FastAPI → Modal ASR / IndicTrans2
+# All steps logged into a single per-run JSON in backend/logs/runs/
+# ──────────────────────────────────────────────────────────────────────────────
+
+class BindRunIdRequest(BaseModel):
+    run_id: str
+
+@app.post("/api/bind-run-id", tags=["Voice Pipeline"])
+async def bind_run_id(req: BindRunIdRequest):
+    """
+    Bind a voice-pipeline run_id so the next LLM call in AGUIChatWorkflow
+    can link its log entry to the same run JSON.
+    Called by the frontend *before* appending the transcript to CopilotKit chat.
+    """
+    try:
+        from utils.llm_logger import set_current_run_id
+        set_current_run_id(req.run_id)
+    except Exception:
+        pass
+    return {"status": "ok"}
+
+class TranslateRequest(BaseModel):
+    text: str
+    src_lang: str
+    run_id: str | None = None   # carry-over from /api/transcribe for chained logging
+
+
+@app.post("/api/transcribe", tags=["Voice Pipeline"])
+async def transcribe_audio(
+    audio: UploadFile = File(...),
+    language: str = Form(None),
+):
+    """
+    Receive an audio recording from the frontend, save it to disk,
+    forward to Modal AI4Bharat ASR, and return the transcription.
+    A RunLogger is created here; the run_id is returned so that
+    /api/translate can append its step to the same JSON file.
+    """
+    modal_asr_url = os.getenv("MODAL_ASR_URL")
+    if not modal_asr_url:
+        raise HTTPException(status_code=500, detail="MODAL_ASR_URL not configured in backend .env")
+
+    rl = RunLogger()
+
+    # ── 1. Save raw voice input ────────────────────────────────────────────────
+    ts = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f")[:23].replace(":", "-")
+    ext = (audio.filename or "audio.webm").rsplit(".", 1)[-1]
+    voice_filename = f"{ts}_{rl.run_id}.{ext}"
+    voice_path = os.path.join(VOICE_DIR, voice_filename)
+
+    audio_bytes = await audio.read()
+    with open(voice_path, "wb") as f:
+        f.write(audio_bytes)
+
+    rl.set_voice_file(voice_path)
+
+    # ── 2. Call Modal ASR ──────────────────────────────────────────────────────
+    file_size_kb = round(len(audio_bytes) / 1024, 1)
+    # webm/opus at 128 kbps → ~16 KB/s; rough estimate for logging only
+    estimated_duration_s = round(len(audio_bytes) / (128 * 1024 / 8), 1)
+    transcriptor_input = {
+        "voice_file": voice_path,
+        "file_name": audio.filename or "audio.webm",
+        "language": language,
+        "file_size_kb": file_size_kb,
+        "estimated_duration_s": estimated_duration_s,
+        "modal_asr_url": modal_asr_url,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=ASR_REQUEST_TIMEOUT) as client:
+            form_data = {"language": language} if language else {}
+            files = {"audio": (audio.filename or "audio.webm", audio_bytes, audio.content_type or "audio/webm")}
+            resp = await client.post(modal_asr_url, data=form_data, files=files)
+
+        if resp.status_code != 200:
+            rl.update_step(
+                "transcriptor",
+                input=transcriptor_input,
+                output=None,
+                error=f"Modal ASR error {resp.status_code}: {resp.text[:500]}",
+            )
+            rl.finalize()
+            raise HTTPException(status_code=resp.status_code, detail=f"Modal ASR error: {resp.text[:300]}")
+
+        asr_data = resp.json()
+        rl.update_step("transcriptor", input=transcriptor_input, output=asr_data, error=None)
+
+        # Flush now — the file exists even if translation is skipped (English audio)
+        rl.flush()
+
+        return {**asr_data, "run_id": rl.run_id}
+
+    except httpx.TimeoutException:
+        rl.update_step("transcriptor", input=transcriptor_input, output=None, error="Modal ASR request timed out")
+        rl.finalize()
+        raise HTTPException(status_code=504, detail="Modal ASR request timed out")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        rl.update_step("transcriptor", input=transcriptor_input, output=None, error=str(exc))
+        rl.finalize()
+        raise HTTPException(status_code=500, detail=f"Transcription failed: {exc}")
+
+
+@app.post("/api/translate", tags=["Voice Pipeline"])
+async def translate_text(req: TranslateRequest):
+    """
+    Translate Indian-language text to English using Modal IndicTrans2.
+    Accepts an optional run_id; if provided, the translator step is appended
+    to the existing run JSON produced by /api/transcribe, giving a single
+    combined log file for the complete voice pipeline.
+    """
+    if not req.text or not req.text.strip():
+        raise HTTPException(status_code=400, detail="No text provided for translation")
+
+    modal_translate_url = os.getenv("MODAL_TRANSLATE_URL")
+    if not modal_translate_url:
+        raise HTTPException(status_code=500, detail="MODAL_TRANSLATE_URL not configured in backend .env")
+
+    # Re-attach to the existing run JSON written by /api/transcribe.
+    # load_existing() scans RUNS_DIR for the file whose name contains run_id
+    # and reopens it — so the translator step is appended to the same file.
+    # Fall back to a fresh run if no run_id was supplied (standalone translate call).
+    if req.run_id:
+        rl = RunLogger.load_existing(req.run_id) or RunLogger()
+    else:
+        rl = RunLogger()
+
+    translator_input = {
+        "text": req.text,
+        "src_lang": req.src_lang,
+        "modal_translate_url": modal_translate_url,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=TRANSLATE_REQUEST_TIMEOUT) as client:
+            resp = await client.post(
+                modal_translate_url,
+                json={"text": req.text, "src_lang": req.src_lang},
+            )
+
+        if resp.status_code != 200:
+            rl.update_step(
+                "translator",
+                input=translator_input,
+                output=None,
+                error=f"Modal Translate error {resp.status_code}: {resp.text[:500]}",
+            )
+            rl.finalize()
+            raise HTTPException(status_code=resp.status_code, detail=f"Translation error: {resp.text[:300]}")
+
+        translate_data = resp.json()
+        rl.update_step("translator", input=translator_input, output=translate_data, error=None)
+        rl.finalize()
+
+        return translate_data
+
+    except httpx.TimeoutException:
+        rl.update_step("translator", input=translator_input, output=None, error="Modal Translate request timed out")
+        rl.finalize()
+        raise HTTPException(status_code=504, detail="Modal Translate request timed out")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        rl.update_step("translator", input=translator_input, output=None, error=str(exc))
+        rl.finalize()
+        raise HTTPException(status_code=500, detail=f"Translation failed: {exc}")
+
+
 if __name__ == "__main__":
-    host = os.getenv("BACKEND_HOST", "0.0.0.0")
-    port = int(os.getenv("BACKEND_PORT", "8000"))
+    host = os.getenv("BACKEND_HOST", DEFAULT_BACKEND_HOST)
+    port = int(os.getenv("BACKEND_PORT", str(DEFAULT_BACKEND_PORT)))
     uvicorn.run(
         "main:app",
         host=host,

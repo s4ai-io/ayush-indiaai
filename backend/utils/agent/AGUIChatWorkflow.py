@@ -1,11 +1,12 @@
 import json
+import re
 import uuid
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from ag_ui.core import RunAgentInput
 
 from llama_index.core import Settings
-from llama_index.core.llms import ChatMessage, ChatResponse, TextBlock
+from llama_index.core.llms import ChatMessage, ChatResponse
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.tools import BaseTool, FunctionTool, ToolOutput
 from llama_index.core.workflow import Context, Workflow, step
@@ -169,7 +170,9 @@ class AGUIChatWorkflow(Workflow):
 
             if self.system_prompt:
                 if chat_history[0].role.value == "system":
-                    chat_history[0].blocks.append(TextBlock(text=self.system_prompt))
+                    # Replace CopilotKit's generic system message with our custom one.
+                    # Appending via TextBlock causes phi-4 to see the full prompt twice.
+                    chat_history[0] = ChatMessage(role="system", content=self.system_prompt)
                 else:
                     chat_history.insert(
                         0, ChatMessage(role="system", content=self.system_prompt)
@@ -178,6 +181,33 @@ class AGUIChatWorkflow(Workflow):
             await ctx.store.set("chat_history", chat_history)
         else:
             chat_history = await ctx.store.get("chat_history")
+
+        # ── Extract run_id for voice-pipeline log linkage ──
+        # Primary: /api/bind-run-id has already called set_current_run_id().
+        # Fallback: check message content for legacy __run_id__ prefix.
+        _run_id_for_this_call: Optional[str] = None
+        try:
+            from utils.llm_logger import get_current_run_id
+            _run_id_for_this_call = get_current_run_id()
+        except Exception:
+            pass
+
+        if not _run_id_for_this_call:
+            _RUN_ID_RE = re.compile(r"^__run_id__:([a-f0-9]{12})\n?", re.MULTILINE)
+            for msg in reversed(chat_history):
+                if msg.role.value == "user" and msg.content:
+                    m = _RUN_ID_RE.match(str(msg.content))
+                    if m:
+                        _run_id_for_this_call = m.group(1)
+                        msg.content = _RUN_ID_RE.sub("", str(msg.content), count=1).lstrip()
+                        break
+
+        # Bind run_id to this thread so llm_logger._append_vllm_step() can find it
+        try:
+            from utils.llm_logger import set_current_run_id
+            set_current_run_id(_run_id_for_this_call)
+        except Exception:
+            pass
 
         tools = list(self.frontend_tools.values())
         tools.extend(list(self.backend_tools.values()))

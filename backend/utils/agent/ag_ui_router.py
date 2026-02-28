@@ -7,6 +7,7 @@ from fastapi.responses import StreamingResponse
 from utils.agent.ToolCallResultWorkflowEvent import ToolCallResultWorkflowEvent
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.workflow import Workflow
+from config import AGENT_TIMEOUT
 from llama_index.protocols.ag_ui.events import (
     TextMessageStartWorkflowEvent,
     TextMessageContentWorkflowEvent,
@@ -103,7 +104,7 @@ def get_default_workflow_factory(
     backend_tools: Optional[List[str]] = None,
     initial_state: Optional[Dict[str, Any]] = None,
     system_prompt: Optional[str] = None,
-    timeout: Optional[float] = 120,
+    timeout: Optional[float] = AGENT_TIMEOUT,
 ) -> Callable[[], Workflow]:
     async def workflow_factory():
         return AGUIChatWorkflow(
@@ -124,7 +125,7 @@ def get_ag_ui_workflow_router(
     backend_tools: Optional[List[str]] = None,
     initial_state: Optional[Dict[str, Any]] = None,
     system_prompt: Optional[str] = None,
-    timeout: Optional[float] = 120,
+    timeout: Optional[float] = AGENT_TIMEOUT,
 ) -> APIRouter:
     workflow_factory = workflow_factory or get_default_workflow_factory(
         llm, frontend_tools, backend_tools, initial_state, system_prompt, timeout

@@ -1,4 +1,8 @@
 import modal
+from pathlib import Path
+
+# Portable path to .env (works on any dev machine)
+_ENV_PATH = str(Path(__file__).resolve().parent.parent / ".env")
 
 # Use a clean image with build tools required for IndicTransToolkit
 image = (
@@ -51,8 +55,8 @@ TGT_LANG = "eng_Latn"
 
 @app.cls(
     gpu="A100",
-    scaledown_window=300,
-    secrets=[modal.Secret.from_name("my-huggingface-secret")]
+    scaledown_window=1800,  # 30 minutes
+    secrets=[modal.Secret.from_dotenv(path=_ENV_PATH)]
 )
 class TranslationModel:
     @modal.enter()
@@ -126,7 +130,7 @@ class TranslationModel:
         return result
 
 
-@app.function(image=image, secrets=[modal.Secret.from_name("my-huggingface-secret")])
+@app.function(image=image, secrets=[modal.Secret.from_dotenv(path=_ENV_PATH)])
 @modal.asgi_app()
 def asgi_app():
     from fastapi import FastAPI, HTTPException

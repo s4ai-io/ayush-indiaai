@@ -8,6 +8,11 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.tools import BaseTool
 from dotenv import load_dotenv
 from utils.llm_logger import apply_logging_to_llm
+from config import (
+    LLM_REQUEST_TIMEOUT, LLM_TEMPERATURE,
+    DEFAULT_LLM_BINDING, DEFAULT_LLM_MODEL, DEFAULT_OPENAI_MODEL,
+    DEFAULT_VLLM_API_HOST, DEFAULT_VLLM_API_KEY,
+)
 
 load_dotenv()
 
@@ -17,12 +22,12 @@ def get_llm():
     Returns a configured LLM instance based on environment variables.
     Supports either standard OpenAI API or an OpenAI-compatible vLLM endpoint (e.g., for Phi-4).
     """
-    llm_binding = os.getenv("LLM_BINDING", "openai").lower()
+    llm_binding = os.getenv("LLM_BINDING", DEFAULT_LLM_BINDING).lower()
 
     if llm_binding == "vllm":
-        model = os.getenv("LLM_MODEL", "microsoft/phi-4")
-        api_base = os.getenv("VLLM_API_HOST", "http://localhost:8000/v1")
-        api_key = os.getenv("VLLM_API_KEY", "dummy-key")
+        model = os.getenv("LLM_MODEL", DEFAULT_LLM_MODEL)
+        api_base = os.getenv("VLLM_API_HOST", DEFAULT_VLLM_API_HOST)
+        api_key = os.getenv("VLLM_API_KEY", DEFAULT_VLLM_API_KEY)
 
         class VLLMOpenAI(OpenAI):
             """
@@ -79,13 +84,13 @@ def get_llm():
             model=model,
             api_base=api_base,
             api_key=api_key,
-            temperature=0,
+            temperature=LLM_TEMPERATURE,
             # max_tokens=max_tokens,
-            timeout=300.0,  # 5 min — Phi-4 on Modal can be slow (cold start + large model)
+            timeout=LLM_REQUEST_TIMEOUT,
         )
     else:
         # Default standard OpenAI
-        model = os.getenv("LLM_MODEL", "gpt-4o")
-        llm = OpenAI(model=model, temperature=0)
+        model = os.getenv("LLM_MODEL", DEFAULT_OPENAI_MODEL)
+        llm = OpenAI(model=model, temperature=LLM_TEMPERATURE)
 
     return apply_logging_to_llm(llm)

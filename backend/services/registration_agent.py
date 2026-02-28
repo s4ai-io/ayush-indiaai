@@ -4,6 +4,7 @@ from llama_index.core.workflow import Context
 from llama_index.protocols.ag_ui.router import get_ag_ui_workflow_router
 from utils.validators import RegistrationData
 from utils.llm_config import get_llm
+from config import AGENT_TIMEOUT
 import os
 from dotenv import load_dotenv
 
@@ -89,4 +90,5 @@ registration_agent_router = get_ag_ui_workflow_router(
     initial_state={
         "registration_data": RegistrationData().model_dump(),
     },
+    timeout=AGENT_TIMEOUT,
 )

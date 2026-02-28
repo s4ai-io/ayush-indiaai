@@ -113,12 +113,21 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
         setShowNewChatConfirm(false);
     };
 
-    const handleVoiceTranscript = async (transcript: string) => {
+    useCopilotReadable({ description: "The current state of the registration form.", value: formData });
+
+    const handleVoiceTranscript = async (transcript: string, runId?: string) => {
         setVoiceError(null);
+        // Bind run_id on the backend so the LLM logger can link to the voice pipeline run
+        if (runId) {
+            const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            fetch(`${API_BASE}/api/bind-run-id`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ run_id: runId }),
+            }).catch(() => { });
+        }
         await appendMessage(new TextMessage({ role: MessageRole.User, content: transcript }));
     };
-
-    useCopilotReadable({ description: "The current state of the registration form.", value: formData });
 
     useCopilotAction({
         name: "propose_registration_data",
@@ -155,6 +164,15 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
             },
         ],
         handler: async (args: any) => {
+            // Helper: check if an object has any non-empty values
+            const hasData = (obj: any) =>
+                obj && typeof obj === 'object' && Object.values(obj).some(v => v !== null && v !== undefined && v !== '');
+
+            // If the model returned all empty objects, there's nothing to propose — skip.
+            if (!hasData(args.basicInfo) && !hasData(args.contactInfo) && !hasData(args.otherInfo)) {
+                return "No registration data found in this message.";
+            }
+
             setProposedData((prev: any) => {
                 const mergeObj = (existing: any, incoming: any) => {
                     if (!incoming) return existing || undefined;

@@ -107,7 +107,15 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
         return () => clearInterval(iv);
     }, []);
 
-    const handleVoiceTranscript = async (transcript: string) => {
+    const handleVoiceTranscript = async (transcript: string, runId?: string) => {
+        // Bind run_id on the backend so the LLM logger can link to the voice pipeline run
+        if (runId) {
+            fetch(`${API_BASE}/api/bind-run-id`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ run_id: runId }),
+            }).catch(() => { });
+        }
         await appendMessage(new TextMessage({ role: MessageRole.User, content: transcript }));
     };
 

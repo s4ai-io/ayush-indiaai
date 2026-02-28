@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { Mic, MicOff, Loader2 } from 'lucide-react';
 
 interface VoiceInputButtonProps {
-    onTranscript: (text: string) => void;
+    onTranscript: (text: string, runId?: string) => void;
     onError?: (error: string) => void;
     language?: string;
 }
@@ -72,6 +72,9 @@ export function VoiceInputButton({ onTranscript, onError, language = 'hi' }: Voi
                     }
 
                     const transcript: string = transcribeData.text;
+                    // run_id lets the Python backend append the translator step
+                    // to the same JSON run file created in /api/transcribe
+                    const runId: string | undefined = transcribeData.run_id;
 
                     // ─── Step 2: Translate (only if not English) ──────────────────
                     if (language && needsTranslation(language)) {
@@ -79,7 +82,7 @@ export function VoiceInputButton({ onTranscript, onError, language = 'hi' }: Voi
                         const translateRes = await fetch('/api/translate', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ text: transcript, src_lang: language }),
+                            body: JSON.stringify({ text: transcript, src_lang: language, run_id: runId }),
                         });
 
                         if (!translateRes.ok) {
@@ -91,10 +94,10 @@ export function VoiceInputButton({ onTranscript, onError, language = 'hi' }: Voi
 
                         const translateData = await translateRes.json();
                         const englishText: string = translateData?.translated_text || transcript;
-                        onTranscript(englishText);
+                        onTranscript(englishText, runId);
                     } else {
-                        // English audio — no translation needed
-                        onTranscript(transcript);
+                        // English audio — Python backend already flushed the run JSON.
+                        onTranscript(transcript, runId);
                     }
 
                 } catch (error: any) {

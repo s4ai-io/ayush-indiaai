@@ -1,6 +1,10 @@
 import modal
 import io
 import os
+from pathlib import Path
+
+# Portable path to .env (works on any dev machine)
+_ENV_PATH = str(Path(__file__).resolve().parent.parent / ".env")
 
 # Define the image with necessary dependencies
 # Use CUDA-enabled base to ensure CUDAExecutionProvider is available in onnxruntime-gpu
@@ -28,9 +32,9 @@ ASR_MODEL_ID = "ai4bharat/indic-conformer-600m-multilingual"
 
 # Cache the weights so we don't download them on every cold start
 @app.cls(
-    gpu="A100", 
-    scaledown_window=300,
-    secrets=[modal.Secret.from_name("my-huggingface-secret")]
+    gpu="A100",
+    scaledown_window=1800,  # 30 minutes
+    secrets=[modal.Secret.from_dotenv(path=_ENV_PATH)]
 )
 class ASRModel:
     @modal.enter()
@@ -95,23 +99,62 @@ class ASRModel:
             wav = resampler(wav)
             
         print(f"Running inference on audio of shape {wav.shape} for language '{target_language}'...")
-        # The ai4bharat model returns a string or list of strings directly
+        # ai4bharat/indic-conformer-600m-multilingual works best on ≤20 s chunks.
+        # Strategy: split into 20 s chunks with 0.5 s overlap, try RNNT first,
+        # fall back to CTC per-chunk if RNNT returns empty.
         try:
-            transcription = self.model(wav, target_language, "ctc")
-            
-            # If it returns a list of batch results, get the first one
-            if isinstance(transcription, list):
-                transcription = transcription[0]
-                
-            print(f"Transcription complete: {transcription}")
+            CHUNK_SEC     = 20
+            OVERLAP_SEC   = 0.5
+            SR            = 16000
+            CHUNK_SAMPLES = CHUNK_SEC * SR
+            OVERLAP       = int(OVERLAP_SEC * SR)
+            STEP          = CHUNK_SAMPLES - OVERLAP
+            audio_len     = wav.shape[-1]
+
+            def _decode_chunk(chunk_wav):
+                """Try RNNT; if empty fall back to CTC."""
+                result = self.model(chunk_wav, target_language, "rnnt")
+                if isinstance(result, list):
+                    result = result[0]
+                result = (result or "").strip()
+                if not result:
+                    # RNNT returned empty — use CTC as fallback
+                    result = self.model(chunk_wav, target_language, "ctc")
+                    if isinstance(result, list):
+                        result = result[0]
+                    result = (result or "").strip()
+                return result
+
+            parts = []
+            start = 0
+            while start < audio_len:
+                end   = min(start + CHUNK_SAMPLES, audio_len)
+                chunk = wav[:, start:end]
+                part  = _decode_chunk(chunk)
+                if part:
+                    parts.append(part)
+                print(f"  chunk [{start//SR:.1f}s–{end//SR:.1f}s]: {repr(part[:60])}")
+                start += STEP
+
+            transcription = " ".join(parts)
+
+            if not transcription.strip():
+                raise RuntimeError(
+                    f"Model returned empty transcription for {audio_len/SR:.1f} s "
+                    f"of {target_language} audio — check audio quality or language setting."
+                )
+
+            print(f"Transcription complete ({len(parts)} chunks): {transcription[:120]}")
             return str(transcription)
+        except RuntimeError:
+            raise
         except Exception as e:
             print(f"Error during inference: {e}")
             raise e
 
 # Since we need to accept generic HTTP form-data (a file from the browser), 
 # ASGI wrapper is more robust for FastAPI than the basic @web_endpoint
-@app.function(image=image, secrets=[modal.Secret.from_name("my-huggingface-secret")])
+@app.function(image=image, secrets=[modal.Secret.from_dotenv(path=_ENV_PATH)])
 @modal.asgi_app()
 def asgi_app():
     from fastapi import FastAPI, UploadFile, File, Form, HTTPException
