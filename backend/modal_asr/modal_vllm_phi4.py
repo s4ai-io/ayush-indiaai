@@ -9,8 +9,6 @@ import modal
 from typing import Any, Dict, List
 
 import tiktoken  # Add this import
-VLLM_COMMIT="75531a6c134282f940c86461b3c40996b4136793"
-VLLM_URL = "--extra-index-url https://wheels.vllm.ai/" + VLLM_COMMIT
 
 
 vllm_image = (
@@ -22,15 +20,13 @@ vllm_image = (
     .apt_install("git")
     .apt_install("wget")
     .uv_pip_install(
-        "vllm==0.7.2",
+        "vllm==0.14.0",
         "uv",
         "huggingface_hub[hf_transfer]==0.34.4",
-        "flashinfer-python==0.5.3",
         pre=True,
     )
     .env({"HF_HUB_ENABLE_HF_TRANSFER": "1",
-    "VLLM_USE_FLASHINFER_MOE_FP8": "1",
-          "VLLM_LOGGING_LEVEL":"DEBUG"})
+          "VLLM_LOGGING_LEVEL": "DEBUG"})
 )
 
 # Phi-4 model from Microsoft
@@ -41,8 +37,6 @@ MODEL_REVISION = None  # Use latest version, or specify a commit hash if needed
 
 hf_cache_vol = modal.Volume.from_name("huggingface-cache", create_if_missing=True)
 vllm_cache_vol = modal.Volume.from_name("vllm-cache", create_if_missing=True)
-
-# vllm_image = vllm_image.env({"VLLM_USE_V1": "1"})
 
 FAST_BOOT = True  # slower boots but faster inference
 MAX_INPUTS = 2  # how many requests can one replica handle? tune carefully!
@@ -73,8 +67,6 @@ VLLM_PORT = 8000
 def serve():
     import subprocess
 
-
-
     cmd = [
     "vllm",
     "serve",
@@ -83,7 +75,11 @@ def serve():
     "--served-model-name", MODEL_NAME,
     "--host", "0.0.0.0",
     "--port", str(VLLM_PORT),
-    "--trust-remote-code", 
+    "--trust-remote-code",
+
+    # ── Tool Calling (native phi4_mini_json parser, available in vLLM ≥ 0.14) ──
+    "--enable-auto-tool-choice",
+    "--tool-call-parser", "phi4_mini_json",
 
     # Performance optimizations
     "--max-model-len", "16384",  # Phi-4 has 16K context window
@@ -96,10 +92,6 @@ def serve():
     
     # Enable optimizations
     "--enable-chunked-prefill",
-    
-    # Enable tool/function calling support
-    "--enable-auto-tool-choice",
-    "--tool-call-parser", "hermes",  
 ]
 
     # enforce-eager disables both Torch compilation and CUDA graph capture
@@ -111,9 +103,6 @@ def serve():
             "-O.cudagraph_capture_sizes="
             + str(CUDA_GRAPH_CAPTURE_SIZES).replace(" ", "")
         ]
-
-    # assume multiple GPUs are for splitting up large matrix multiplications
-    # cmd += ["--tensor-parallel-size", str(N_GPU)]
 
     print(cmd)
 

@@ -64,15 +64,24 @@ def get_llm():
                     **kwargs,
                 )
                 # Override: force model to ALWAYS call a tool when tools are present
+                # Phi-4 ignores tool_choice="auto" and narrates instead of calling tools.
+                # "required" forces it to emit proper tool_calls in the API response.
                 if tools:
                     result["tool_choice"] = "required"
                 return result
+
+        # Cap output tokens to keep responses fast.
+        # Agents only need short tool-call JSON + brief chat replies.
+        # Override via LLM_MAX_TOKENS env var if a specific task needs more.
+        # max_tokens = int(os.getenv("LLM_MAX_TOKENS", "1024"))
 
         llm = VLLMOpenAI(
             model=model,
             api_base=api_base,
             api_key=api_key,
             temperature=0,
+            # max_tokens=max_tokens,
+            timeout=300.0,  # 5 min — Phi-4 on Modal can be slow (cold start + large model)
         )
     else:
         # Default standard OpenAI
