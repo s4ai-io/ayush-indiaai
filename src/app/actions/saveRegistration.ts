@@ -1,6 +1,6 @@
 'use server';
 
-import { generateAbhaId } from '@/lib/mockAbdmService';
+
 import type { PatientRegistrationData } from '@/types/clinical';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -9,10 +9,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export async function saveRegistration(data: PatientRegistrationData) {
     try {
-        // Mock ABDM Integration: Generate ABHA ID if not provided
-        if (data.basicInfo && !data.basicInfo.abhaId) {
-            data.basicInfo.abhaId = generateAbhaId();
-        }
+
 
         console.log("Saving registration to backend:", `${API_URL}/api/patients`);
 
