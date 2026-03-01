@@ -15,6 +15,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 from config import (
     ASR_REQUEST_TIMEOUT, TRANSLATE_REQUEST_TIMEOUT,
     DEFAULT_BACKEND_HOST, DEFAULT_BACKEND_PORT,
@@ -136,6 +138,59 @@ async def get_disease_suggestions(q: str = None, limit: int = 3):
         return {"suggestions": []}
     suggestions = ayurgenix_service.get_suggestions(q, limit=limit)
     return {"suggestions": suggestions}
+
+
+@app.get("/api/dietary-plan", tags=["Treatment Recommendations"])
+async def get_dietary_plan(disease: str, prakriti: str):
+    """
+    Get Ayurvedic dietary plan based on disease (partial match) and prakriti (exact match).
+
+    Args:
+        disease: Disease name to lookup (partial, case-insensitive)
+        prakriti: Patient's Prakriti constitution (e.g. Vata, Pitta-Kapha)
+
+    Returns:
+        Matched dietary plan text, matched disease name, and prakriti, or null fields if no match.
+    """
+    try:
+        dietary_csv_path = os.path.join(BASE_DIR, "data", "Ayurvedic_Dietary_Plan.csv")
+        if not os.path.exists(dietary_csv_path):
+            return {"dietary_plan": None, "disease_matched": None, "prakriti": prakriti}
+
+        disease_lower = disease.strip().lower()
+        prakriti_clean = prakriti.strip()
+
+        current_disease = None
+        with open(dietary_csv_path, newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                # The CSV uses a blank Disease cell for subsequent Prakriti rows of the same disease
+                disease_cell = row.get("Disease", "").strip()
+                if disease_cell:
+                    current_disease = disease_cell
+
+                if current_disease is None:
+                    continue
+
+                # Partial disease match (e.g. "Skin" matches "Skin Diseases")
+                disease_matches = (
+                    disease_lower in current_disease.lower()
+                    or current_disease.lower() in disease_lower
+                )
+                prakriti_matches = row.get("Prakriti", "").strip().lower() == prakriti_clean.lower()
+
+                if disease_matches and prakriti_matches:
+                    return {
+                        "dietary_plan": row.get("Dietary Plan", "").strip(),
+                        "disease_matched": current_disease,
+                        "prakriti": prakriti_clean,
+                    }
+
+        return {"dietary_plan": None, "disease_matched": None, "prakriti": prakriti_clean}
+
+    except Exception as e:
+        print(f"Error reading dietary plan CSV: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch dietary plan: {str(e)}")
 
 
 @app.post("/api/recommend", response_model=TreatmentRecommendation, tags=["Treatment Recommendations"])

@@ -91,6 +91,9 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
     const [suggestedDiseases, setSuggestedDiseases] = useState<string[]>([]);
     const [selectedSuggestion, setSelectedSuggestion] = useState<string | null>(null);
 
+    // Ayurvedic dietary plan from CSV
+    const [ayurvedicDietPlan, setAyurvedicDietPlan] = useState<{ plan: string; disease: string } | null>(null);
+
     // Voice / CopilotKit portal
     const [selectedLanguage, setSelectedLanguage] = useState('hi-IN');
     const [isListening, setIsListening] = useState(false);
@@ -265,6 +268,29 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
         };
         fetchSuggestions();
     }, [proposedData?.disease]);
+
+    // Fetch Ayurvedic dietary plan from CSV whenever disease + prakriti change
+    useEffect(() => {
+        const fetchDietaryPlan = async () => {
+            if (!disease || !prakriti) { setAyurvedicDietPlan(null); return; }
+            try {
+                const res = await fetch(`/api/ml/dietary-plan?disease=${encodeURIComponent(disease)}&prakriti=${encodeURIComponent(prakriti)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.dietary_plan) {
+                        setAyurvedicDietPlan({ plan: data.dietary_plan, disease: data.disease_matched || disease });
+                    } else {
+                        setAyurvedicDietPlan(null);
+                    }
+                } else {
+                    setAyurvedicDietPlan(null);
+                }
+            } catch {
+                setAyurvedicDietPlan(null);
+            }
+        };
+        fetchDietaryPlan();
+    }, [disease, prakriti]);
 
     const handleProceedWithUpdated = () => {
         if (!proposedData) return;
@@ -856,6 +882,19 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                                 </CardTitle>
                                             </CardHeader>
                                             <CardContent className="pt-4 px-5 pb-5">
+                                                {/* Ayurvedic Dietary Plan from CSV */}
+                                                {ayurvedicDietPlan && (
+                                                    <div className="mb-4 p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border border-amber-200 shadow-sm">
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <Leaf className="w-4 h-4 text-amber-600" />
+                                                            <span className="text-xs font-bold text-amber-800 uppercase tracking-wider">
+                                                                Ayurvedic Plan · {prakriti} Prakriti
+                                                            </span>
+                                                            <span className="ml-auto text-xs text-amber-500 font-medium bg-amber-100 px-2 py-0.5 rounded-full">{ayurvedicDietPlan.disease}</span>
+                                                        </div>
+                                                        <p className="text-sm text-amber-900 leading-relaxed">{ayurvedicDietPlan.plan}</p>
+                                                    </div>
+                                                )}
                                                 <ul className="space-y-2.5">
                                                     {(treatmentPlan.diet || []).length === 0 && !addingDiet && (
                                                         <li className="text-sm text-slate-400 italic py-2">No dietary guidelines specified.</li>
