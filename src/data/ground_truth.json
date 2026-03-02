@@ -1,166 +1,146 @@
 [
   {
-    "Disease": "Asthma / Chronic Cough (Kapha Respiratory Disorder)",
+    "Audio-file name": "hindi_ayush1.wav",
+    "Disease": "Respiratory disorder",
     "Symptoms": [
       "Chest heaviness",
-      "Excess mucus production",
-      "Breathlessness at night",
-      "Difficulty breathing"
+      "Excess mucus",
+      "Breathlessness at night"
     ],
-    "Comorbidity": [
-      "Kapha accumulation in lungs",
-      "Obstructed airways"
-    ],
-    "Doshas": ["Kapha (increased)", "Vata (obstructed)"],
-    "Prakriti": "Kapha dominant"
+    "Comorbidities": [],
+    "Doshas": "Kapha",
+    "Prakriti": "Kapha"
   },
   {
-    "Disease": "Acne with Burning Sensation (Pitta Skin Disorder)",
+    "Audio-file name": "gujarati_ayush2.wav",
+    "Disease": "Skin inflammation",
     "Symptoms": [
-      "Red pimples",
-      "Burning sensation on face",
-      "Redness in eyes",
-      "Body warmth"
+      "Red eruptions on face",
+      "Burning sensation in sunlight",
+      "Itching",
+      "Body heat"
     ],
-    "Comorbidity": [
-      "Impure blood (Rakta dushti)",
-      "Excess body heat"
-    ],
-    "Doshas": ["Pitta (aggravated)"],
-    "Prakriti": "Pitta dominant"
+    "Comorbidities": [],
+    "Doshas": "Pitta",
+    "Prakriti": "Pitta"
   },
   {
-    "Disease": "Insomnia with Anxiety",
+    "Audio-file name": "bengali_ayush3.wav",
+    "Disease": "Anemia",
     "Symptoms": [
-      "Disturbed/light sleep",
-      "Excessive thoughts",
-      "Anxiety",
-      "Fast pulse",
-      "Dryness in body"
+      "Weakness",
+      "Fatigue",
+      "Breathlessness on exertion",
+      "Tingling in hands and feet",
+      "Loss of appetite",
+      "Dizziness"
     ],
-    "Comorbidity": [
-      "Mental stress",
-      "Excess caffeine intake"
-    ],
-    "Doshas": ["Vata (aggravated)"],
-    "Prakriti": "Vata dominant"
+    "Comorbidities": [],
+    "Doshas": "Pitta",
+    "Prakriti": "Pitta"
   },
   {
-    "Disease": "Pandu Roga (Anemia)",
+    "Audio-file name": "punjabi_ayush4.wav",
+    "Disease": "Diabetes",
     "Symptoms": [
-      "General weakness",
-      "Fatigue on exertion",
-      "Pale eyes and nails",
-      "Tingling in limbs",
-      "Loss of appetite"
-    ],
-    "Comorbidity": [
-      "Rakta dhatu deficiency",
-      "Possible liver weakness"
-    ],
-    "Doshas": ["Pitta imbalance", "Vata involvement"],
-    "Prakriti": "Pitta-Vata dominant"
-  },
-  {
-    "Disease": "Madhumeha (Diabetes)",
-    "Symptoms": [
-      "Excessive thirst",
+      "Excess thirst",
       "Frequent urination",
       "Weakness",
+      "Weight loss",
       "Fatigue"
     ],
-    "Comorbidity": [
-      "Excess Kapha",
-      "Medo dhatu (fat) increase",
-      "Low digestive fire (Mandagni)"
-    ],
-    "Doshas": ["Kapha (aggravated)"],
-    "Prakriti": "Kapha dominant"
+    "Comorbidities": [],
+    "Doshas": "Kapha",
+    "Prakriti": "Kapha"
   },
   {
-    "Disease": "Migraine (Suryaavarta / Shirshoola)",
+    "Audio-file name": "kannada_ayush5.wav",
+    "Disease": "Migraine",
     "Symptoms": [
-      "Unilateral headache",
+      "Half head pain",
       "Nausea",
-      "Headache aggravated by sunlight",
-      "Acidity"
-    ],
-    "Comorbidity": [
+      "Pain increases in sunlight",
+      "Sensitivity to light",
+      "Sensitivity to sound",
+      "Vomiting sensation",
       "Irregular meals",
-      "Hyperacidity"
+      "Poor sleep"
     ],
-    "Doshas": ["Pitta (aggravated)"],
-    "Prakriti": "Pitta dominant"
+    "Comorbidities": [],
+    "Doshas": "Pitta",
+    "Prakriti": "Pitta"
   },
   {
-    "Disease": "Asrigdara (Menstrual Disorder)",
+    "Audio-file name": "tamil_ayush6.wav",
+    "Disease": "Menstrual disorder",
     "Symptoms": [
-      "Excess menstrual bleeding",
-      "Lower abdominal pain"
+      "Heavy menstrual bleeding",
+      "Lower abdominal pain",
+      "Weakness",
+      "Dizziness",
+      "Body heat"
     ],
-    "Comorbidity": [
-      "Excess body heat",
-      "Irregular diet"
-    ],
-    "Doshas": ["Pitta (aggravated)", "Vata (associated)"],
-    "Prakriti": "Pitta dominant"
+    "Comorbidities": [],
+    "Doshas": "Pitta",
+    "Prakriti": "Pitta-Vata"
   },
   {
-    "Disease": "Sthoulya (Obesity)",
+    "Audio-file name": "telugu_ayush7.wav",
+    "Disease": "Obesity",
     "Symptoms": [
-      "Rapid weight gain",
-      "Exertional breathlessness",
-      "Sedentary lifestyle"
+      "Weight gain",
+      "Tiredness on walking",
+      "Excess sleep",
+      "Lethargy",
+      "Lack of exercise"
     ],
-    "Comorbidity": [
-      "Medo dhatu excess",
-      "Blocked Vata channels"
-    ],
-    "Doshas": ["Kapha (aggravated)", "Vata obstruction"],
-    "Prakriti": "Kapha dominant"
+    "Comorbidities": [],
+    "Doshas": "Kapha",
+    "Prakriti": "Kapha"
   },
   {
-    "Disease": "Kati Shoola (Low Back Pain)",
+    "Audio-file name": "malayalam_ayush8.wav",
+    "Disease": "Lower back pain",
     "Symptoms": [
-      "Lower back pain",
-      "Stiffness after sitting",
-      "Difficulty bending"
+      "Back stiffness",
+      "Pain after sitting",
+      "Difficulty bending",
+      "Pain after long travel",
+      "Morning stiffness"
     ],
-    "Comorbidity": [
-      "Degeneration of spinal fluids",
-      "Prolonged bike travel"
-    ],
-    "Doshas": ["Vata (aggravated)"],
-    "Prakriti": "Vata dominant"
+    "Comorbidities": [],
+    "Doshas": "Vata",
+    "Prakriti": "Vata"
   },
   {
-    "Disease": "Agni Mandya (Indigestion / Loss of Appetite)",
+    "Audio-file name": "english_ayush9.wav",
+    "Disease": "Insomnia",
     "Symptoms": [
-      "Heaviness in abdomen",
+      "Difficulty sleeping",
+      "Light sleep",
+      "Anxiety",
+      "Excess thinking",
+      "Restlessness",
+      "Excess caffeine intake",
+      "Excess screen use"
+    ],
+    "Comorbidities": [],
+    "Doshas": "Vata",
+    "Prakriti": "Vata"
+  },
+  {
+    "Audio-file name": "marathi_ayush10.wav",
+    "Disease": "Indigestion",
+    "Symptoms": [
       "Loss of appetite",
-      "Bitter taste in mouth"
+      "Heaviness in stomach",
+      "Bitter taste in mouth",
+      "Burping",
+      "Excess sleep after meals",
+      "Daytime sleeping"
     ],
-    "Comorbidity": [
-      "Ama accumulation",
-      "Daytime sleeping habit"
-    ],
-    "Doshas": ["Kapha (aggravated)", "Ama presence"],
-    "Prakriti": "Kapha dominant"
-  },
-  {
-    "Disease": "Jwara (Fever due to Ama)",
-    "Symptoms": [
-      "Fever",
-      "Body ache",
-      "Headache",
-      "Loss of appetite",
-      "White-coated tongue",
-      "Rapid pulse"
-    ],
-    "Comorbidity": [
-      "Ama accumulation"
-    ],
-    "Doshas": ["Kapha (associated)", "Pitta (fever component)"],
-    "Prakriti": "Kapha-Pitta dominant"
+    "Comorbidities": [],
+    "Doshas": "Kapha",
+    "Prakriti": "Kapha"
   }
 ]

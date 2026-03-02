@@ -102,7 +102,6 @@ export interface ClinicalAssessment {
     diagnosis: string;
     prakriti?: string;
     vikriti?: string;
-    severity?: number;
     comorbidities?: string;
     notes: string;
 }
@@ -134,7 +133,6 @@ export interface VisitContext {
     doctorNotes: string;
     prakriti: string;
     vikriti: string;
-    severity: string;
     comorbidities: string;
     patient?: VisitPatient;
 }
@@ -165,7 +163,6 @@ export interface VisitDetails {
         diagnosis: string;
         prakriti: string;
         vikriti: string;
-        severity: string;
         comorbidities: string;
         notes: string;
         prescription: Record<string, unknown>;
@@ -241,7 +238,7 @@ export interface TreatmentPlan {
     prognosis?: string;
     complications: string[];
     medical_intervention?: string;
-    doshas_affected?: string;
+    vikriti_affected?: string;
     source_disease?: string;
     predicted_improvement: number;
     recommended_duration_weeks: number;

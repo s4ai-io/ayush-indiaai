@@ -1,7 +1,6 @@
 from typing import Annotated, Dict, Any, List
 
 from llama_index.core.workflow import Context
-from llama_index.llms.openai import OpenAI
 from llama_index.protocols.ag_ui.router import get_ag_ui_workflow_router
 from utils.llm_config import get_llm
 from config import AGENT_TIMEOUT
@@ -35,7 +34,7 @@ Use `propose_clinical_assessment` with these EXACT fields:
 - disease: string (disease name, e.g. "Diabetes", "Asthma")
 - symptoms: string (comma-separated symptoms, e.g. "fatigue, frequent urination")
 - comorbidity: string (medical history/comorbidities, e.g. "hypertension, obesity")
-- doshas: string (MUST be exactly one of: "Vata", "Pitta", "Kapha")
+- vikriti: string (MUST be exactly one of: "Vata", "Pitta", "Kapha")
 - prakriti: string (MUST be exactly one of: "Vata", "Pitta", "Kapha", "Vata-Pitta", "Pitta-Kapha", "Vata-Kapha")
 - herbs: string (comma-separated herbs suggested by the doctor e.g. "Ashwagandha, Tulsi")
 - yoga: string (comma-separated yoga practices suggested by the doctor e.g. "Surya Namaskar, Pranayama")
@@ -58,7 +57,7 @@ async def propose_clinical_assessment(
     disease: Annotated[str, "Disease name (e.g. Diabetes, Asthma)"] = None,
     symptoms: Annotated[str, "Comma-separated patient symptoms"] = None,
     comorbidity: Annotated[str, "Patient medical history / comorbidities"] = None,
-    doshas: Annotated[str, "Current dosha imbalance: Vata, Pitta, or Kapha"] = None,
+    vikriti: Annotated[str, "Current dosha imbalance: Vata, Pitta, or Kapha"] = None,
     prakriti: Annotated[str, "Patient constitution: Vata, Pitta, Kapha, Vata-Pitta, Pitta-Kapha, or Vata-Kapha"] = None,
     herbs: Annotated[str, "Comma-separated doctor prescribed herbs"] = None,
     yoga: Annotated[str, "Comma-separated doctor prescribed yoga practices"] = None,

@@ -222,6 +222,11 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
+This will:
+1. Create and populate the Python virtual environment
+2. Install Node.js dependencies
+3. Create `.env.local` if not present
+
 ---
 
 ## 5. Configuration
@@ -281,3 +286,5 @@ ayush-app/
 | **Modal.run** | Serverless GPU hosting for fast inference without idle costs |
 | **NetworkX & scikit-learn** | Backbone of geographic mapping and clinical recommendation |
 | **PostgreSQL** | Primary relational datastore for medical events and users |
+
+**Built by**: S4AI Technologies LLP

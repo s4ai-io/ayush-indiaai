@@ -24,12 +24,18 @@ def run_migration():
     init_db()
     session = SessionLocal()
 
-    # Clear existing data
-    session.query(TreatmentFeedback).delete()
-    session.query(AyushTreatment).delete()
-    session.query(MedicalRecord).delete()
-    session.query(Patient).delete()
-    session.commit()
+    # Clear existing data in correct order to avoid ForeignKeyViolation
+    try:
+        session.query(TreatmentFeedback).delete()
+        session.query(AyushTreatment).delete()
+        session.query(MedicalRecord).delete()
+        session.query(Patient).delete()
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        print(f"Error clearing existing data: {e}")
+        # If deletion fails, we might still want to proceed or exiting
+        # For now, let's try to continue if it was just empty or handle better
 
     # 1. Patients
     if os.path.exists(PATIENTS_CSV):
@@ -81,7 +87,7 @@ def run_migration():
                 diagnosis=str(row.get("diagnosis", "")),
                 symptoms=str(row.get("symptoms", "")),
                 prakriti=str(row.get("prakriti", "")),
-                vikriti=str(row.get("vikriti", "")),
+                vikriti=str(row.get("doshas", row.get("vikriti", ""))),
                 severity=str(row.get("severity", "")),
                 comorbidities=str(row.get("comorbidities", "")),
                 notes=str(row.get("notes", "")),

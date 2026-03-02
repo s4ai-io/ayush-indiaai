@@ -56,16 +56,11 @@ if [ ! -f ".env" ]; then
     echo "Creating backend/.env from template..."
     cat > .env << 'EOF'
 # ── LLM ───────────────────────────────────────────────────────────────
-# Binding: "openai" | "vllm"
-LLM_BINDING=vllm
 LLM_MODEL=microsoft/phi-4
 
-# vLLM endpoint (only used when LLM_BINDING=vllm)
+# vLLM endpoint
 VLLM_API_HOST=https://<your-modal-endpoint>/v1
 VLLM_API_KEY=dummy-key
-
-# OpenAI (used when LLM_BINDING=openai)
-OPENAI_API_KEY=sk-...
 
 # ── Server ─────────────────────────────────────────────────────────────
 BACKEND_HOST=0.0.0.0

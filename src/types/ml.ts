@@ -13,8 +13,7 @@ export interface PatientProfile {
     vikriti: string;
     disease: string;
     symptoms?: string;
-    medical_history?: string; // Comorbidity
-    severity: number; // 1–10
+    comorbidities?: string;
     bmi?: number;
 }
 

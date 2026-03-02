@@ -217,10 +217,6 @@ export function validatePatientProfile(profile: PatientProfile): string[] {
         errors.push('Age must be between 0 and 120');
     }
 
-    if (profile.severity < 1 || profile.severity > 10) {
-        errors.push('Severity must be between 1 and 10');
-    }
-
     if (profile.bmi && (profile.bmi < 10 || profile.bmi > 50)) {
         errors.push('BMI must be between 10 and 50');
     }
@@ -229,7 +225,7 @@ export function validatePatientProfile(profile: PatientProfile): string[] {
         errors.push('Gender must be Male or Female');
     }
 
-    const validDoshas = [
+    const validVikritis = [
         'Vata',
         'Pitta',
         'Kapha',
@@ -239,12 +235,12 @@ export function validatePatientProfile(profile: PatientProfile): string[] {
         'Tridosha',
     ];
 
-    if (!validDoshas.includes(profile.prakriti)) {
+    if (!validVikritis.includes(profile.prakriti)) {
         errors.push('Invalid Prakriti value');
     }
 
-    if (!validDoshas.includes(profile.vikriti)) {
-        errors.push('Invalid Vikriti value');
+    if (!validVikritis.includes(profile.vikriti)) {
+        errors.push('Invalid Doshas imbalance value');
     }
 
     return errors;
