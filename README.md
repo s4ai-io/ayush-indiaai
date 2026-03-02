@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-**AYUSH India AI** is an AI-powered Ayurvedic healthcare platform that integrates traditional AYUSH knowledge with modern ML. It provides end-to-end capabilities covering patient registration, AI-driven clinical consultation (using CopilotKit and LlamaIndex), treatment planning (AyurGenix engine), and public health surveillance via spatiotemporal GNN and ARIMA forecasting.
+**AYUSH India AI** is an AI-powered Ayurvedic healthcare platform that integrates traditional AYUSH knowledge with modern ML. It provides end-to-end capabilities covering patient registration, AI-driven clinical consultation (using CopilotKit and LlamaIndex), treatment planning (ISHAAyush engine), and public health surveillance via spatiotemporal GNN and ARIMA forecasting.
 
 By combining **Microsoft Phi-4** (via vLLM on Modal.run), **AI4Bharat** (ASR and translation for multilingual Indic voice support), and a **FastAPI/Next.js** stack, AYUSH India AI democratizes access to personalized Ayurvedic care while enabling proactive disease monitoring at scale.
 
@@ -22,7 +22,7 @@ Traditional Ayurvedic healthcare faces several challenges in scaling and standar
 
 1. **Intelligent Multilingual Voice Input**: Leverages AI4Bharat ASR and translation, allowing patients and practitioners to interact using various Indic languages natively.
 2. **AI Copilot Agents**: Three specialized agents (Registration, Consultation, Treatment) powered by CopilotKit and LlamaIndex for conversational, guided workflows.
-3. **AyurGenix Treatment Recommendation**: Scikit-learn based ML engine generating personalized Ayurvedic treatment plans based on a curated `AyurGenixAI_Dataset.csv` knowledge base.
+3. **ISHAAyush Treatment Recommendation**: Scikit-learn based ML engine generating personalized Ayurvedic treatment plans based on a curated `ISHAAyushAI_Dataset.csv` knowledge base.
 4. **Public Health Surveillance**: Analyzes clinical data to detect geographical disease hotspots and forecast outbreaks using ARIMA and Spatiotemporal Graph Neural Networks (GNN).
 5. **Role-Based Workflows**: Tailored, intuitive Next.js web applications for Receptionists, Doctors, and Public Health Officials.
 6. **Cloud-Accelerated Inference**: Heavy ML workloads like the Phi-4 model and ASR are deployed on Modal.run serverless GPU infrastructure for high performance and low latency.
@@ -44,7 +44,7 @@ graph TD
     Frontend <-->|Copilot Protocol| Backend
 
     subgraph Server_Side [Backend Core]
-        Backend <-->|ML Inference| AyurGenix["AyurGenix Engine<br/>(Scikit-learn)"]
+        Backend <-->|ML Inference| ISHAAyush["ISHAAyush Engine<br/>(Scikit-learn)"]
         Backend <-->|Data Access| DB[(PostgreSQL & CSVs)]
         Backend <-->|Forecasting| Analytics["Analytics & Forecasting<br/>(ARIMA + GNN)"]
     end
@@ -71,7 +71,7 @@ sequenceDiagram
     participant UI as Next.js Frontend
     participant API as FastAPI Backend
     participant Agent as Copilot Agent (LlamaIndex)
-    participant ML as AyurGenix Engine
+    participant ML as ISHAAyush Engine
 
     Patient->>UI: Voice input symptoms (Indic language)
     UI->>API: Transcribe & Translate (Modal.run)
@@ -116,7 +116,7 @@ The orchestration engine handles APIs, Copilot agents, and integrates machine le
 
 | Service | Description |
 |---|---|
-| `AyurGenixService` | ML-driven treatment recommendation engine using historical datasets |
+| `ISHAAyushService` | ML-driven treatment recommendation engine using historical datasets |
 | `ConsultationAgent` | Copilot-based agent for clinical assessment and diagnosis guidance |
 | `ForecastService` | Disease forecasting using ARIMA and trend algorithms |
 | `GNNService` | Spatiotemporal Graph Neural Network for disease spread mapping |
@@ -154,7 +154,7 @@ A modern, responsive healthcare portal powered by Next.js App Router and shadcn/
 |---|---|
 | **Registration (`/registration`)** | Copilot-assisted patient onboarding queue |
 | **Doctor (`/doctor`)** | AI copilot clinical evaluation and patient history |
-| **Treatment (`/doctor/treatment/[id]`)** | AyurGenix treatment generation and prescription confirmation |
+| **Treatment (`/doctor/treatment/[id]`)** | ISHAAyush treatment generation and prescription confirmation |
 | **Dashboard (`/public-health/dashboard`)** | Global incidence tracking, spatial GNN charts, and active alerts |
 
 ---
@@ -258,7 +258,7 @@ System accuracy and model alignment can be evaluated via administrative endpoint
 ayush-app/
 ├── backend/
 │   ├── main.py                 # FastAPI router entry
-│   ├── services/               # Business logic (AyurGenix, GNN, Forecasting)
+│   ├── services/               # Business logic (ISHAAyush, GNN, Forecasting)
 │   ├── data/                   # Core structured knowledge base (.csv)
 │   ├── modal_asr/              # Scripts to deploy vLLM, ASR to Modal.run
 │   └── utils/

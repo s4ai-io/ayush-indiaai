@@ -1,17 +1,17 @@
-# AyurGenix AI — Treatment Recommendation System
+# ISHAAyush AI — Treatment Recommendation System
 
 ## Technical Report & Implementation Documentation
 
 **Version:** 1.0  
 **Date:** February 2026  
 **Project:** AYUSH India AI — Ministry of AYUSH PoC  
-**Module:** `backend/services/ayurgenix_service.py`
+**Module:** `backend/services/ISHAAyush_service.py`
 
 ---
 
 ## 1. Executive Summary
 
-AyurGenix AI is an intelligent treatment recommendation engine that provides **personalised Ayurvedic treatment plans** based on disease diagnosis and patient symptoms. It combines classical NLP techniques (TF-IDF vectorisation, cosine similarity) with string-matching algorithms and domain-specific Ayurvedic knowledge to deliver clinically relevant recommendations to doctors in real time.
+ISHAAyush AI is an intelligent treatment recommendation engine that provides **personalised Ayurvedic treatment plans** based on disease diagnosis and patient symptoms. It combines classical NLP techniques (TF-IDF vectorisation, cosine similarity) with string-matching algorithms and domain-specific Ayurvedic knowledge to deliver clinically relevant recommendations to doctors in real time.
 
 The system is designed for the **Ministry of AYUSH Proof-of-Concept (PoC)** platform, where doctors select patients, input clinical assessments, and receive AI-generated treatment plans — including herbal prescriptions, yoga therapy, dietary guidelines, and prognosis information — which they can then review and finalise.
 
@@ -55,13 +55,13 @@ We built a **retrieval-based recommendation system** rather than a generative mo
 
 ---
 
-## 3. Dataset: AyurGenixAI_Dataset.csv
+## 3. Dataset: ISHAAyushAI_Dataset.csv
 
 ### 3.1 Overview
 
 | Property | Value |
 |---|---|
-| **File** | `backend/data/AyurGenixAI_Dataset.csv` |
+| **File** | `backend/data/ISHAAyushAI_Dataset.csv` |
 | **Diseases** | 446 unique conditions |
 | **Columns** | 34 attributes per disease |
 | **Size** | ~387 KB |
@@ -141,14 +141,14 @@ The dataset contains the following 34 columns, organised into functional groups:
 
 ```
 ┌──────────────┐     ┌──────────────────┐     ┌─────────────────────┐
-│  Doctor UI   │────▶│  FastAPI Backend  │────▶│  AyurGenix Service  │
+│  Doctor UI   │────▶│  FastAPI Backend  │────▶│  ISHAAyush Service  │
 │  (Next.js)   │     │  /api/recommend   │     │  (In-Memory Engine) │
 │              │◀────│                   │◀────│                     │
 └──────────────┘     └──────────────────┘     └─────────────────────┘
                                                         │
                                                         ▼
                                                ┌────────────────┐
-                                               │ AyurGenixAI    │
+                                               │ ISHAAyushAI    │
                                                │ Dataset.csv    │
                                                │ (446 diseases) │
                                                └────────────────┘
@@ -212,7 +212,7 @@ On server startup, the service performs:
     "Exact match: Diabetes found in 447-disease Ayurvedic database.",
     "Herbs target Kapha dosha imbalance (patient's prakriti is Kapha).",
     "Predicted 80.0% improvement based on severity + dosha profile.",
-    "Recommendation sourced from AyurGenix dataset (30-60 years, Both genders)."
+    "Recommendation sourced from ISHAAyush dataset (30-60 years, Both genders)."
   ]
 }
 ```
@@ -221,7 +221,7 @@ On server startup, the service performs:
 
 ## 5. Matching Algorithm — 4-Tier Strategy
 
-The core innovation of AyurGenix is its **cascading 4-tier matching strategy**. Each tier is tried in sequence; the first successful match short-circuits the cascade.
+The core innovation of ISHAAyush is its **cascading 4-tier matching strategy**. Each tier is tried in sequence; the first successful match short-circuits the cascade.
 
 ### 5.1 Tier 1: Exact Disease Name Lookup
 
@@ -430,7 +430,7 @@ explainability = [
     "Exact match: Diabetes found in 447-disease Ayurvedic database.",
     "Herbs target Kapha dosha imbalance (patient's prakriti is Kapha).",
     "Predicted 80.0% improvement based on severity + dosha profile.",
-    "Recommendation sourced from AyurGenix dataset (30-60 years, Both genders)."
+    "Recommendation sourced from ISHAAyush dataset (30-60 years, Both genders)."
 ]
 ```
 
@@ -602,14 +602,14 @@ curl -s -X POST http://localhost:8000/api/ml/recommend \
 ```
 backend/
 ├── services/
-│   └── ayurgenix_service.py    # Core recommendation engine (598 lines)
+│   └── ISHAAyush_service.py    # Core recommendation engine (598 lines)
 ├── utils/
 │   └── validators.py           # Pydantic request/response models
 ├── data/
-│   └── AyurGenixAI_Dataset.csv # 446 diseases × 34 columns
+│   └── ISHAAyushAI_Dataset.csv # 446 diseases × 34 columns
 ├── main.py                     # FastAPI app + /api/recommend endpoint
 ├── docs/
-│   └── AyurGenixAI_Model_Report.md  # This document
+│   └── ISHAAyushAI_Model_Report.md  # This document
 ├── run.sh                      # Server runner script
 ├── migrate.sh                  # Data migration script
 └── setup.sh                    # First-time setup script

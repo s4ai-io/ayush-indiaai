@@ -1,4 +1,4 @@
-# AyurGenix AI — One-Page Summary
+# ISHAAyush AI — One-Page Summary
 
 **AYUSH India AI | Ministry of AYUSH PoC | February 2026**
 
@@ -6,7 +6,7 @@
 
 ## What It Does
 
-AyurGenix AI is a **treatment recommendation engine** that generates personalised Ayurvedic treatment plans for doctors. Given a patient's disease, symptoms, and dosha profile, it returns herb prescriptions, yoga therapy, dietary guidelines, prognosis, and complications — all sourced from a curated **446-disease medical dataset** with full explainability.
+ISHAAyush AI is a **treatment recommendation engine** that generates personalised Ayurvedic treatment plans for doctors. Given a patient's disease, symptoms, and dosha profile, it returns herb prescriptions, yoga therapy, dietary guidelines, prognosis, and complications — all sourced from a curated **446-disease medical dataset** with full explainability.
 
 ## How It Works — 4-Tier Matching
 
@@ -35,7 +35,7 @@ Patient Input → Tier 1: Exact Disease Lookup (100% confidence)
 
 ## Dataset
 
-**`AyurGenixAI_Dataset.csv`** — 446 diseases × 34 columns covering: symptoms, herbs, formulations, yoga, diet, lifestyle, doshas, prognosis, complications, prevention, and medical intervention. Includes Hindi and Marathi disease names.
+**`ISHAAyushAI_Dataset.csv`** — 446 diseases × 34 columns covering: symptoms, herbs, formulations, yoga, diet, lifestyle, doshas, prognosis, complications, prevention, and medical intervention. Includes Hindi and Marathi disease names.
 
 ## Output (13 Fields)
 
@@ -62,10 +62,10 @@ Patient Input → Tier 1: Exact Disease Lookup (100% confidence)
 ## Architecture
 
 ```
-Next.js Frontend ──POST──▶ FastAPI /api/ml/recommend ──▶ AyurGenixService (in-memory)
-                  ◀─JSON──                              ◀── AyurGenixAI_Dataset.csv
+Next.js Frontend ──POST──▶ FastAPI /api/ml/recommend ──▶ ISHAAyushService (in-memory)
+                  ◀─JSON──                              ◀── ISHAAyushAI_Dataset.csv
 ```
 
 ---
 
-*Full technical report: [AyurGenixAI_Model_Report.md](./AyurGenixAI_Model_Report.md)*
+*Full technical report: [ISHAAyushAI_Model_Report.md](./ISHAAyushAI_Model_Report.md)*

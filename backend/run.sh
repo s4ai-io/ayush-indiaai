@@ -40,7 +40,7 @@ fi
 
 # ── 2. Check data files ──────────────────────────────
 echo "📁 Checking data files..."
-for f in "data/patients.csv" "data/AyurGenixAI_Dataset.csv"; do
+for f in "data/patients.csv" "data/ISHAAyushAI_Dataset.csv"; do
     if [ -f "$f" ]; then
         echo "  ✓ $f"
     else

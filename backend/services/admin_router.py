@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException
 from typing import List, Dict, Any
 from pydantic import BaseModel
 
-from services.ayurgenix_service import ayurgenix_service
+from services.ISHAAyush_service import ISHAAyush_service
 from utils.llm_config import get_llm
 from config import ASR_REQUEST_TIMEOUT
 

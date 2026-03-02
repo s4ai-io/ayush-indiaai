@@ -88,7 +88,7 @@ echo ""
 # Check required data files
 echo "Checking data files..."
 MISSING=0
-for f in "data/patients.csv" "data/AyurGenixAI_Dataset.csv" "data/medical_records.csv"; do
+for f in "data/patients.csv" "data/ISHAAyushAI_Dataset.csv" "data/medical_records.csv"; do
     if [ -f "$f" ]; then
         echo -e "  ${GREEN}✓ $f${NC}"
     else

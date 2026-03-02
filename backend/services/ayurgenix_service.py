@@ -1,5 +1,5 @@
 """
-AyurGenix Treatment Recommendation Service
+ISHAAyush Treatment Recommendation Service
 
 Uses Codified_Ayurvedic_disease.csv to provide disease-specific Ayurvedic treatment recommendations based on standardized NAMC codes.
 
@@ -19,7 +19,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 
-class AyurGenixService:
+class ISHAAyushService:
     """
     Treatment recommendation service powered by Codified_Ayurvedic_disease.csv.
     """
@@ -38,7 +38,7 @@ class AyurGenixService:
     def initialize(self):
         """Load the codified dataset on startup."""
         try:
-            print("Initializing AyurGenix Service with Codified Data...")
+            print("Initializing ISHAAyush Service with Codified Data...")
             csv_path = os.path.join(DATA_DIR, 'Codified_Ayurvedic_disease.csv')
 
             if not os.path.exists(csv_path):
@@ -72,11 +72,11 @@ class AyurGenixService:
                 self.tfidf_matrix = self.vectorizer.fit_transform(self.all_diseases)
 
             self.initialized = True
-            print(f"✓ AyurGenix Service loaded: {len(self.df)} codified diseases")
+            print(f"✓ ISHAAyush Service loaded: {len(self.df)} codified diseases")
             return True
 
         except Exception as e:
-            print(f"❌ Error initializing AyurGenix Service: {e}")
+            print(f"❌ Error initializing ISHAAyush Service: {e}")
             return False
 
     # ------------------------------------------------------------------
@@ -147,7 +147,7 @@ class AyurGenixService:
             Full treatment recommendation dict, or a no_match dict.
         """
         if not self.initialized:
-            raise RuntimeError("AyurGenix Service not initialized. Call initialize() first.")
+            raise RuntimeError("ISHAAyush Service not initialized. Call initialize() first.")
 
         disease_input = (patient_data.get('disease') or '').strip()
 
@@ -446,7 +446,7 @@ class AyurGenixService:
         gender_info = self._safe_get(row, 'Gender')
         if age_group and gender_info:
             explainability.append(
-                f"Recommendation sourced from AyurGenix dataset ({age_group}, {gender_info})."
+                f"Recommendation sourced from ISHAAyush dataset ({age_group}, {gender_info})."
             )
 
         return explainability
@@ -484,4 +484,4 @@ class AyurGenixService:
 
 
 # Global singleton instance
-ayurgenix_service = AyurGenixService()
+ISHAAyush_service = ISHAAyushService()

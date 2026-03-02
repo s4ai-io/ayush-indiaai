@@ -1,4 +1,4 @@
-from services.ayurgenix_service import ayurgenix_service
+from services.ISHAAyush_service import ISHAAyush_service
 from services.clustering_service import clustering_service
 from services.rl_service import rl_service
 import copy
@@ -19,7 +19,7 @@ class HybridRecommendationEngine:
         """
         # 1. Base Strategy: Codified Rules execution
         # Get the standard Ayurvedic recommendations
-        base_recommendation = ayurgenix_service.get_recommendation(patient_data)
+        base_recommendation = ISHAAyush_service.get_recommendation(patient_data)
         
         # If no match in the rule base, return early
         if base_recommendation.get("no_match_found"):

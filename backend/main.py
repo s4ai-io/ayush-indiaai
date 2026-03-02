@@ -33,7 +33,7 @@ from utils.validators import (
     TrendsResponse,
     HealthCheckResponse
 )
-from services.ayurgenix_service import ayurgenix_service
+from services.ISHAAyush_service import ISHAAyush_service
 from services.hybrid_service import hybrid_service
 from services.clustering_service import clustering_service
 from services.rl_service import rl_service
@@ -47,8 +47,8 @@ async def lifespan(app: FastAPI):
     print("Starting AYUSH ML Backend API")
     print("="*60)
     
-    # Initialize AyurGenix Treatment Service
-    ayurgenix_service.initialize()
+    # Initialize ISHAAyush Treatment Service
+    ISHAAyush_service.initialize()
     
     # Initialize Forecast Service
     forecast_service.initialize()
@@ -97,11 +97,11 @@ async def root():
 @app.get("/health", response_model=HealthCheckResponse, tags=["Health"])
 async def health_check():
     """Health check endpoint"""
-    ayurgenix_health = ayurgenix_service.health_check()
+    ISHAAyush_health = ISHAAyush_service.health_check()
     
     return {
-        "status": "healthy" if ayurgenix_health["initialized"] else "degraded",
-        "models_loaded": ayurgenix_health["dataset_loaded"],
+        "status": "healthy" if ISHAAyush_health["initialized"] else "degraded",
+        "models_loaded": ISHAAyush_health["dataset_loaded"],
         "storage": "csv",
         "version": "3.0.0"
     }
@@ -110,7 +110,7 @@ async def health_check():
 @app.get("/api/diseases", tags=["Treatment Recommendations"])
 async def get_disease_list(q: str = None):
     """
-    Get list of all disease names from the AyurGenix dataset.
+    Get list of all disease names from the ISHAAyush dataset.
     
     Args:
         q: Optional search query to filter disease names
@@ -118,7 +118,7 @@ async def get_disease_list(q: str = None):
     Returns:
         List of disease name strings
     """
-    diseases = ayurgenix_service.get_disease_list()
+    diseases = ISHAAyush_service.get_disease_list()
     if q:
         q_lower = q.strip().lower()
         diseases = [d for d in diseases if q_lower in d.lower()]
@@ -139,7 +139,7 @@ async def get_disease_suggestions(q: str = None, limit: int = 3):
     """
     if not q:
         return {"suggestions": []}
-    suggestions = ayurgenix_service.get_suggestions(q, limit=limit)
+    suggestions = ISHAAyush_service.get_suggestions(q, limit=limit)
     return {"suggestions": suggestions}
 
 

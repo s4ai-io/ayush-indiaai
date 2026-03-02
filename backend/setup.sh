@@ -38,7 +38,7 @@ echo "  ✓ All dependencies installed"
 echo ""
 echo "Step 3/3: Checking data files..."
 MISSING=0
-for f in "data/patients.csv" "data/medical_records.csv" "data/ayush_treatments.csv" "data/AyurGenixAI_Dataset.csv"; do
+for f in "data/patients.csv" "data/medical_records.csv" "data/ayush_treatments.csv" "data/ISHAAyushAI_Dataset.csv"; do
     if [ -f "$f" ]; then
         ROWS=$(wc -l < "$f" | tr -d ' ')
         echo "  ✓ $f ($ROWS lines)"
