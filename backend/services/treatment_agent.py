@@ -1,7 +1,6 @@
 from typing import Annotated, Dict, Any, List
 
 from llama_index.core.workflow import Context
-from llama_index.llms.openai import OpenAI
 from llama_index.protocols.ag_ui.router import get_ag_ui_workflow_router
 from utils.llm_config import get_llm
 from config import AGENT_TIMEOUT

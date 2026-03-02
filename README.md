@@ -21,7 +21,7 @@ ayush-app/
 │   │   └── admin_router.py         # Admin evaluation & accuracy endpoints
 │   ├── utils/
 │   │   ├── validators.py           # Pydantic v2 request/response schemas
-│   │   ├── llm_config.py           # LLM binding selector (OpenAI / vLLM)
+│   │   ├── llm_config.py           # LLM vLLM client configuration
 │   │   ├── llm_logger.py           # LLM I/O logging (writes to logs/)
 │   │   └── agent/                  # AG-UI agent workflow implementation
 │   │       ├── AGUIChatWorkflow.py
@@ -103,8 +103,7 @@ ayush-app/
 | ML / Recommendation | **Scikit-learn**, **Pandas**, **NumPy** (AyurGenixAI dataset) |
 | Disease Forecasting | **ARIMA**, trend analysis, **NetworkX** GNN |
 | Copilot Agents | **CopilotKit** + **AG-UI Protocol** + **LlamaIndex** |
-| LLM (default) | **Microsoft Phi-4** via **vLLM** on Modal.run |
-| LLM (fallback) | **OpenAI GPT-4o** |
+| LLM | **Microsoft Phi-4** via **vLLM** on Modal.run |
 | Speech-to-Text | **AI4Bharat ASR** (multilingual Indic, on Modal.run) |
 | Translation | **AI4Bharat IndicTrans** (Indic ↔ English, on Modal.run) |
 
@@ -162,16 +161,11 @@ python main.py
 **`backend/.env` reference:**
 ```env
 # ── LLM ───────────────────────────────────────────────────────────────
-# Binding: "openai" | "vllm"
-LLM_BINDING=vllm
 LLM_MODEL=microsoft/phi-4
 
-# vLLM endpoint (only used when LLM_BINDING=vllm)
+# vLLM endpoint
 VLLM_API_HOST=https://<your-modal-endpoint>/v1
 VLLM_API_KEY=dummy-key
-
-# OpenAI (used when LLM_BINDING=openai or as fallback)
-OPENAI_API_KEY=sk-...
 
 # ── Server ─────────────────────────────────────────────────────────────
 BACKEND_HOST=0.0.0.0
@@ -272,7 +266,7 @@ The platform uses three **CopilotKit + AG-UI** agents backed by **LlamaIndex**:
 | **Registration Agent** | `/api/copilot/registration` | Voice + form-driven patient registration |
 | **Treatment Agent** | `/api/copilot/treatment` | AI-crafted Ayurvedic treatment plan generation |
 
-LLM selection is controlled by the `LLM_BINDING` environment variable (`vllm` → Phi-4, `openai` → GPT-4o).
+The application exclusively uses the vLLM API to communicate with the language model.
 
 ---
 

@@ -12,7 +12,7 @@ Import as:
 # These are kept in sync across backend agents, LLM clients, and the frontend.
 
 AGENT_TIMEOUT = 300          # AG-UI workflow timeout (all agents)
-LLM_REQUEST_TIMEOUT = 300.0  # OpenAI/vLLM HTTP request timeout
+LLM_REQUEST_TIMEOUT = 300.0  # vLLM HTTP request timeout
 ASR_REQUEST_TIMEOUT = 180.0  # Modal ASR (transcription) HTTP timeout
 TRANSLATE_REQUEST_TIMEOUT = 120.0  # Modal IndicTrans2 (translation) HTTP timeout
 
@@ -21,9 +21,7 @@ DEFAULT_BACKEND_HOST = "0.0.0.0"
 DEFAULT_BACKEND_PORT = 8000
 
 # ── LLM Defaults ──────────────────────────────────────────────────────────────
-DEFAULT_LLM_BINDING = "vllm"          # "openai" | "vllm"
 DEFAULT_LLM_MODEL = "microsoft/phi-4"
-DEFAULT_OPENAI_MODEL = "gpt-4o"
 DEFAULT_VLLM_API_HOST = "http://localhost:8000/v1"
 DEFAULT_VLLM_API_KEY = "dummy-key"
 LLM_TEMPERATURE = 0
