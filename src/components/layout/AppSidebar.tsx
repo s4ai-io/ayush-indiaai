@@ -45,42 +45,42 @@ export function AppSidebar() {
                 )}
             >
                 {/* Header with Close Button */}
-<div className="flex items-center justify-between p-6">
+                <div className="flex items-center justify-between p-6">
 
-    {/* Left side */}
-    <div className="flex items-center gap-3">
+                    {/* Left side */}
+                    <div className="flex items-center gap-3">
 
-        {/* Logo */}
-        <div className="w-10 h-10 relative">
-            <Image
-                src={logo}
-                alt="S4AI"
-                fill
-                className="object-contain"
-            />
-        </div>
+                        {/* Logo */}
+                        <div className="w-10 h-10 relative">
+                            <Image
+                                src={logo}
+                                alt="S4AI"
+                                fill
+                                className="object-contain"
+                            />
+                        </div>
 
-        {/* Text */}
-        <div>
-            <h1 className="text-lg font-bold text-white">ISHA Ayush</h1>
-            <p className="text-xs text-white/70">
-                S4AI Technologies LLP
-            </p>
-        </div>
+                        {/* Text */}
+                        <div>
+                            <h1 className="text-lg font-bold text-white">ISHA Ayush</h1>
+                            <p className="text-xs text-white/70">
+                                S4AI Technologies LLP
+                            </p>
+                        </div>
 
-    </div>
+                    </div>
 
-    {/* Close button */}
-    <Button
-        variant="ghost"
-        size="icon"
-        className="text-white hover:bg-white/20"
-        onClick={() => setIsExpanded(false)}
-    >
-        <X className="h-6 w-6" />
-    </Button>
+                    {/* Close button */}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-white hover:bg-white/20"
+                        onClick={() => setIsExpanded(false)}
+                    >
+                        <X className="h-6 w-6" />
+                    </Button>
 
-</div>
+                </div>
 
 
                 {/* Navigation Links */}

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ayush AI Health System",
+  title: "ISHA Ayush",
   description: "Intelligent AYUSH Health System",
 };
 
