@@ -113,7 +113,7 @@ class TranslationModel:
                 **inputs,
                 use_cache=True,
                 min_length=0,
-                max_length=256,
+                max_length=2048,
                 num_beams=5,
                 num_return_sequences=1,
             )

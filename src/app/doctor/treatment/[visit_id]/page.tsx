@@ -749,7 +749,6 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                             ) : (
                                 <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
                                     {/* Explainability / NAMC Details Banner */}
-                                    {/* 
                                     <Card className="bg-gradient-to-br from-slate-900 to-slate-800 text-slate-100 border-none shadow-xl overflow-hidden relative rounded-2xl">
                                         <div className="absolute -top-4 -right-4 p-3 opacity-10">
                                             <Brain className="w-32 h-32 text-white" />
@@ -790,7 +789,6 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                             )}
                                         </CardContent>
                                     </Card>
-                                    */}
 
                                     {/* Herbal Interventions */}
                                     <Card className="overflow-hidden border-none shadow-md ring-1 ring-emerald-100 bg-white/90 rounded-2xl">

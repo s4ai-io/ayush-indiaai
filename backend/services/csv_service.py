@@ -210,6 +210,7 @@ class DBService:
                 "vikriti": data.get("vikriti"),
                 "match_method": treatment_plan.get("match_method"),
                 "match_confidence": treatment_plan.get("match_confidence"),
+                "cluster_id": data.get("cluster_id") or treatment_plan.get("cluster_id")
             }
 
             f = TreatmentFeedback(

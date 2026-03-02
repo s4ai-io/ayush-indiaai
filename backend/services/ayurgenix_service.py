@@ -385,7 +385,7 @@ class AyurGenixService:
         """Parse Duration of Treatment into weeks."""
         duration_text = self._safe_get(row, 'Duration of Treatment')
         if not duration_text:
-            return 0
+            return 1
 
         text_lower = duration_text.lower()
 
@@ -405,7 +405,7 @@ class AyurGenixService:
             if nums:
                 return max(int(nums[-1]) // 7, 1)
 
-        return 0  # Default
+        return 1  # Default
 
     # ------------------------------------------------------------------
     # Explainability Builder

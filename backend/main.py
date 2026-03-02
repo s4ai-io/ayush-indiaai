@@ -1,7 +1,7 @@
 """
 FastAPI Backend for AYUSH ML Pipeline
 """
-from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Form, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
@@ -34,6 +34,9 @@ from utils.validators import (
     HealthCheckResponse
 )
 from services.ayurgenix_service import ayurgenix_service
+from services.hybrid_service import hybrid_service
+from services.clustering_service import clustering_service
+from services.rl_service import rl_service
 from services.forecast_service import forecast_service
 from services.csv_service import csv_service
 
@@ -196,9 +199,7 @@ async def get_dietary_plan(disease: str, prakriti: str):
 @app.post("/api/recommend", response_model=TreatmentRecommendation, tags=["Treatment Recommendations"])
 async def get_recommendation(patient: PatientProfile):
     """
-    Get personalized AYUSH treatment recommendation using AyurGenix dataset.
-    
-    Uses 3-tier matching: exact disease → fuzzy match → TF-IDF symptom similarity.
+    Get personalized AYUSH treatment recommendation using Hybrid Engine (Clustering + RL + Codified Data).
     
     Args:
         patient: Patient profile with disease, symptoms, prakriti, vikriti, severity, age, gender
@@ -208,7 +209,7 @@ async def get_recommendation(patient: PatientProfile):
     """
     try:
         patient_data = patient.model_dump()
-        recommendation = ayurgenix_service.get_recommendation(patient_data)
+        recommendation = hybrid_service.get_recommendation(patient_data)
         return recommendation
         
     except ValueError as e:
@@ -217,6 +218,29 @@ async def get_recommendation(patient: PatientProfile):
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@app.post("/api/ml/retrain", tags=["Continuous Learning"])
+async def trigger_retraining():
+    """
+    Manually trigger the ML retraining pipeline:
+    1. Retrain Patient Clustering (K-Means) on all historical AHIMS data.
+    2. Retrain Reinforcement Learning (Bandits) on unprocessed clinician feedback.
+    """
+    try:
+        cluster_res = clustering_service.retrain_clusters()
+        rl_feedback_res = rl_service.retrain_from_feedback()
+        rl_outcomes_res = rl_service.retrain_from_outcomes()
+        
+        return {
+            "status": "success",
+            "clustering": cluster_res,
+            "reinforcement_learning_feedback": rl_feedback_res,
+            "reinforcement_learning_outcomes": rl_outcomes_res
+        }
+    except Exception as e:
+        print(f"❌ Error triggering ML retraining: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to trigger retraining: {str(e)}")
 
 
 @app.post("/api/feedback", tags=["Continuous Learning"])
@@ -244,7 +268,7 @@ async def submit_feedback(feedback: TreatmentFeedback):
 
 
 @app.post("/api/prescribe", tags=["Prescriptions"])
-async def save_prescription(data: PrescriptionRequest):
+async def save_prescription(data: PrescriptionRequest, background_tasks: BackgroundTasks):
     """
     Save a doctor's full prescription.
 
@@ -255,6 +279,11 @@ async def save_prescription(data: PrescriptionRequest):
     """
     try:
         result = csv_service.save_prescription(data.model_dump())
+        
+        # Trigger background retraining so that the newly saved feedback and records
+        # instantly influence the RL and Clustering models for the next patient.
+        background_tasks.add_task(trigger_retraining)
+        
         return {
             "status": "success",
             "message": "Prescription saved successfully",

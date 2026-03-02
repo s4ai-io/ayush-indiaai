@@ -78,5 +78,20 @@ class TreatmentFeedback(Base):
     is_retrained = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class ClinicalOutcomeScore(Base):
+    __tablename__ = "clinical_outcome_scores"
+    
+    id = Column(String, primary_key=True, index=True)
+    patient_id = Column(String, index=True)
+    medical_record_id = Column(String, index=True)
+    disease = Column(String, default="")
+    target_vital = Column(String, default="")
+    baseline_value = Column(Float, nullable=True)
+    followup_value = Column(Float, nullable=True)
+    percentage_change = Column(Float, nullable=True)
+    calculated_reward = Column(Float, default=0.0)
+    is_retrained = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 def init_db():
     Base.metadata.create_all(bind=engine)
