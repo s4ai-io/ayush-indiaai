@@ -232,18 +232,38 @@ class RegistrationData(BaseModel):
 
 class HotspotResponse(BaseModel):
     """Single hotspot entry"""
-    city: Optional[str] = None
-    pincode: Optional[str] = None
-    diagnosis: str
-    count: int
+    city:        Optional[str] = None
+    pincode:     Optional[str] = None
+    diagnosis:   str
+    count:       int
+    devanagari:  Optional[str] = None
+    iast:        Optional[str] = None
+    hindi:       Optional[str] = None
 
 
 class AlertResponse(BaseModel):
-    """Single outbreak alert"""
-    disease: str
-    severity: str
-    message: str
-    date: str
+    """Single outbreak alert — Z-Score/CUSUM anomaly detection result."""
+    disease:      str
+    severity:     str
+    message:      str
+    date:         str
+    # Devanagari name fields
+    devanagari:   Optional[str]   = None
+    iast:         Optional[str]   = None
+    hindi:        Optional[str]   = None
+    # Z-Score enrichment fields
+    z_score:      Optional[float] = None
+    cusum_value:  Optional[float] = None
+    surge_month:  Optional[str]   = None
+    recent_cases: Optional[int]   = None
+    pct_increase: Optional[float] = None
+    baseline_avg: Optional[float] = None
+    triggered_by: Optional[str]   = None
+    # Weekly alert extra fields
+    week:           Optional[str]   = None
+    recent_weeks:   Optional[int]   = None
+    baseline_std:   Optional[float] = None
+    detection_type: Optional[str]   = None
 
 
 class DiseaseCount(BaseModel):

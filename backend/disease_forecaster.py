@@ -1,331 +1,347 @@
+"""
+Disease Forecaster — PostgreSQL-backed.
+Replaces the synthetic public_health_trends.csv with real medical_records data.
+Builds time-series features per disease, trains RandomForest, forecasts future months.
+"""
 import os
-import pandas as pd
 import numpy as np
-from sklearn.ensemble import RandomForestRegressor
+import pandas as pd
+from datetime import datetime
+from collections import defaultdict
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.preprocessing import LabelEncoder
 import warnings
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
-# Get base directory for relative paths
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+from models import SessionLocal, Patient, MedicalRecord
+
+
+# Gregorian month → Ayurvedic Ritu (season)
+_RITU_MAP = {
+    1: "Shishira", 2: "Shishira",
+    3: "Vasanta",  4: "Vasanta",
+    5: "Grishma",  6: "Grishma",
+    7: "Varsha",   8: "Varsha",
+    9: "Sharad",   10: "Sharad",
+    11: "Hemanta", 12: "Hemanta",
+}
+
+# Ritu Sandhi months (transition — highest risk)
+_SANDHI_MONTHS = {3, 5, 7, 9, 11, 1}
+
+
+def _load_trends_from_db() -> pd.DataFrame:
+    """
+    Query real medical_records + patients and return a monthly trend DataFrame
+    equivalent to the old public_health_trends.csv schema.
+
+    Returns columns:
+        month, disease, disease_category, season, cases_reported, avg_severity
+    """
+    with SessionLocal() as db:
+        rows = (
+            db.query(
+                MedicalRecord.visit_date,
+                MedicalRecord.diagnosis,
+                MedicalRecord.severity,
+                Patient.city,
+                Patient.state,
+            )
+            .join(Patient, Patient.id == MedicalRecord.patient_id)
+            .filter(
+                MedicalRecord.visit_date != None,
+                MedicalRecord.diagnosis != None,
+                MedicalRecord.diagnosis != "",
+            )
+            .all()
+        )
+
+    if not rows:
+        return pd.DataFrame()
+
+    records = []
+    for visit_date, diagnosis, severity, city, state in rows:
+        if not visit_date or not diagnosis:
+            continue
+        d = visit_date.date() if hasattr(visit_date, "date") else visit_date
+        month_str = d.strftime("%Y-%m")
+        month_num = d.month
+
+        # Parse severity (stored as string "1"-"10", "Mild"/"Moderate"/"Severe")
+        sev = 5.0
+        if severity:
+            sv = str(severity).strip().lower()
+            if sv == "mild":
+                sev = 3.0
+            elif sv == "moderate":
+                sev = 6.0
+            elif sv == "severe":
+                sev = 9.0
+            else:
+                try:
+                    sev = float(sv)
+                except ValueError:
+                    sev = 5.0
+
+        records.append({
+            "month":            month_str,
+            "month_num":        month_num,
+            "disease":          diagnosis.strip(),
+            "disease_category": "Ayurvedic",   # can be enriched later
+            "season":           _RITU_MAP.get(month_num, "Shishira"),
+            "ritu_sandhi":      int(month_num in _SANDHI_MONTHS),
+            "avg_severity":     sev,
+            "city":             (city or "Unknown").strip(),
+            "state":            (state or "Unknown").strip(),
+        })
+
+    df = pd.DataFrame(records)
+
+    # Monthly aggregation: cases_reported = count of records per month × disease
+    monthly = (
+        df.groupby(["month", "disease", "disease_category", "season", "ritu_sandhi"])
+        .agg(
+            cases_reported=("avg_severity", "count"),
+            avg_severity=("avg_severity", "mean"),
+        )
+        .reset_index()
+    )
+    return monthly.sort_values(["disease", "month"])
 
 
 class DiseaseForecaster:
     """
-    Public Health Risk Forecasting System
-    - Detects emerging disease trends
-    - Forecasts future disease outbreaks
-    - Identifies high-risk seasons and populations
+    Public Health Risk Forecasting System — backed by real PostgreSQL data.
     """
-    
+
     def __init__(self):
+        self.trends: pd.DataFrame = pd.DataFrame()
         self.forecast_model = None
-        self.label_encoders = {}
-        
+        self.label_encoders: dict = {}
+        self.initialized = False
+
     def load_trend_data(self):
-        """Load public health trend data"""
-        print("Loading public health trend data...")
-        trends_path = os.path.join(BASE_DIR, 'data', 'public_health_trends.csv')
-        if not os.path.exists(trends_path):
-            trends_path = os.path.join(BASE_DIR, 'public_health_trends.csv')
-        self.trends = pd.read_csv(trends_path)
-        print(f"✓ Loaded {len(self.trends)} trend records")
-        
-    def detect_emerging_trends(self):
-        """Identify diseases with increasing case rates"""
-        print("\n" + "="*60)
-        print("EMERGING DISEASE TREND DETECTION")
-        print("="*60)
-        
-        # Calculate month-over-month growth
-        trends_sorted = self.trends.sort_values(['disease', 'month'])
-        
+        """Load disease trend data from PostgreSQL medical_records."""
+        print("Loading disease trend data from PostgreSQL...")
+        self.trends = _load_trends_from_db()
+        if self.trends.empty:
+            raise FileNotFoundError(
+                "No medical records found in PostgreSQL. "
+                "Please ensure data has been migrated."
+            )
+        print(f"✓ Loaded {len(self.trends)} monthly disease records from DB "
+              f"({self.trends['disease'].nunique()} diseases, "
+              f"{self.trends['month'].nunique()} months)")
+        self.initialized = True
+
+    # ─── Emerging Trends ──────────────────────────────────────────────────────
+
+    def detect_emerging_trends(self) -> pd.DataFrame:
+        """Identify diseases with month-over-month rising case rates."""
+        if self.trends.empty:
+            return pd.DataFrame()
+
+        trends_sorted = self.trends.sort_values(["disease", "month"])
         disease_trends = []
-        
-        for disease in self.trends['disease'].unique():
-            disease_data = trends_sorted[trends_sorted['disease'] == disease].copy()
-            disease_data['cases_prev_month'] = disease_data['cases_reported'].shift(1)
-            disease_data['growth_rate'] = (
-                (disease_data['cases_reported'] - disease_data['cases_prev_month']) / 
-                disease_data['cases_prev_month'] * 100
+
+        for disease in self.trends["disease"].unique():
+            disease_data = trends_sorted[trends_sorted["disease"] == disease].copy()
+            if len(disease_data) < 2:
+                continue
+            disease_data["cases_prev"] = disease_data["cases_reported"].shift(1)
+            disease_data["growth_rate"] = (
+                (disease_data["cases_reported"] - disease_data["cases_prev"])
+                / disease_data["cases_prev"].replace(0, 1) * 100
             )
-            
-            # Recent 3 months average growth
-            recent_growth = disease_data['growth_rate'].tail(3).mean()
-            recent_cases = disease_data['cases_reported'].tail(3).mean()
-            
+            recent_growth = disease_data["growth_rate"].tail(3).mean()
+            recent_cases  = disease_data["cases_reported"].tail(3).mean()
+
             disease_trends.append({
-                'disease': disease,
-                'category': disease_data['disease_category'].iloc[0],
-                'recent_avg_cases': int(recent_cases),
-                'growth_rate': round(recent_growth, 2),
-                'trend': 'Rising' if recent_growth > 10 else 'Stable' if recent_growth > -10 else 'Declining'
+                "disease":         disease,
+                "category":        disease_data["disease_category"].iloc[0],
+                "recent_avg_cases": int(recent_cases),
+                "growth_rate":     round(recent_growth, 2),
+                "trend": (
+                    "Rising" if recent_growth > 10
+                    else "Stable" if recent_growth > -10
+                    else "Declining"
+                ),
             })
-        
-        trend_df = pd.DataFrame(disease_trends).sort_values('growth_rate', ascending=False)
-        
-        print("\n🚨 TOP 5 EMERGING DISEASE THREATS:")
-        print("-" * 60)
-        for idx, row in trend_df.head(5).iterrows():
-            print(f"  {row['disease']} ({row['category']})")
-            print(f"    Recent cases: {row['recent_avg_cases']}")
-            print(f"    Growth rate: {row['growth_rate']:+.1f}%")
-            print(f"    Trend: {row['trend']}")
-            print()
-        
-        return trend_df
-    
-    def seasonal_analysis(self):
-        """Analyze seasonal patterns in disease occurrence"""
-        print("\n" + "="*60)
-        print("SEASONAL DISEASE PATTERN ANALYSIS")
-        print("="*60)
-        
-        seasonal_summary = self.trends.groupby(['season', 'disease_category']).agg({
-            'cases_reported': 'mean',
-            'avg_severity': 'mean'
-        }).round(1)
-        
-        print("\n📅 Disease Prevalence by Season:")
-        print("-" * 60)
-        
-        for season in ['Spring', 'Summer', 'Monsoon', 'Autumn', 'Winter', 'Late Winter']:
-            if season in seasonal_summary.index.get_level_values(0):
-                season_data = seasonal_summary.loc[season].sort_values('cases_reported', ascending=False)
-                print(f"\n{season}:")
-                for category, row in season_data.head(3).iterrows():
-                    print(f"  • {category}: {row['cases_reported']:.0f} cases (severity: {row['avg_severity']:.1f}/10)")
-        
-        return seasonal_summary
-    
-    def forecast_next_months(self, n_months=3):
-        """Forecast disease cases for next n months"""
-        print("\n" + "="*60)
-        print(f"FORECASTING DISEASE TRENDS ({n_months} months ahead)")
-        print("="*60)
-        
-        # Prepare data for forecasting
+
+        if not disease_trends:
+            return pd.DataFrame()
+        return pd.DataFrame(disease_trends).sort_values("growth_rate", ascending=False)
+
+    # ─── Seasonal Analysis ────────────────────────────────────────────────────
+
+    def seasonal_analysis(self) -> pd.DataFrame:
+        """Analyse disease prevalence per Ayurvedic Ritu season."""
+        if self.trends.empty:
+            return pd.DataFrame()
+        return (
+            self.trends.groupby(["season", "disease_category"])
+            .agg(cases_reported=("cases_reported", "mean"),
+                 avg_severity=("avg_severity", "mean"))
+            .round(1)
+        )
+
+    # ─── Forecasting ──────────────────────────────────────────────────────────
+
+    def forecast_next_months(self, n_months: int = 3) -> pd.DataFrame:
+        """Forecast disease cases using RandomForest trained on real DB data."""
+        if self.trends.empty:
+            raise ValueError("No trend data loaded. Call load_trend_data() first.")
+
         df = self.trends.copy()
-        
-        # Convert month to datetime
-        df['month_dt'] = pd.to_datetime(df['month'])
-        df['month_num'] = df['month_dt'].dt.month
-        df['year'] = df['month_dt'].dt.year
-        
-        # Create lag features
-        df = df.sort_values(['disease', 'month'])
-        df['cases_lag1'] = df.groupby('disease')['cases_reported'].shift(1)
-        df['cases_lag2'] = df.groupby('disease')['cases_reported'].shift(2)
-        df['cases_lag3'] = df.groupby('disease')['cases_reported'].shift(3)
-        
-        # Drop NaN from lags
-        df = df.dropna()
-        
-        # Encode categorical
-        le_disease = LabelEncoder()
-        le_category = LabelEncoder()
-        le_season = LabelEncoder()
-        
-        df['disease_encoded'] = le_disease.fit_transform(df['disease'])
-        df['category_encoded'] = le_category.fit_transform(df['disease_category'])
-        df['season_encoded'] = le_season.fit_transform(df['season'])
-        
-        self.label_encoders = {
-            'disease': le_disease,
-            'category': le_category,
-            'season': le_season
-        }
-        
-        # Features and target
-        feature_cols = [
-            'disease_encoded', 'category_encoded', 'season_encoded',
-            'month_num', 'cases_lag1', 'cases_lag2', 'cases_lag3', 'avg_severity'
-        ]
-        
-        X = df[feature_cols]
-        y = df['cases_reported']
-        
-        # Train model
-        print("\nTraining forecast model...")
-        self.forecast_model = RandomForestRegressor(
-            n_estimators=100,
-            max_depth=10,
-            random_state=42,
-            n_jobs=-1
-        )
-        
-        self.forecast_model.fit(X, y)
-        
-        print("✓ Model trained successfully!")
-        
-        # Make predictions for next months
-        forecasts = self._predict_future(df, n_months)
-        
-        print(f"\n🔮 FORECAST FOR NEXT {n_months} MONTHS:")
-        print("-" * 60)
-        
-        # Show top forecasted diseases
-        for month in range(1, n_months + 1):
-            month_forecast = forecasts[forecasts['future_month'] == month].sort_values(
-                'predicted_cases', ascending=False
+        df["month_dt"]  = pd.to_datetime(df["month"])
+        df["month_num"] = df["month_dt"].dt.month
+        df["year"]      = df["month_dt"].dt.year
+
+        # Lag features
+        df = df.sort_values(["disease", "month"])
+        df["cases_lag1"] = df.groupby("disease")["cases_reported"].shift(1)
+        df["cases_lag2"] = df.groupby("disease")["cases_reported"].shift(2)
+        df["cases_lag3"] = df.groupby("disease")["cases_reported"].shift(3)
+        df = df.dropna(subset=["cases_lag1", "cases_lag2", "cases_lag3"])
+
+        if df.empty:
+            raise ValueError(
+                "Not enough historical months to build lag features. "
+                "Need at least 3 months of data per disease."
             )
-            
-            print(f"\nMonth {month}:")
-            for idx, row in month_forecast.head(5).iterrows():
-                print(f"  • {row['disease']}: {int(row['predicted_cases'])} cases (expected)")
-        
-        return forecasts
-    
-    def _predict_future(self, df, n_months):
-        """Generate future predictions"""
-        last_data = df.groupby('disease').last()
-        
-        forecasts = []
-        
-        for disease in df['disease'].unique():
-            disease_data = last_data.loc[disease]
-            
-            for month_ahead in range(1, n_months + 1):
-                # Predict next month
-                future_month_num = (disease_data['month_num'] + month_ahead) % 12
-                if future_month_num == 0:
-                    future_month_num = 12
-                
-                # Get season for month
-                season_map = {
-                    1: 'Late Winter', 2: 'Late Winter', 3: 'Spring', 4: 'Spring',
-                    5: 'Summer', 6: 'Summer', 7: 'Monsoon', 8: 'Monsoon',
-                    9: 'Autumn', 10: 'Autumn', 11: 'Winter', 12: 'Winter'
-                }
-                future_season = season_map[future_month_num]
-                
-                features = np.array([[
-                    disease_data['disease_encoded'],
-                    disease_data['category_encoded'],
-                    self.label_encoders['season'].transform([future_season])[0],
-                    future_month_num,
-                    disease_data['cases_lag1'],
-                    disease_data['cases_lag2'],
-                    disease_data['cases_lag3'],
-                    disease_data['avg_severity']
-                ]])
-                
-                predicted_cases = self.forecast_model.predict(features)[0]
-                
-                forecasts.append({
-                    'disease': disease,
-                    'category': self.label_encoders['category'].inverse_transform(
-                        [int(disease_data['category_encoded'])]
-                    )[0],
-                    'future_month': month_ahead,
-                    'month_num': future_month_num,
-                    'season': future_season,
-                    'predicted_cases': max(0, predicted_cases)
-                })
-        
-        return pd.DataFrame(forecasts)
-    
-    def risk_assessment(self):
-        """Assess public health risks"""
-        print("\n" + "="*60)
-        print("PUBLIC HEALTH RISK ASSESSMENT")
-        print("="*60)
-        
-        # Calculate risk scores
-        risk_scores = self.trends.groupby('disease_category').agg({
-            'cases_reported': 'sum',
-            'avg_severity': 'mean'
-        })
-        
-        # Normalize and calculate composite risk
-        risk_scores['cases_normalized'] = (
-            risk_scores['cases_reported'] / risk_scores['cases_reported'].max()
-        )
-        risk_scores['risk_score'] = (
-            risk_scores['cases_normalized'] * 0.6 + 
-            risk_scores['avg_severity'] / 10 * 0.4
-        ) * 100
-        
-        risk_scores = risk_scores.sort_values('risk_score', ascending=False)
-        
-        print("\n⚠️ DISEASE CATEGORY RISK LEVELS:")
-        print("-" * 60)
-        for category, row in risk_scores.iterrows():
-            risk_level = 'HIGH' if row['risk_score'] > 70 else 'MEDIUM' if row['risk_score'] > 40 else 'LOW'
-            print(f"  {category:20s}: {row['risk_score']:5.1f} [{risk_level}]")
-            print(f"    Total cases: {int(row['cases_reported']):,}")
-            print(f"    Avg severity: {row['avg_severity']:.1f}/10")
-            print()
-        
-        return risk_scores
-    
-    def generate_alerts(self):
-        """Generate health alerts based on analysis"""
-        print("\n" + "="*60)
-        print("PUBLIC HEALTH ALERTS")
-        print("="*60)
-        
-        alerts = []
-        
-        # Detect spikes
-        for disease in self.trends['disease'].unique():
-            disease_data = self.trends[self.trends['disease'] == disease].sort_values('month')
-            
-            if len(disease_data) >= 3:
-                recent_avg = disease_data['cases_reported'].tail(3).mean()
-                overall_avg = disease_data['cases_reported'].mean()
-                
-                if recent_avg > overall_avg * 1.5:
-                    alerts.append({
-                        'type': 'SPIKE',
-                        'disease': disease,
-                        'message': f"{disease} cases are 50% above normal. Increase monitoring."
-                    })
-        
-        # Seasonal alerts
-        current_month = pd.Timestamp.now().month
-        season_map = {
-            1: 'Late Winter', 2: 'Late Winter', 3: 'Spring', 4: 'Spring',
-            5: 'Summer', 6: 'Summer', 7: 'Monsoon', 8: 'Monsoon',
-            9: 'Autumn', 10: 'Autumn', 11: 'Winter', 12: 'Winter'
+
+        # Encode categoricals
+        le_disease  = LabelEncoder()
+        le_category = LabelEncoder()
+        le_season   = LabelEncoder()
+
+        df["disease_enc"]  = le_disease.fit_transform(df["disease"])
+        df["category_enc"] = le_category.fit_transform(df["disease_category"])
+        df["season_enc"]   = le_season.fit_transform(df["season"])
+
+        self.label_encoders = {
+            "disease": le_disease, "category": le_category, "season": le_season
         }
-        current_season = season_map[current_month]
-        
-        seasonal_diseases = self.trends[self.trends['season'] == current_season].groupby(
-            'disease_category'
-        )['cases_reported'].mean().sort_values(ascending=False)
-        
-        for category in seasonal_diseases.head(2).index:
+
+        feature_cols = [
+            "disease_enc", "category_enc", "season_enc",
+            "month_num", "ritu_sandhi",
+            "cases_lag1", "cases_lag2", "cases_lag3",
+            "avg_severity",
+        ]
+
+        X = df[feature_cols]
+        y = df["cases_reported"]
+
+        self.forecast_model = RandomForestRegressor(
+            n_estimators=200, max_depth=10, random_state=42, n_jobs=-1
+        )
+        self.forecast_model.fit(X, y)
+
+        return self._predict_future(df, n_months)
+
+    def _predict_future(self, df: pd.DataFrame, n_months: int) -> pd.DataFrame:
+        """Generate future monthly predictions per disease."""
+        last_data = df.groupby("disease").last()
+        forecasts = []
+
+        for disease in df["disease"].unique():
+            if disease not in last_data.index:
+                continue
+            row = last_data.loc[disease]
+
+            for month_ahead in range(1, n_months + 1):
+                future_month = (int(row["month_num"]) + month_ahead - 1) % 12 + 1
+                future_season = _RITU_MAP[future_month]
+                ritu_sandhi   = int(future_month in _SANDHI_MONTHS)
+
+                try:
+                    season_enc = self.label_encoders["season"].transform([future_season])[0]
+                except ValueError:
+                    season_enc = 0
+
+                features = np.array([[
+                    row["disease_enc"],
+                    row["category_enc"],
+                    season_enc,
+                    future_month,
+                    ritu_sandhi,
+                    row["cases_lag1"],
+                    row["cases_lag2"],
+                    row["cases_lag3"],
+                    row["avg_severity"],
+                ]])
+
+                predicted = max(0, self.forecast_model.predict(features)[0])
+                forecasts.append({
+                    "disease":         disease,
+                    "category":        self.label_encoders["category"].inverse_transform(
+                                           [int(row["category_enc"])])[0],
+                    "future_month":    month_ahead,
+                    "month_num":       future_month,
+                    "season":          future_season,
+                    "ritu_sandhi":     ritu_sandhi,
+                    "predicted_cases": predicted,
+                })
+
+        return pd.DataFrame(forecasts)
+
+    # ─── Risk Assessment ──────────────────────────────────────────────────────
+
+    def risk_assessment(self) -> pd.DataFrame:
+        """Composite risk score per disease category from real data."""
+        if self.trends.empty:
+            return pd.DataFrame()
+
+        risk = self.trends.groupby("disease_category").agg(
+            cases_reported=("cases_reported", "sum"),
+            avg_severity=("avg_severity", "mean"),
+        )
+        risk["cases_norm"] = risk["cases_reported"] / risk["cases_reported"].max()
+        risk["risk_score"] = (risk["cases_norm"] * 0.6 + risk["avg_severity"] / 10 * 0.4) * 100
+        return risk.sort_values("risk_score", ascending=False)
+
+    # ─── Alerts ───────────────────────────────────────────────────────────────
+
+    def generate_alerts(self) -> list:
+        """Generate public-health alerts from real trend data."""
+        if self.trends.empty:
+            return []
+
+        alerts = []
+        for disease in self.trends["disease"].unique():
+            d_data = self.trends[self.trends["disease"] == disease].sort_values("month")
+            if len(d_data) < 3:
+                continue
+            recent_avg  = d_data["cases_reported"].tail(3).mean()
+            overall_avg = d_data["cases_reported"].mean()
+            if recent_avg > overall_avg * 1.5:
+                alerts.append({
+                    "type": "SPIKE",
+                    "disease": disease,
+                    "message": (
+                        f"{disease} cases are "
+                        f"{round((recent_avg/overall_avg - 1)*100)}% above historical average. "
+                        f"Increase monitoring."
+                    ),
+                })
+
+        # Seasonal (Ritu) alert
+        current_ritu = _RITU_MAP[datetime.now().month]
+        seasonal = (
+            self.trends[self.trends["season"] == current_ritu]
+            .groupby("disease")["cases_reported"]
+            .mean()
+            .sort_values(ascending=False)
+        )
+        for disease in seasonal.head(3).index:
             alerts.append({
-                'type': 'SEASONAL',
-                'disease': category,
-                'message': f"Prepare for increased {category} diseases during {current_season}."
+                "type": "SEASONAL",
+                "disease": disease,
+                "message": (
+                    f"Historical data shows elevated {disease} cases during "
+                    f"{current_ritu} (current Ritu). Prepare accordingly."
+                ),
             })
-        
-        print(f"\n🔔 {len(alerts)} Active Alerts:")
-        print("-" * 60)
-        for i, alert in enumerate(alerts, 1):
-            print(f"{i}. [{alert['type']}] {alert['disease']}")
-            print(f"   {alert['message']}")
-            print()
-        
+
         return alerts
-
-
-if __name__ == "__main__":
-    # Initialize forecaster
-    forecaster = DiseaseForecaster()
-    
-    # Load data
-    forecaster.load_trend_data()
-    
-    # Run analyses
-    emerging_trends = forecaster.detect_emerging_trends()
-    seasonal_patterns = forecaster.seasonal_analysis()
-    forecasts = forecaster.forecast_next_months(n_months=3)
-    risk_assessment = forecaster.risk_assessment()
-    alerts = forecaster.generate_alerts()
-    
-    print("\n" + "="*60)
-    print("✓ DISEASE FORECASTING COMPLETE!")
-    print("="*60)

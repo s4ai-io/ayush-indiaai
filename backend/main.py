@@ -283,12 +283,43 @@ async def get_forecast(disease: str = None, months: int = 3):
         # Validate months
         if months < 1 or months > 12:
             raise HTTPException(status_code=400, detail="Months must be between 1 and 12")
-        
+
         # Get forecast from service
         forecast = forecast_service.get_forecast(disease=disease, months=months)
-        
+
+        # ── Enrich with by_disease + real calendar month names ────────────────
+        # (Works even if the service singleton was cached before recent changes)
+        import calendar as _cal
+        from datetime import datetime as _dt
+        now = _dt.now()
+        def _month_name(offset: int) -> str:
+            m = (now.month - 1 + offset) % 12 + 1
+            y = now.year + (now.month - 1 + offset) // 12
+            return f"{_cal.month_abbr[m]} {y}"
+
+        forecast_data = forecast.get("forecast_data", [])
+        # Add month_name to each entry if missing
+        for entry in forecast_data:
+            if "month_name" not in entry:
+                entry["month_name"] = _month_name(int(entry.get("month", "Month 1").split()[-1]))
+
+        # Build by_disease grouping if missing
+        if not forecast.get("by_disease"):
+            by_disease: dict = {}
+            for entry in forecast_data:
+                dk = entry.get("disease", disease or "All Diseases")
+                if dk not in by_disease:
+                    by_disease[dk] = []
+                by_disease[dk].append({
+                    "month_name":      entry["month_name"],
+                    "predicted_cases": entry["predicted_cases"],
+                    "season":          entry.get("season", ""),
+                    "ritu_sandhi":     entry.get("ritu_sandhi", False),
+                })
+            forecast["by_disease"] = by_disease
+
         return forecast
-        
+
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except RuntimeError as e:
@@ -319,11 +350,29 @@ async def get_emerging_trends():
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
+@app.get("/api/forecast/emerging", tags=["Disease Forecasting"])
+async def get_emerging_trends_alias():
+    """Alias for /api/trends — returns emerging disease trends with growth rates."""
+    try:
+        return forecast_service.get_emerging_trends()
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 # --- Analytics Endpoints ---
 from services.analytics_service import analytics_service
+from services.disease_names import DISEASE_NAMES, enrich_with_devanagari, get_full_name
 from utils.validators import HotspotResponse, AlertResponse, DashboardSummaryResponse
+
+@app.get("/api/analytics/disease-names", tags=["Public Health Analytics"])
+async def get_disease_name_map():
+    """
+    Returns the full Sanskrit/Devanāgarī name lookup for all tracked diseases.
+    Shape: { "<stored_diagnosis>": { devanagari, iast, hindi, english } }
+    """
+    return DISEASE_NAMES
 
 @app.get("/api/analytics/trends", tags=["Public Health Analytics"])
 async def get_disease_trends(days: int = 30):
@@ -336,18 +385,29 @@ async def get_disease_trends(days: int = 30):
 
 @app.get("/api/analytics/hotspots", response_model=list[HotspotResponse], tags=["Public Health Analytics"])
 async def get_disease_hotspots(disease: str = None):
-    """Get location-based disease hotspots"""
+    """Get location-based disease hotspots enriched with Devanāgarī names"""
     try:
         hotspots = analytics_service.get_hotspots(disease=disease)
+        # Add devanagari/iast/hindi fields to each hotspot using diagnosis key
+        for h in hotspots:
+            entry = get_full_name(h.get("diagnosis", ""))
+            h["devanagari"] = entry["devanagari"]
+            h["iast"]       = entry["iast"]
+            h["hindi"]      = entry["hindi"]
         return hotspots
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/analytics/alerts", response_model=list[AlertResponse], tags=["Public Health Analytics"])
 async def get_public_health_alerts():
-    """Get active outbreak alerts"""
+    """Get active outbreak alerts enriched with Devanāgarī disease names"""
     try:
         alerts = analytics_service.detect_anomalies()
+        for a in alerts:
+            entry = get_full_name(a.get("disease", ""))
+            a["devanagari"] = entry["devanagari"]
+            a["iast"]       = entry["iast"]
+            a["hindi"]      = entry["hindi"]
         return alerts
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -361,20 +421,67 @@ async def get_dashboard_summary():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+from services.spatial_service import spatial_service
+
+@app.get("/api/analytics/weekly-alerts", response_model=list[AlertResponse], tags=["Public Health Analytics"])
+async def get_weekly_alerts():
+    """
+    Weekly rolling Z-score anomaly detection.
+    Detects disease surges 3–4 weeks earlier than the monthly detector.
+    Uses a 4-week recent window vs 12-week baseline window.
+    """
+    try:
+        alerts = analytics_service.detect_weekly_anomalies()
+        for a in alerts:
+            entry = get_full_name(a.get("disease", ""))
+            a["devanagari"] = entry["devanagari"]
+            a["iast"]       = entry["iast"]
+            a["hindi"]      = entry["hindi"]
+        return alerts
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/analytics/clusters", tags=["Public Health Analytics"])
+async def get_disease_clusters(days: int = 90):
+    """
+    DBSCAN geospatial clustering of disease burden across Indian cities.
+    Groups cities within 400 km that share elevated disease burden.
+    Returns cluster list with centroid, radius, cities, and total cases.
+    """
+    try:
+        result = spatial_service.get_cluster_summary(days=days)
+        # Enrich each cluster's disease name
+        for cluster in result.get("clusters", []):
+            entry = get_full_name(cluster.get("disease", ""))
+            cluster["devanagari"] = entry["devanagari"]
+            cluster["iast"]       = entry["iast"]
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 
 from services.gnn_service import gnn_service
 
 @app.get("/api/analytics/predictions", tags=["Public Health Analytics"])
-async def get_disease_spread_prediction():
-    """Predict future disease spread using Spatiotemporal GNN"""
+async def get_disease_spread_prediction(disease: str = None):
+    """
+    Predict short-term regional disease spread using graph diffusion on real DB data.
+    Builds a dynamic city-level graph from actual patient records.
+
+    Args:
+        disease: Optional disease name filter (e.g. 'Dengue', 'Fever')
+    """
     try:
-        # 1. Get current hotspots
-        current_hotspots = analytics_service.get_hotspots(disease="Dengue") # Default to Dengue for demo
-        
-        # 2. Predict spread based on current state
-        predictions = gnn_service.predict_spread(current_hotspots)
-        
-        return predictions
+        # Load real case loads from DB and simulate 7-day spread
+        predictions = gnn_service.predict_spread(current_hotspots=[], disease=disease)
+        graph_summary = gnn_service.get_spread_graph_summary(disease=disease)
+        return {
+            "predictions": predictions,
+            "graph_summary": graph_summary,
+            "disease_filter": disease or "All diseases",
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

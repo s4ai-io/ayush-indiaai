@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Activity, UserPlus, Stethoscope, Menu, X, Users } from "lucide-react";
+import { LayoutDashboard, Activity, UserPlus, Stethoscope, Menu, X, Users, ShieldAlert } from "lucide-react";
 
 export function AppSidebar() {
     const pathname = usePathname();
@@ -104,8 +104,8 @@ export function AppSidebar() {
                             onClick={() => setIsExpanded(false)}
                             className={cn("flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-colors text-sm font-medium", pathname.includes("/public-health") ? "bg-white/20 text-white shadow-sm" : "text-white/80 hover:bg-white/10 hover:text-white")}
                         >
-                            <Activity className="h-5 w-5" />
-                            <span>Outbreak Monitor</span>
+                            <ShieldAlert className="h-5 w-5" />
+                            <span>Dashboard</span>
                         </Link>
                     </div>
 
