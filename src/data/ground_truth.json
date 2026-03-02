@@ -1,0 +1,146 @@
+[
+  {
+    "Audio-file name": "hindi_ayush1.wav",
+    "Disease": "Respiratory disorder",
+    "Symptoms": [
+      "Chest heaviness",
+      "Excess mucus",
+      "Breathlessness at night"
+    ],
+    "Comorbidities": [],
+    "Doshas": "Kapha",
+    "Prakriti": "Kapha"
+  },
+  {
+    "Audio-file name": "gujarati_ayush2.wav",
+    "Disease": "Skin inflammation",
+    "Symptoms": [
+      "Red eruptions on face",
+      "Burning sensation in sunlight",
+      "Itching",
+      "Body heat"
+    ],
+    "Comorbidities": [],
+    "Doshas": "Pitta",
+    "Prakriti": "Pitta"
+  },
+  {
+    "Audio-file name": "bengali_ayush3.wav",
+    "Disease": "Anemia",
+    "Symptoms": [
+      "Weakness",
+      "Fatigue",
+      "Breathlessness on exertion",
+      "Tingling in hands and feet",
+      "Loss of appetite",
+      "Dizziness"
+    ],
+    "Comorbidities": [],
+    "Doshas": "Pitta",
+    "Prakriti": "Pitta"
+  },
+  {
+    "Audio-file name": "punjabi_ayush4.wav",
+    "Disease": "Diabetes",
+    "Symptoms": [
+      "Excess thirst",
+      "Frequent urination",
+      "Weakness",
+      "Weight loss",
+      "Fatigue"
+    ],
+    "Comorbidities": [],
+    "Doshas": "Kapha",
+    "Prakriti": "Kapha"
+  },
+  {
+    "Audio-file name": "kannada_ayush5.wav",
+    "Disease": "Migraine",
+    "Symptoms": [
+      "Half head pain",
+      "Nausea",
+      "Pain increases in sunlight",
+      "Sensitivity to light",
+      "Sensitivity to sound",
+      "Vomiting sensation",
+      "Irregular meals",
+      "Poor sleep"
+    ],
+    "Comorbidities": [],
+    "Doshas": "Pitta",
+    "Prakriti": "Pitta"
+  },
+  {
+    "Audio-file name": "tamil_ayush6.wav",
+    "Disease": "Menstrual disorder",
+    "Symptoms": [
+      "Heavy menstrual bleeding",
+      "Lower abdominal pain",
+      "Weakness",
+      "Dizziness",
+      "Body heat"
+    ],
+    "Comorbidities": [],
+    "Doshas": "Pitta",
+    "Prakriti": "Pitta-Vata"
+  },
+  {
+    "Audio-file name": "telugu_ayush7.wav",
+    "Disease": "Obesity",
+    "Symptoms": [
+      "Weight gain",
+      "Tiredness on walking",
+      "Excess sleep",
+      "Lethargy",
+      "Lack of exercise"
+    ],
+    "Comorbidities": [],
+    "Doshas": "Kapha",
+    "Prakriti": "Kapha"
+  },
+  {
+    "Audio-file name": "malayalam_ayush8.wav",
+    "Disease": "Lower back pain",
+    "Symptoms": [
+      "Back stiffness",
+      "Pain after sitting",
+      "Difficulty bending",
+      "Pain after long travel",
+      "Morning stiffness"
+    ],
+    "Comorbidities": [],
+    "Doshas": "Vata",
+    "Prakriti": "Vata"
+  },
+  {
+    "Audio-file name": "english_ayush9.wav",
+    "Disease": "Insomnia",
+    "Symptoms": [
+      "Difficulty sleeping",
+      "Light sleep",
+      "Anxiety",
+      "Excess thinking",
+      "Restlessness",
+      "Excess caffeine intake",
+      "Excess screen use"
+    ],
+    "Comorbidities": [],
+    "Doshas": "Vata",
+    "Prakriti": "Vata"
+  },
+  {
+    "Audio-file name": "marathi_ayush10.wav",
+    "Disease": "Indigestion",
+    "Symptoms": [
+      "Loss of appetite",
+      "Heaviness in stomach",
+      "Bitter taste in mouth",
+      "Burping",
+      "Excess sleep after meals",
+      "Daytime sleeping"
+    ],
+    "Comorbidities": [],
+    "Doshas": "Kapha",
+    "Prakriti": "Kapha"
+  }
+]

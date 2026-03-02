@@ -1,0 +1,97 @@
+from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import create_engine, Column, String, Integer, Float, Boolean, Text, DateTime, DateTime
+from datetime import datetime
+
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/ayush_db")
+
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+Base = declarative_base()
+
+class Patient(Base):
+    __tablename__ = "patients"
+    
+    id = Column(String, primary_key=True, index=True)
+    first_name = Column(String, default="")
+    last_name = Column(String, default="")
+    gender = Column(String, default="")
+    age = Column(Integer, nullable=True)
+    marital_status = Column(String, default="")
+    mobile = Column(String, default="")
+    address = Column(String, default="")
+    city = Column(String, default="")
+    state = Column(String, default="")
+    pincode = Column(String, default="")
+    blood_group = Column(String, default="")
+    occupation = Column(String, default="")
+    id_type = Column(String, default="")
+    id_number = Column(String, default="")
+    diagnosis_done = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class MedicalRecord(Base):
+    __tablename__ = "medical_records"
+    
+    id = Column(String, primary_key=True, index=True)
+    patient_id = Column(String, index=True)
+    visit_date = Column(DateTime)
+    diagnosis = Column(String, default="")
+    symptoms = Column(Text, default="")
+    prakriti = Column(String, default="")
+    vikriti = Column(String, default="")
+    severity = Column(String, default="")
+    comorbidities = Column(String, default="")
+    notes = Column(Text, default="")
+    prescription = Column(Text, default="")
+
+class AyushTreatment(Base):
+    __tablename__ = "ayush_treatments"
+    
+    id = Column(String, primary_key=True, index=True)
+    patient_id = Column(String, index=True)
+    medical_record_id = Column(String, index=True)
+    visit_date = Column(DateTime)
+    disease = Column(String, default="")
+    herbs_prescribed = Column(Text, default="")
+    yoga_prescribed = Column(Text, default="")
+    diet_plan = Column(Text, default="")
+    treatment_duration_weeks = Column(String, default="")
+    improvement_percentage = Column(String, default="")
+    outcome = Column(String, default="")
+
+class TreatmentFeedback(Base):
+    __tablename__ = "treatment_feedbacks"
+    
+    id = Column(String, primary_key=True, index=True)
+    patient_id = Column(String, index=True)
+    medical_record_id = Column(String, index=True)
+    ai_plan = Column(Text, default="")
+    ml_context = Column(Text, default="")
+    doctor_rating = Column(String, default="")
+    doctor_comments = Column(Text, default="")
+    is_retrained = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class ClinicalOutcomeScore(Base):
+    __tablename__ = "clinical_outcome_scores"
+    
+    id = Column(String, primary_key=True, index=True)
+    patient_id = Column(String, index=True)
+    medical_record_id = Column(String, index=True)
+    disease = Column(String, default="")
+    target_vital = Column(String, default="")
+    baseline_value = Column(Float, nullable=True)
+    followup_value = Column(Float, nullable=True)
+    percentage_change = Column(Float, nullable=True)
+    calculated_reward = Column(Float, default=0.0)
+    is_retrained = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+def init_db():
+    Base.metadata.create_all(bind=engine)

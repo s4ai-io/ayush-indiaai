@@ -1,4 +1,5 @@
-import { riskForecastData } from "@/lib/mockData";
+// TODO: Wire up to real backend API (GET /api/ml/forecast)
+const riskForecastData: { region: string; riskLevel: string; threat: string; probability: number; details: string }[] = [];
 import { cn } from "@/lib/utils";
 import { AlertTriangle, ShieldCheck, ThermometerSun, CloudRain, Wind } from "lucide-react";
 

@@ -1,7 +1,8 @@
 'use client';
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { diseaseTrendsData } from '@/lib/mockData';
+// TODO: Wire up to real backend API (GET /api/ml/trends)
+const diseaseTrendsData: Record<string, unknown>[] = [];
 
 export function TrendChart() {
     return (
