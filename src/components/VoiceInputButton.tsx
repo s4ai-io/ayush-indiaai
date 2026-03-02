@@ -76,7 +76,8 @@ export function VoiceInputButton({ onTranscript, onError, language = 'hi' }: Voi
                     // to the same JSON run file created in /api/transcribe
                     const runId: string | undefined = transcribeData.run_id;
 
-                    // ─── Step 2: Translate (only if not English) ──────────────────
+                    // ─── Step 2: Translate (REMOVED - sending directly to vLLM) ───
+                    /*
                     if (language && needsTranslation(language)) {
                         setStatusLabel('Translating...');
                         const translateRes = await fetch('/api/translate', {
@@ -99,6 +100,10 @@ export function VoiceInputButton({ onTranscript, onError, language = 'hi' }: Voi
                         // English audio — Python backend already flushed the run JSON.
                         onTranscript(transcript, runId);
                     }
+                    */
+
+                    // Directly send the transcript to the agent (vLLM will handle translation/extraction)
+                    onTranscript(transcript, runId);
 
                 } catch (error: any) {
                     console.error('Voice pipeline error:', error);

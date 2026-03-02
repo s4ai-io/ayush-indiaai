@@ -34,7 +34,7 @@ export default function TreatmentPage({ params }: { params: Promise<{ visit_id: 
                 instructions="You are an AI Clinical Assistant helping the doctor fill the treatment assessment form."
                 labels={{
                     title: "🩺 Treatment Assistant",
-                    initial: "Hello Doctor! Describe the patient's condition and I'll fill the clinical assessment for you.",
+                    initial: "Helps you extract the clinical details from the doctor's patient conversation.",
                 }}
                 defaultOpen={false}
                 clickOutsideToClose={false}
@@ -152,7 +152,6 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                     doctorNotes: data.visit?.notes || '',
                     prakriti: data.visit?.prakriti || '',
                     vikriti: data.visit?.vikriti || '',
-                    severity: data.visit?.severity || '5',
                     comorbidities: data.visit?.comorbidities || '',
                     patient: data.patient,
                 });
@@ -174,7 +173,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                             patientMobile: d.patientMobile || '', symptoms: d.symptoms || '',
                             diagnosis: d.diagnosis || '', doctorNotes: d.doctorNotes || '',
                             prakriti: d.prakriti || '', vikriti: d.vikriti || '',
-                            severity: d.severity || '5', comorbidities: d.comorbidities || '',
+                            comorbidities: d.comorbidities || '',
                         });
                         setDisease(d.diagnosis || '');
                         setSymptoms(d.symptoms || '');
@@ -202,8 +201,8 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
         parameters: [
             { name: "disease", type: "string", description: "Disease name" },
             { name: "symptoms", type: "string", description: "Comma-separated symptoms" },
-            { name: "comorbidity", type: "string", description: "Medical history / comorbidities" },
-            { name: "doshas", type: "string", description: "Current dosha imbalance: Vata, Pitta, or Kapha" },
+            { name: "comorbidities", type: "string", description: "Medical history / comorbidities" },
+            { name: "vikriti", type: "string", description: "Current dosha imbalance: Vata, Pitta, or Kapha" },
             { name: "prakriti", type: "string", description: "Constitution: Vata, Pitta, Kapha, Vata-Pitta, Pitta-Kapha, Vata-Kapha" },
             { name: "herbs", type: "string", description: "Doctor prescribed herbs" },
             { name: "yoga", type: "string", description: "Doctor prescribed yoga" },
@@ -232,8 +231,8 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
         if (!proposedData) return;
         if (proposedData.disease) setDisease(proposedData.disease);
         if (proposedData.symptoms) setSymptoms(proposedData.symptoms);
-        if (proposedData.comorbidity) setMedicalHistory(proposedData.comorbidity);
-        if (proposedData.doshas) setVikriti(proposedData.doshas);
+        if (proposedData.comorbidities) setMedicalHistory(proposedData.comorbidities);
+        if (proposedData.vikriti) setVikriti(proposedData.vikriti);
         if (proposedData.prakriti) setPrakriti(proposedData.prakriti);
 
         if (proposedData.herbs) setDoctorHerbs(proposedData.herbs.split(',').map((h: string) => h.trim()).filter(Boolean));
@@ -298,8 +297,8 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
 
         setDisease(finalDisease);
         if (proposedData.symptoms) setSymptoms(proposedData.symptoms);
-        if (proposedData.comorbidity) setMedicalHistory(proposedData.comorbidity);
-        if (proposedData.doshas) setVikriti(proposedData.doshas);
+        if (proposedData.comorbidities) setMedicalHistory(proposedData.comorbidities);
+        if (proposedData.vikriti) setVikriti(proposedData.vikriti);
         if (proposedData.prakriti) setPrakriti(proposedData.prakriti);
 
         if (proposedData.herbs) setDoctorHerbs(proposedData.herbs.split(',').map((h: string) => h.trim()).filter(Boolean));
@@ -363,7 +362,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                     gender: visitCtx?.patient?.gender || '',
                     prakriti, vikriti, disease,
                     symptoms: symptoms || undefined,
-                    medical_history: medicalHistory || undefined
+                    comorbidities: medicalHistory || undefined
                 }),
             });
             if (!res.ok) throw new Error('Failed to generate plan');
@@ -511,14 +510,11 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                     <ul className="list-disc list-inside space-y-1">
                                         {proposedData.disease && <li><strong>Disease:</strong> {proposedData.disease}</li>}
                                         {proposedData.symptoms && <li><strong>Symptoms:</strong> {proposedData.symptoms}</li>}
-                                        {proposedData.comorbidity && <li><strong>Comorbidity:</strong> {proposedData.comorbidity}</li>}
-                                        {proposedData.doshas && <li><strong>Doshas:</strong> {proposedData.doshas}</li>}
-                                        {proposedData.comorbidity && <li><strong>Comorbidity:</strong> {proposedData.comorbidity}</li>}
-                                        {proposedData.doshas && <li><strong>Doshas:</strong> {proposedData.doshas}</li>}
+                                        {proposedData.comorbidities && <li><strong>Comorbidities:</strong> {proposedData.comorbidities}</li>}
+                                        {proposedData.vikriti && <li><strong>Doshas:</strong> {proposedData.vikriti}</li>}
                                         {proposedData.prakriti && <li><strong>Prakriti:</strong> {proposedData.prakriti}</li>}
                                         {proposedData.herbs && <li><strong>Herbs:</strong> {proposedData.herbs}</li>}
                                         {proposedData.yoga && <li><strong>Yoga:</strong> {proposedData.yoga}</li>}
-                                        {proposedData.diet && <li><strong>Diet:</strong> {proposedData.diet}</li>}
                                         {proposedData.diet && <li><strong>Diet:</strong> {proposedData.diet}</li>}
                                         {proposedData.lifestyle && <li><strong>Lifestyle:</strong> {proposedData.lifestyle}</li>}
                                     </ul>
@@ -615,7 +611,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                     {/* Comorbidity */}
                                     <div className="space-y-2 pt-2">
                                         <label className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-                                            <Activity className="w-3.5 h-3.5 text-primary" /> Comorbidity
+                                            <Activity className="w-3.5 h-3.5 text-primary" /> Comorbidities
                                         </label>
                                         <textarea
                                             value={medicalHistory}
@@ -626,7 +622,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                         />
                                     </div>
 
-                                    {/* Doshas */}
+                                    {/* Vikriti */}
                                     <div className="space-y-2 pt-2">
                                         <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Doshas (Current Imbalance)</label>
                                         <Select onValueChange={setVikriti} value={vikriti}>
@@ -706,10 +702,10 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                                 </div>
                                             </div>
                                         </div>
-                                        {treatmentPlan.doshas_affected && (
+                                        {treatmentPlan.vikriti_affected && (
                                             <div className="pt-3 border-t border-white/10">
                                                 <span className="text-xs text-slate-400 uppercase tracking-wider">Doshas Affected</span>
-                                                <div className="text-purple-300 font-semibold mt-1">{treatmentPlan.doshas_affected}</div>
+                                                <div className="text-purple-300 font-semibold mt-1">{treatmentPlan.vikriti_affected}</div>
                                             </div>
                                         )}
                                     </CardContent>
@@ -781,10 +777,10 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                                     </div>
                                                 </div>
                                             </div>
-                                            {treatmentPlan.doshas_affected && (
+                                            {treatmentPlan.vikriti_affected && (
                                                 <div className="pt-3 border-t border-white/10">
                                                     <span className="text-xs text-slate-400 uppercase tracking-wider">Doshas Affected</span>
-                                                    <div className="text-purple-300 font-semibold mt-1">{treatmentPlan.doshas_affected}</div>
+                                                    <div className="text-purple-300 font-semibold mt-1">{treatmentPlan.vikriti_affected}</div>
                                                 </div>
                                             )}
                                         </CardContent>

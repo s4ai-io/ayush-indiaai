@@ -14,7 +14,6 @@ export function ConsultationForm({ initialCondition }: { initialCondition?: stri
     const [vikriti, setVikriti] = useState<string>('Vata');
     const [condition, setCondition] = useState<string>(initialCondition || 'Anxiety');
     const [symptoms, setSymptoms] = useState<string>('');
-    const [severity, setSeverity] = useState<number>(5);
     const [bmi, setBmi] = useState<number | undefined>(undefined);
     const [height, setHeight] = useState<number | undefined>(undefined);
     const [weight, setWeight] = useState<number | undefined>(undefined);
@@ -47,7 +46,6 @@ export function ConsultationForm({ initialCondition }: { initialCondition?: stri
                 vikriti,
                 disease: condition,
                 symptoms,
-                severity,
                 bmi
             };
 
@@ -177,25 +175,6 @@ export function ConsultationForm({ initialCondition }: { initialCondition?: stri
                             />
                         </div>
 
-                        {/* Severity Slider */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">
-                                Severity: <span className="text-primary font-bold">{severity}/10</span>
-                            </label>
-                            <input
-                                type="range"
-                                className="w-full"
-                                min="1"
-                                max="10"
-                                value={severity}
-                                onChange={(e) => setSeverity(parseInt(e.target.value))}
-                            />
-                            <div className="flex justify-between text-xs text-muted-foreground">
-                                <span>Mild</span>
-                                <span>Moderate</span>
-                                <span>Severe</span>
-                            </div>
-                        </div>
 
                         {/* Prakriti */}
                         <div className="space-y-2">
@@ -214,7 +193,7 @@ export function ConsultationForm({ initialCondition }: { initialCondition?: stri
 
                         {/* Vikriti */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Vikriti (Current Imbalance)</label>
+                            <label className="text-sm font-medium">Doshas (Current Imbalance)</label>
                             <select
                                 className="w-full p-2 border rounded-md"
                                 value={vikriti}
@@ -267,7 +246,7 @@ export function ConsultationForm({ initialCondition }: { initialCondition?: stri
                                 <Stethoscope className="w-5 h-5" />
                                 AI-Powered AYUSH Protocol: {condition}
                             </CardTitle>
-                            <p className="text-sm text-emerald-700">Tailored for {prakriti} constitution with {vikriti} imbalance</p>
+                            <p className="text-sm text-emerald-700">Tailored for {prakriti} constitution with {vikriti} imbalance (Doshas)</p>
                         </CardHeader>
                         <CardContent className="space-y-5">
                             {/* ML Predictions */}

@@ -517,12 +517,10 @@ async def get_disease_spread_prediction(disease: str = None):
 
 
 
-from services.consultation_agent import consultation_agent_router
 from services.registration_agent import registration_agent_router
 from services.treatment_agent import treatment_agent_router
 from services.admin_router import admin_router
 
-app.include_router(consultation_agent_router, prefix="/api/copilot/consultation", tags=["Copilot Agent"])
 app.include_router(registration_agent_router, prefix="/api/copilot/registration", tags=["Copilot Agent"])
 app.include_router(treatment_agent_router, prefix="/api/copilot/treatment", tags=["Copilot Agent"])
 app.include_router(admin_router, prefix="/api/admin", tags=["Admin"])

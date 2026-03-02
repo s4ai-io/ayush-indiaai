@@ -43,22 +43,6 @@ function Section({ icon, title, children, accent = 'indigo' }: { icon: React.Rea
     );
 }
 
-function SeverityBar({ value }: { value: string }) {
-    const n = parseInt(value) || 0;
-    const pct = (n / 10) * 100;
-    const color = n <= 3 ? 'bg-emerald-400' : n <= 6 ? 'bg-amber-400' : 'bg-red-400';
-    return (
-        <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Severity</p>
-            <div className="flex items-center gap-3">
-                <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
-                </div>
-                <span className="text-sm font-bold text-slate-700">{n}/10</span>
-            </div>
-        </div>
-    );
-}
 
 function StarRating({ value }: { value: string }) {
     const n = parseInt(value) || 0;
@@ -178,13 +162,8 @@ export default function VisitDetailsPage({ params }: { params: Promise<{ visit_i
                         <Field label="Diagnosis" value={v.diagnosis} />
                     </div>
                     <Field label="Prakriti (Constitution)" value={v.prakriti} />
-                    <Field label="Vikriti (Imbalance)" value={v.vikriti} />
+                    <Field label="Doshas (Imbalance)" value={v.vikriti} />
                     <Field label="Comorbidities" value={v.comorbidities} />
-                    {v.severity && (
-                        <div className="col-span-2 md:col-span-3">
-                            <SeverityBar value={v.severity} />
-                        </div>
-                    )}
                     {v.notes && (
                         <div className="col-span-2 md:col-span-3">
                             <Field label="Doctor Notes" value={v.notes} />

@@ -27,7 +27,7 @@ class PatientProfile(BaseModel):
     vikriti: Optional[str] = Field(None, description="Current dosha imbalance (Vikriti)")
     disease: str = Field(..., min_length=1, description="Primary health condition (required)")
     symptoms: Optional[str] = Field(None, description="Patient symptoms (optional)")
-    medical_history: Optional[str] = Field(None, description="Patient medical history or comorbidities")
+    comorbidities: Optional[str] = Field(None, description="Patient medical history or comorbidities")
     bmi: Optional[float] = Field(None, ge=10, le=50, description="Body Mass Index")
     
     @field_validator('gender')
@@ -92,7 +92,7 @@ class PrescriptionRequest(BaseModel):
     symptoms: Optional[str] = Field("", description="Patient symptoms text")
     comorbidities: Optional[str] = Field("", description="Patient comorbidities/medical history")
     prakriti: str = Field("Vata", description="Patient prakriti")
-    vikriti: str = Field("Vata", description="Patient vikriti")
+    vikriti: str = Field("Vata", description="Patient current dosha imbalance")
     treatmentPlan: Optional[dict] = Field(None, description="Full AI treatment plan JSON")
     doctorPrescription: Optional[str] = Field("", description="Doctor's prescription notes")
     doctorNotes: Optional[str] = Field("", description="Additional doctor notes")
