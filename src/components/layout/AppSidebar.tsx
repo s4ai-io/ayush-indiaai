@@ -1,5 +1,6 @@
 "use client";
-
+import logo from "./s4ailogo.png";
+import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -44,21 +45,43 @@ export function AppSidebar() {
                 )}
             >
                 {/* Header with Close Button */}
-                <div className="flex items-center justify-between p-6">
-                    <div>
-                        <h1 className="text-2xl font-bold">Ayush AI</h1>
-                        <p className="text-sm opacity-80">Intelligent Health System</p>
-                    </div>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-white hover:bg-white/20 hover:text-white"
-                        onClick={() => setIsExpanded(false)}
-                    >
-                        <X className="h-6 w-6" />
-                        <span className="sr-only">Close Menu</span>
-                    </Button>
-                </div>
+<div className="flex items-center justify-between p-6">
+
+    {/* Left side */}
+    <div className="flex items-center gap-3">
+
+        {/* Logo */}
+        <div className="w-10 h-10 relative">
+            <Image
+                src={logo}
+                alt="S4AI"
+                fill
+                className="object-contain"
+            />
+        </div>
+
+        {/* Text */}
+        <div>
+            <h1 className="text-lg font-bold text-white">ISHA Ayush</h1>
+            <p className="text-xs text-white/70">
+                S4AI Technologies LLP
+            </p>
+        </div>
+
+    </div>
+
+    {/* Close button */}
+    <Button
+        variant="ghost"
+        size="icon"
+        className="text-white hover:bg-white/20"
+        onClick={() => setIsExpanded(false)}
+    >
+        <X className="h-6 w-6" />
+    </Button>
+
+</div>
+
 
                 {/* Navigation Links */}
                 <nav className="flex-1 space-y-8 overflow-y-auto px-4 pb-8">
