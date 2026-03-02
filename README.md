@@ -16,7 +16,6 @@ ayush-app/
 │   │   ├── analytics_service.py    # Public health analytics
 │   │   ├── forecast_service.py     # Disease forecasting (ARIMA/trend)
 │   │   ├── gnn_service.py          # Spatiotemporal GNN for disease spread
-│   │   ├── consultation_agent.py   # Copilot consultation agent router
 │   │   ├── registration_agent.py   # Copilot registration agent router
 │   │   ├── treatment_agent.py      # Copilot treatment agent router
 │   │   └── admin_router.py         # Admin evaluation & accuracy endpoints
@@ -56,7 +55,6 @@ ayush-app/
 │   │   ├── doctor/                 # Doctor's consultation & diagnosis
 │   │   │   └── treatment/[visit_id]/ # AI treatment plan generation
 │   │   ├── visits/                 # Visit detail (read-only)
-│   │   ├── consultation/           # Consultation copilot
 │   │   ├── public-health/          # Command center dashboard
 │   │   ├── forecasting/            # Disease forecasting view
 │   │   ├── trends/                 # Emerging trends view
@@ -244,8 +242,6 @@ This will:
 | `GET` | `/api/patients/search?q=` | Search patients by name / mobile |
 | `GET` | `/api/patients/{id}` | Get patient by ID |
 | `GET` | `/api/patients/{id}/history` | Full visit history |
-| `POST` | `/api/consultations` | Record a new consultation (visit) |
-| `GET` | `/api/consultations/{visit_id}/treatment` | Get visit context for treatment generation |
 | `GET` | `/api/visits/{visit_id}` | Full visit details (read-only) |
 | `POST` | `/api/recommend` | Get AI treatment recommendation |
 | `GET` | `/api/diseases` | List all diseases (`?q=search`) |
@@ -259,7 +255,6 @@ This will:
 | `GET` | `/api/analytics/hotspots` | Location-based disease hotspots |
 | `GET` | `/api/analytics/alerts` | Active outbreak alerts |
 | `GET` | `/api/analytics/predictions` | GNN-based spread predictions |
-| `POST` | `/api/copilot/consultation/...` | CopilotKit consultation agent |
 | `POST` | `/api/copilot/registration/...` | CopilotKit registration agent |
 | `POST` | `/api/copilot/treatment/...` | CopilotKit treatment agent |
 | `GET` | `/api/admin/accuracy` | Accuracy evaluation (admin) |
@@ -275,7 +270,6 @@ The platform uses three **CopilotKit + AG-UI** agents backed by **LlamaIndex**:
 | Agent | Route prefix | Purpose |
 |---|---|---|
 | **Registration Agent** | `/api/copilot/registration` | Voice + form-driven patient registration |
-| **Consultation Agent** | `/api/copilot/consultation` | Clinical assessment & diagnosis guidance |
 | **Treatment Agent** | `/api/copilot/treatment` | AI-crafted Ayurvedic treatment plan generation |
 
 LLM selection is controlled by the `LLM_BINDING` environment variable (`vllm` → Phi-4, `openai` → GPT-4o).
@@ -355,3 +349,7 @@ Implemented in `backend/utils/llm_logger.py`.
 
 - [AyurGenix Model Report](backend/docs/AyurGenixAI_Model_Report.md) — detailed ML pipeline documentation
 - [AyurGenix One-Pager](backend/docs/AyurGenixAI_OnePager.md) — high-level project overview
+
+---
+
+**Built by**: S4AI Technologies LLP
