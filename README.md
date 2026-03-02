@@ -1,357 +1,283 @@
-# AYUSH India AI
+# AYUSH India AI — Ayurvedic Healthcare & Public Health Surveillance Platform
 
-An AI-powered Ayurvedic healthcare platform that integrates traditional AYUSH knowledge with modern ML — covering patient registration, AI-driven clinical consultation, treatment planning, and public health surveillance.
+## Executive Summary
+
+**AYUSH India AI** is an AI-powered Ayurvedic healthcare platform that integrates traditional AYUSH knowledge with modern ML. It provides end-to-end capabilities covering patient registration, AI-driven clinical consultation (using CopilotKit and LlamaIndex), treatment planning (AyurGenix engine), and public health surveillance via spatiotemporal GNN and ARIMA forecasting.
+
+By combining **Microsoft Phi-4** (via vLLM on Modal.run), **AI4Bharat** (ASR and translation for multilingual Indic voice support), and a **FastAPI/Next.js** stack, AYUSH India AI democratizes access to personalized Ayurvedic care while enabling proactive disease monitoring at scale.
 
 ---
 
-## 🏗️ Architecture Overview
+## 1. Problem Statement & Solution Capabilities
 
-```
-ayush-app/
-├── backend/              # Python FastAPI ML Backend
-│   ├── main.py           # API entry point (all routes)
-│   ├── services/         # Business logic
-│   │   ├── ayurgenix_service.py    # AyurGenix treatment recommendation engine
-│   │   ├── csv_service.py          # CSV-based data persistence layer
-│   │   ├── analytics_service.py    # Public health analytics
-│   │   ├── forecast_service.py     # Disease forecasting (ARIMA/trend)
-│   │   ├── gnn_service.py          # Spatiotemporal GNN for disease spread
-│   │   ├── consultation_agent.py   # Copilot consultation agent router
-│   │   ├── registration_agent.py   # Copilot registration agent router
-│   │   ├── treatment_agent.py      # Copilot treatment agent router
-│   │   └── admin_router.py         # Admin evaluation & accuracy endpoints
-│   ├── utils/
-│   │   ├── validators.py           # Pydantic v2 request/response schemas
-│   │   ├── llm_config.py           # LLM binding selector (OpenAI / vLLM)
-│   │   ├── llm_logger.py           # LLM I/O logging (writes to logs/)
-│   │   └── agent/                  # AG-UI agent workflow implementation
-│   │       ├── AGUIChatWorkflow.py
-│   │       └── ag_ui_router.py
-│   ├── modal_asr/                  # Modal.run cloud GPU services
-│   │   ├── modal_vllm_phi4.py      # vLLM Phi-4 inference (2× L40S GPU)
-│   │   ├── app.py                  # AI4Bharat ASR (speech-to-text)
-│   │   └── app_translate.py        # AI4Bharat translation (Indic ↔ English)
-│   ├── data/                       # CSV data files (source of truth)
-│   │   ├── patients.csv
-│   │   ├── medical_records.csv
-│   │   ├── ayush_treatments.csv
-│   │   ├── treatment_feedback.csv
-│   │   └── AyurGenixAI_Dataset.csv # Core Ayurvedic knowledge base
-│   ├── logs/
-│   │   └── model_interactions/     # Timestamped LLM input/output logs
-│   ├── docs/
-│   │   ├── AyurGenixAI_Model_Report.md
-│   │   └── AyurGenixAI_OnePager.md
-│   ├── disease_forecaster.py
-│   ├── requirements.txt
-│   ├── run.sh                      # Quick backend start script
-│   └── .env                        # Backend environment variables
-│
-├── src/                            # Next.js 16 Frontend (App Router)
-│   ├── app/
-│   │   ├── page.tsx                # Landing page (role selector)
-│   │   ├── layout.tsx
-│   │   ├── registration/           # Patient registration flow
-│   │   ├── patients/               # Patient queue & search
-│   │   ├── doctor/                 # Doctor's consultation & diagnosis
-│   │   │   └── treatment/[visit_id]/ # AI treatment plan generation
-│   │   ├── visits/                 # Visit detail (read-only)
-│   │   ├── consultation/           # Consultation copilot
-│   │   ├── public-health/          # Command center dashboard
-│   │   ├── forecasting/            # Disease forecasting view
-│   │   ├── trends/                 # Emerging trends view
-│   │   ├── admin/                  # Admin accuracy evaluation
-│   │   ├── actions/                # Next.js server actions
-│   │   └── api/
-│   │       ├── copilotkit/         # CopilotKit runtime endpoint
-│   │       ├── transcribe/         # Proxy → Modal ASR
-│   │       ├── translate/          # Proxy → Modal Translation
-│   │       └── ml/                 # Server-side proxies to FastAPI
-│   ├── components/
-│   │   ├── VoiceInputButton.tsx    # Voice input with language selector
-│   │   ├── LanguageSelector.tsx    # Indian language picker
-│   │   ├── charts/                 # Recharts wrappers
-│   │   ├── forms/                  # Shared form components
-│   │   ├── layout/                 # Navigation & shell
-│   │   └── ui/                     # shadcn/ui primitives
-│   ├── lib/
-│   │   ├── config.ts               # API base URL config (read from env)
-│   │   ├── logger.ts
-│   │   └── api/
-│   ├── types/
-│   │   ├── index.ts                # Barrel export
-│   │   ├── clinical.ts             # Patient & clinical types
-│   │   ├── ml.ts                   # ML recommendation types
-│   │   └── public-health.ts        # Analytics & forecasting types
-│   └── data/
-│
-├── package.json
-├── next.config.ts
-├── tsconfig.json
-├── setup.sh                        # Full-stack one-shot setup script
-└── .env.local                      # Frontend environment variables
+### The Challenge
+
+Traditional Ayurvedic healthcare faces several challenges in scaling and standardizing care:
+
+- **Accessibility**: Patients in rural areas face language barriers and limited access to expert Ayurvedic practitioners.
+- **Knowledge Integration**: Ayurvedic knowledge is vast, making it challenging to standardize treatment plans across practitioners.
+- **Public Health Monitoring**: Lack of real-time, data-driven surveillance for emerging disease trends and outbreaks.
+
+### Our Solution
+
+1. **Intelligent Multilingual Voice Input**: Leverages AI4Bharat ASR and translation, allowing patients and practitioners to interact using various Indic languages natively.
+2. **AI Copilot Agents**: Three specialized agents (Registration, Consultation, Treatment) powered by CopilotKit and LlamaIndex for conversational, guided workflows.
+3. **AyurGenix Treatment Recommendation**: Scikit-learn based ML engine generating personalized Ayurvedic treatment plans based on a curated `AyurGenixAI_Dataset.csv` knowledge base.
+4. **Public Health Surveillance**: Analyzes clinical data to detect geographical disease hotspots and forecast outbreaks using ARIMA and Spatiotemporal Graph Neural Networks (GNN).
+5. **Role-Based Workflows**: Tailored, intuitive Next.js web applications for Receptionists, Doctors, and Public Health Officials.
+6. **Cloud-Accelerated Inference**: Heavy ML workloads like the Phi-4 model and ASR are deployed on Modal.run serverless GPU infrastructure for high performance and low latency.
+
+---
+
+## 2. System Architecture
+
+### High-Level Architecture
+
+```mermaid
+graph TD
+    subgraph Client_Side [Client Side]
+        User((User)) -->|Interacts| Browser[Web Browser]
+        Browser -->|Renders| Frontend["Frontend App<br/>(Next.js + React)"]
+    end
+
+    Frontend <-->|REST API + WebSockets| Backend["Backend API<br/>(FastAPI)"]
+    Frontend <-->|Copilot Protocol| Backend
+
+    subgraph Server_Side [Backend Core]
+        Backend <-->|ML Inference| AyurGenix["AyurGenix Engine<br/>(Scikit-learn)"]
+        Backend <-->|Data Access| DB[(PostgreSQL & CSVs)]
+        Backend <-->|Forecasting| Analytics["Analytics & Forecasting<br/>(ARIMA + GNN)"]
+    end
+
+    subgraph Cloud_Models [Modal.run GPU Services]
+        Backend <-->|vLLM API| Phi4["Microsoft Phi-4<br/>(2x L40S)"]
+        Backend <-->|Transcribe| ASR["AI4Bharat ASR"]
+        Backend <-->|Translate| Translate["AI4Bharat Translate"]
+    end
+
+    style Client_Side fill:#e1f5fe,stroke:#01579b
+    style Server_Side fill:#e8f5e9,stroke:#2e7d32
+    style Cloud_Models fill:#fff3e0,stroke:#ef6c00
 ```
 
+### Core Workflows
+
+#### A. Patient Consultation Flow
+
+```mermaid
+sequenceDiagram
+    participant Patient
+    participant Doctor
+    participant UI as Next.js Frontend
+    participant API as FastAPI Backend
+    participant Agent as Copilot Agent (LlamaIndex)
+    participant ML as AyurGenix Engine
+
+    Patient->>UI: Voice input symptoms (Indic language)
+    UI->>API: Transcribe & Translate (Modal.run)
+    API-->>UI: English text constraints
+    UI->>Agent: Send symptoms via AG-UI
+    Agent->>Agent: Extract clinical entities
+    Agent-->>UI: Suggested diagnosis questions
+    Doctor->>UI: Confirm diagnosis
+    UI->>ML: Request treatment plan based on diagnosis
+    ML-->>UI: Ayurvedic formulation suggestions
+    Doctor->>API: Save final prescription
+```
+
+#### B. Public Health Forecasting
+
+```mermaid
+sequenceDiagram
+    participant Admin as Public Health Official
+    participant UI as Next.js Dashboard
+    participant API as FastAPI Backend
+    participant Analytics as Analytics Engine
+    participant DB as Database
+
+    Admin->>UI: View Dashboard
+    UI->>API: Fetch current hotspots & trends
+    API->>DB: Query aggregated patient data
+    DB-->>API: Historical disease occurrences
+    API->>Analytics: Run GNN & ARIMA models
+    Analytics-->>API: Projected transmission paths & volumes
+    API-->>UI: Render geospatial charts & alerts
+```
+
 ---
 
-## 🛠️ Tech Stack
+## 3. Technical Architecture
 
-### Backend
-| Layer | Technology |
-|---|---|
-| API Framework | **FastAPI** 0.115 + **uvicorn** |
-| Data Validation | **Pydantic v2** |
-| Persistence | **PostgreSQL** via SQLAlchemy (`models.py`) |
-| ML / Recommendation | **Scikit-learn**, **Pandas**, **NumPy** (AyurGenixAI dataset) |
-| Disease Forecasting | **ARIMA**, trend analysis, **NetworkX** GNN |
-| Copilot Agents | **CopilotKit** + **AG-UI Protocol** + **LlamaIndex** |
-| LLM (default) | **Microsoft Phi-4** via **vLLM** on Modal.run |
-| LLM (fallback) | **OpenAI GPT-4o** |
-| Speech-to-Text | **AI4Bharat ASR** (multilingual Indic, on Modal.run) |
-| Translation | **AI4Bharat IndicTrans** (Indic ↔ English, on Modal.run) |
+### 3.1 Backend (FastAPI)
 
-### Frontend
-| Layer | Technology |
+The orchestration engine handles APIs, Copilot agents, and integrates machine learning endpoints.
+
+**Core Services:**
+
+| Service | Description |
 |---|---|
-| Framework | **Next.js 16** (App Router) + **React 19** |
-| Language | **TypeScript** |
-| Styling | **Tailwind CSS v4** |
-| UI Components | **shadcn/ui** (Radix UI primitives) |
-| Charts | **Recharts** |
-| Copilot UI | **@copilotkit/react-ui**, **@copilotkit/react-core** |
-| Icons | **Lucide React** |
+| `AyurGenixService` | ML-driven treatment recommendation engine using historical datasets |
+| `ConsultationAgent` | Copilot-based agent for clinical assessment and diagnosis guidance |
+| `ForecastService` | Disease forecasting using ARIMA and trend algorithms |
+| `GNNService` | Spatiotemporal Graph Neural Network for disease spread mapping |
+| `CSVService` | Data ingestion and persistence layer mapping to PostgreSQL |
+
+**Key API Endpoints:**
+
+| Endpoint | Description |
+|---|---|
+| `POST /api/patients` | Register a new patient |
+| `POST /api/consultations` | Record a new consultation (visit) |
+| `POST /api/recommend` | Get AI treatment recommendation |
+| `POST /api/prescribe` | Save doctor's final prescription |
+| `GET /api/forecast` | Disease forecast mapping |
+| `GET /api/analytics/hotspots` | Location-based disease hotspots |
+| `POST /api/copilot/consultation/...` | CopilotKit consultation agent runtime |
+
+### 3.2 Cloud Infrastructure (Modal.run)
+
+To ensure low latency for heavy ML tasks, specialized models are hosted on Modal:
+
+| Service | GPU Configuration | Purpose |
+|---|---|---|
+| **Microsoft Phi-4** | 2× L40S | LLM reasoning base via vLLM for Copilot agents |
+| **AI4Bharat ASR** | T4 / A10G | Speech-to-text for multilingual voice input |
+| **AI4Bharat Transl** | T4 / A10G | Indic ↔ English translation loop |
+
+### 3.3 Frontend (Next.js)
+
+A modern, responsive healthcare portal powered by Next.js App Router and shadcn/ui.
+
+**Key Views:**
+
+| Page | Description |
+|---|---|
+| **Registration (`/registration`)** | Copilot-assisted patient onboarding queue |
+| **Doctor (`/doctor`)** | AI copilot clinical evaluation and patient history |
+| **Treatment (`/doctor/treatment/[id]`)** | AyurGenix treatment generation and prescription confirmation |
+| **Dashboard (`/public-health/dashboard`)** | Global incidence tracking, spatial GNN charts, and active alerts |
 
 ---
 
-## 🚀 Quick Start
+## 4. Getting Started
 
 ### Prerequisites
-- **Python 3.10+**
-- **Node.js 18+** and npm
-- **PostgreSQL** (running locally)
 
-> **Database Required.** Data persistence is handled via PostgreSQL, seeded initially from local CSV files.
+- Python 3.10+
+- Node.js 18+
+- PostgreSQL (running locally)
+- Modal auth token (if deploying cloud endpoints)
 
----
-
-### 1. Backend Setup
+### Backend Setup
 
 ```bash
 cd backend
 
 # Create and activate virtual environment
 python3 -m venv venv
-source venv/bin/activate        # Mac / Linux
+source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 
 # Configure environment
-cp .env.example .env            # or create .env manually (see below)
+cp .env.example .env
 
-# Set up Database
-# Ensure PostgreSQL is installed and running locally.
-# Create a database named `ayush_db` (or alter DATABASE_URL in .env)
-# Seed the initial data from the CSV files into PostgreSQL:
+# Seed the initial database
 python migrate_csv_postgres.py
 
-# Start the backend
+# Start the FastAPI server
 python main.py
-# → Running at http://localhost:8000
-# → Docs at   http://localhost:8000/docs
 ```
 
-**`backend/.env` reference:**
-```env
-# ── LLM ───────────────────────────────────────────────────────────────
-# Binding: "openai" | "vllm"
-LLM_BINDING=vllm
-LLM_MODEL=microsoft/phi-4
+API runs on `http://localhost:8000`. Full docs at `http://localhost:8000/docs`.
 
-# vLLM endpoint (only used when LLM_BINDING=vllm)
-VLLM_API_HOST=https://<your-modal-endpoint>/v1
-VLLM_API_KEY=dummy-key
-
-# OpenAI (used when LLM_BINDING=openai or as fallback)
-OPENAI_API_KEY=sk-...
-
-# ── Server ─────────────────────────────────────────────────────────────
-BACKEND_HOST=0.0.0.0
-BACKEND_PORT=8000
-
-# ── CORS ───────────────────────────────────────────────────────────────
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
-```
-
-Alternatively, use the convenience script:
-```bash
-cd backend
-./run.sh              # activates venv, checks data files, starts server
-./run.sh --port 8080  # custom port
-./run.sh --no-reload  # disable hot-reload
-```
-
----
-
-### 2. Frontend Setup
+### Frontend Setup
 
 ```bash
 # From project root
 npm install
 
-# Configure environment
-# (create .env.local if it doesn't exist)
+# Configure environment variables
 cat > .env.local << 'EOF'
 NEXT_PUBLIC_API_URL=http://localhost:8000
 PYTHON_BACKEND_URL=http://localhost:8000
 NEXT_PUBLIC_COPILOT_URL=/api/copilotkit
 
-# Modal.run ASR & Translation endpoints
+# Modal endpoints (Update with deployed URLs)
 MODAL_ASR_URL=https://<your-modal-asr-endpoint>/transcribe
 MODAL_TRANSLATE_URL=https://<your-modal-translate-endpoint>/translate
 EOF
 
+# Start Next.js development server
 npm run dev
-# → App running at http://localhost:3000
 ```
 
----
+Portal available at `http://localhost:3000`.
 
-### 3. One-shot Setup (first run)
-
-For a fully automated setup of both backend and frontend:
+### Full-Stack Setup (One-Shot)
 
 ```bash
-# From project root
 chmod +x setup.sh
 ./setup.sh
 ```
 
-This will:
-1. Create and populate the Python virtual environment
-2. Install Node.js dependencies
-3. Create `.env.local` if not present
-
 ---
 
-## 🌐 Key API Routes
+## 5. Configuration
 
-| Method | Endpoint | Description |
+Key environment settings across backend (`.env`) and frontend (`.env.local`):
+
+| Variable | Scope | Description |
 |---|---|---|
-| `GET` | `/health` | Health check |
-| `POST` | `/api/patients` | Register a new patient |
-| `GET` | `/api/patients` | List all patients (`?status=pending\|completed`) |
-| `GET` | `/api/patients/search?q=` | Search patients by name / mobile |
-| `GET` | `/api/patients/{id}` | Get patient by ID |
-| `GET` | `/api/patients/{id}/history` | Full visit history |
-| `POST` | `/api/consultations` | Record a new consultation (visit) |
-| `GET` | `/api/consultations/{visit_id}/treatment` | Get visit context for treatment generation |
-| `GET` | `/api/visits/{visit_id}` | Full visit details (read-only) |
-| `POST` | `/api/recommend` | Get AI treatment recommendation |
-| `GET` | `/api/diseases` | List all diseases (`?q=search`) |
-| `GET` | `/api/diseases/suggestions?q=` | Fuzzy disease name suggestions |
-| `POST` | `/api/prescribe` | Save doctor's final prescription |
-| `POST` | `/api/feedback` | Submit feedback for continuous learning |
-| `GET` | `/api/forecast` | Disease forecast (`?disease=&months=`) |
-| `GET` | `/api/trends` | Emerging disease trends |
-| `GET` | `/api/analytics/dashboard` | Public health dashboard summary |
-| `GET` | `/api/analytics/trends` | Disease trends over time |
-| `GET` | `/api/analytics/hotspots` | Location-based disease hotspots |
-| `GET` | `/api/analytics/alerts` | Active outbreak alerts |
-| `GET` | `/api/analytics/predictions` | GNN-based spread predictions |
-| `POST` | `/api/copilot/consultation/...` | CopilotKit consultation agent |
-| `POST` | `/api/copilot/registration/...` | CopilotKit registration agent |
-| `POST` | `/api/copilot/treatment/...` | CopilotKit treatment agent |
-| `GET` | `/api/admin/accuracy` | Accuracy evaluation (admin) |
-
-Full interactive docs: **[http://localhost:8000/docs](http://localhost:8000/docs)**
+| `LLM_BINDING` | Backend | Model backend: `vllm` (Phi-4) or `openai` (GPT-4o) |
+| `VLLM_API_HOST` | Backend | Modal endpoint if `LLM_BINDING=vllm` |
+| `OPENAI_API_KEY` | Backend | Fallback or primary logic depending on LLM binding |
+| `DATABASE_URL` | Backend | PostgreSQL connection string |
+| `NEXT_PUBLIC_API_URL` | Frontend | Target backend API location |
+| `MODAL_ASR_URL` | Frontend | External endpoint for AI4Bharat text extraction |
 
 ---
 
-## 🤖 Copilot Agents
+## 6. Evaluation & Accuracy
 
-The platform uses three **CopilotKit + AG-UI** agents backed by **LlamaIndex**:
-
-| Agent | Route prefix | Purpose |
-|---|---|---|
-| **Registration Agent** | `/api/copilot/registration` | Voice + form-driven patient registration |
-| **Consultation Agent** | `/api/copilot/consultation` | Clinical assessment & diagnosis guidance |
-| **Treatment Agent** | `/api/copilot/treatment` | AI-crafted Ayurvedic treatment plan generation |
-
-LLM selection is controlled by the `LLM_BINDING` environment variable (`vllm` → Phi-4, `openai` → GPT-4o).
+System accuracy and model alignment can be evaluated via administrative endpoints:
+- **`GET /api/admin/accuracy`**: Compares ML-suggested treatment plans against historical doctor feedback (from `treatment_feedback.csv`).
+- LLM calls are tracked and logged in `backend/logs/model_interactions/` to analyze Copilot step progression and prompt efficiency over time.
 
 ---
 
-## 🗣️ Voice & Language Support
+## 7. Project Structure
 
-Voice input is powered by **AI4Bharat ASR** (AI4Bharat multilingual model, hosted on Modal.run):
-
-- Supported languages include Hindi, Tamil, Telugu, Kannada, Malayalam, Bengali, Gujarati, Marathi, Punjabi, Odia, Urdu, and more.
-- Language selection is available in the `LanguageSelector` / `VoiceInputButton` component.
-- Translation (Indic ↔ English) is via **AI4Bharat IndicTrans**.
-
----
-
-## ☁️ Modal.run Cloud Services
-
-Three Modal.run deployments power the cloud-based AI:
-
-| Service | File | GPU |
-|---|---|---|
-| Phi-4 vLLM Inference | `backend/modal_asr/modal_vllm_phi4.py` | 2× L40S |
-| ASR (Speech-to-Text) | `backend/modal_asr/app.py` | — |
-| Translation | `backend/modal_asr/app_translate.py` | — |
-
-To deploy:
-```bash
-modal deploy backend/modal_asr/modal_vllm_phi4.py
-modal deploy backend/modal_asr/app.py
-modal deploy backend/modal_asr/app_translate.py
+```text
+ayush-app/
+├── backend/
+│   ├── main.py                 # FastAPI router entry
+│   ├── services/               # Business logic (AyurGenix, GNN, Forecasting)
+│   ├── data/                   # Core structured knowledge base (.csv)
+│   ├── modal_asr/              # Scripts to deploy vLLM, ASR to Modal.run
+│   └── utils/
+│       ├── agent/              # CopilotKit backend orchestration
+│       └── llm_logger.py       # I/O compliance tracer
+├── src/
+│   ├── app/                    # Next.js App Router endpoints
+│   ├── components/             # Reusable React components (shadcn/ui, Recharts)
+│   ├── lib/                    # Configuration, hooks, API fetchers
+│   └── types/                  # Shared TypeScript interfaces
+└── setup.sh                    # Unified startup sequence
 ```
 
-Update the resulting endpoint URLs in `backend/.env` (`VLLM_API_HOST`) and `.env.local` (`MODAL_ASR_URL`, `MODAL_TRANSLATE_URL`).
-
 ---
 
-## 📋 User Roles & Workflows
+## 8. Key Technology Choices
 
-The app is role-based with three entry points from the landing page:
-
-| Role | URL | Workflows |
-|---|---|---|
-| **Reception** | `/registration` | Register patients, manage queue |
-| **Doctor** | `/doctor` | Diagnose, generate treatment, give feedback |
-| **Public Health** | `/public-health/dashboard` | Monitor outbreaks, view forecasts, hotspots |
-
----
-
-## 📊 Data Files
-
-All runtime data is stored as CSV files in `backend/data/`:
-
-| File | Description |
+| Technology | Role |
 |---|---|
-| `patients.csv` | Patient demographics |
-| `medical_records.csv` | Consultation records / diagnoses |
-| `ayush_treatments.csv` | Prescribed AYUSH treatment plans |
-| `treatment_feedback.csv` | Doctor ratings & feedback (ML loop) |
-| `AyurGenixAI_Dataset.csv` | Ayurvedic disease–treatment knowledge base |
-| `Codified_Ayurvedic_disease.csv` | National Ayurveda Morbidity Codes mapping |
-| `public_health_trends.csv` | Aggregated public health trend data |
-
----
-
-## 📝 LLM I/O Logging
-
-All model inputs and outputs are automatically logged to timestamped files under:
-```
-backend/logs/model_interactions/
-```
-Implemented in `backend/utils/llm_logger.py`.
-
----
-
-## 📖 Documentation
-
-- [AyurGenix Model Report](backend/docs/AyurGenixAI_Model_Report.md) — detailed ML pipeline documentation
-- [AyurGenix One-Pager](backend/docs/AyurGenixAI_OnePager.md) — high-level project overview
+| **FastAPI** | High-performance async Python backend |
+| **Next.js & React 19** | Server-side rendered interfaces and React Server Components |
+| **CopilotKit** | Headless agent UI components linking React with LlamaIndex |
+| **LlamaIndex** | RAG and multi-agent workflow orchestration |
+| **Microsoft Phi-4** | Lean, highly capable open LLM optimized via vLLM |
+| **Modal.run** | Serverless GPU hosting for fast inference without idle costs |
+| **NetworkX & scikit-learn** | Backbone of geographic mapping and clinical recommendation |
+| **PostgreSQL** | Primary relational datastore for medical events and users |
