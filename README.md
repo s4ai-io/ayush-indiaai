@@ -1,10 +1,10 @@
-# AYUSH India AI — Ayurvedic Healthcare & Public Health Surveillance Platform
+# ISHA-AYUSH — Ayurvedic Healthcare & Public Health Surveillance Platform
 
 ## Executive Summary
 
-**AYUSH India AI** is an AI-powered Ayurvedic healthcare platform that integrates traditional AYUSH knowledge with modern ML. It provides end-to-end capabilities covering patient registration, AI-driven clinical consultation (using CopilotKit and LlamaIndex), treatment planning (ISHAAyush engine), and public health surveillance via spatiotemporal GNN and ARIMA forecasting.
+**ISHA-AYUSH** is an AI-powered Ayurvedic healthcare platform that integrates traditional AYUSH knowledge with modern ML. It provides end-to-end capabilities covering patient registration, AI-driven clinical consultation (using CopilotKit and LlamaIndex), treatment planning (ISHAAyush engine), and public health surveillance via spatiotemporal GNN and ARIMA forecasting.
 
-By combining **Microsoft Phi-4** (via vLLM on Modal.run), **AI4Bharat** (ASR and translation for multilingual Indic voice support), and a **FastAPI/Next.js** stack, AYUSH India AI democratizes access to personalized Ayurvedic care while enabling proactive disease monitoring at scale.
+By combining **Microsoft Phi-4** (via vLLM on Modal.run), **AI4Bharat** (ASR and translation for multilingual Indic voice support), and a **FastAPI/Next.js** stack, ISHA-AYUSH democratizes access to personalized Ayurvedic care while enabling proactive disease monitoring at scale.
 
 ---
 
@@ -131,7 +131,7 @@ The orchestration engine handles APIs, Copilot agents, and integrates machine le
 | `POST /api/recommend` | Get AI treatment recommendation |
 | `POST /api/prescribe` | Save doctor's final prescription |
 | `GET /api/forecast` | Disease forecast mapping |
-| `GET /api/analytics/hotspots` | Location-based disease hotspots |
+| `GET /api/analytics/hotspots` | Loc2ation-based disease hotspots |
 | `POST /api/copilot/consultation/...` | CopilotKit consultation agent runtime |
 
 ### 3.2 Cloud Infrastructure (Modal.run)
