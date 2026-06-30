@@ -1,0 +1,21 @@
+id,patient_id,medical_record_id,disease,target_vital,baseline_value,followup_value,percentage_change,calculated_reward,is_retrained,created_at
+44463ff5-1fd0-4cdf-a69c-e326dc1a8204,7ba9ba8f-9d5b-47c7-987d-66fa6b3470c1,91655bee-c007-4847-b0ad-634a3a8c1b58,Diarrhea (Atisara),Symptom Severity (1-10),7.63,2.95,61.25,1.0,True,2026-03-02 11:49:02.575241
+60debc13-fc0a-4097-95f5-8d6d2c1fe9fd,80a90ae1-bbc3-45e7-b1ab-a16998c47355,953525ea-97dc-4e1a-ab7b-e413c40277e4,Fever (Jwara),Symptom Severity (1-10),8.09,6.04,25.28,0.884,True,2026-03-02 11:49:02.575567
+a8ecf22b-6b5e-4986-b247-651c3272b7ee,d024f4a2-93c1-4d3c-bdc9-d6ecde53f040,b0d10793-9afa-4643-a036-119c2a2bf9b0,Joint Pain (Amavata),Symptom Severity (1-10),8.55,4.65,45.58,1.0,True,2026-03-02 11:49:02.573720
+c9dca9ad-2735-4206-865c-6797f577d08e,75d4dcdd-7686-4c48-a721-5b2442fd4269,4e08557e-9080-4c8a-93b7-c19ca0a0ce23,Indigestion (Ajirna),Symptom Severity (1-10),6.85,2.64,61.43,0.995,True,2026-03-02 11:49:02.574838
+fca3ffae-a27a-42aa-9582-14cb4e9407f1,70342446-c17b-46f3-800d-e50d59501ba8,6e42b684-29cb-48b1-b2c6-4eb0d1f4d265,Acidity (Amlapitta),Symptom Severity (1-10),7.42,5.05,31.91,0.816,True,2026-03-02 11:49:02.574416
+03d1765b-41fe-42dc-8a5a-c10f98cbfe2d,f254b66a-3579-4238-bb9d-64e4c245a99b,738abf24-a520-4334-8e01-fd394284e37f,Bronchitis (Kasa),PEFR (L/min),297.74,332.3,11.61,0.502,True,2026-03-02 11:53:08.304571
+150b6129-18b5-4110-8041-bc804a30dc49,687947bb-a1d7-462e-8117-d927e35d6106,0eafa222-d3fc-4723-ba01-38e30eae7d3c,Skin Rash (Kushtha),Symptom Severity (1-10),6.43,2.18,66.07,1.0,True,2026-03-02 11:53:03.350144
+3a28b711-c049-41e3-a716-4ab3eb59056e,3e36a3fe-c655-47b0-a5de-3fdc883da853,5d5fa844-d5b9-4a66-9a99-4382dd741f0c,Malaria (Vishama Jwara),Symptom Severity (1-10),7.33,3.06,58.29,1.0,True,2026-03-02 11:53:03.350726
+521715d6-125e-4eff-85cc-82eadd102491,ab41944b-1a95-4f5b-981c-1535c7ac5419,fdeddbf2-99c1-4aeb-8e8b-4e6f9f6aeb5e,Asthma (Tamaka Shwasa),PEFR (L/min),267.79,311.94,16.49,0.717,True,2026-03-02 11:53:03.351874
+728d1e23-3d7b-4944-83d1-2ee87e5dc4ad,c6d2f888-40c0-4b61-bc68-ec740ce6f396,9cfef742-935b-45d8-9088-a63d2c9ad291,Acidity (Amlapitta),Symptom Severity (1-10),7.0,4.88,30.35,1.0,True,2026-03-02 11:53:03.351125
+92444078-ed62-41c7-8e32-7f99f022c9ed,dc35d5fd-59d6-415f-9c79-9b420b39c4f1,378d71ba-ebf4-48f9-9cf8-72e1a8196588,Cough (Kasa),PEFR (L/min),291.03,373.79,28.44,1.0,True,2026-03-02 11:52:57.680717
+95fcbcc1-7a6b-49b2-b047-66eb91ce5f73,8c419593-d907-40da-9f2a-a5c830f91832,cf729e6c-d6f1-4fc4-833f-7be0bd6b6200,Diabetes (Madhumeha),HbA1c (%),8.49,7.1,16.37,1.0,True,2026-03-02 11:53:08.304990
+9aa5355c-1bf3-453a-a016-2ee51d1545ce,30fcee78-9709-4fbb-b984-a7b14d92b8c7,d5f2f91c-07bf-4345-9cba-1de75cb07a2e,Rhinitis (Pratishyaya),Symptom Severity (1-10),7.15,3.1,56.72,0.844,True,2026-03-02 11:53:08.305372
+a0cc29fe-e847-4ce5-9e08-20d6c6b71d0e,9bf47bb9-29f1-464c-a939-a6902121878f,0a6a88f8-0011-4dd5-908b-09856f3d23bf,Anxiety (Chittodvega),Symptom Severity (1-10),6.68,2.18,67.32,1.0,True,2026-03-02 11:52:57.680230
+a2bd309f-b8f8-42b6-8437-8b1f275db2fc,cb5ff6e3-acce-43bf-b51c-833a3aff1623,2e7e416e-3e4a-4535-850f-a9bde1fa960f,Heat Stroke (Ushna Jwar),Symptom Severity (1-10),7.58,4.99,34.15,1.0,True,2026-03-02 11:52:57.681159
+a985de05-880b-4e79-8df3-bed4d38467fc,7ba9ba8f-9d5b-47c7-987d-66fa6b3470c1,c7969ffd-9e8d-45c8-ab24-ae5439b01f64,Common Cold,Symptom Severity (1-10),6.34,2.33,63.2,0.899,True,2026-03-02 11:53:08.304150
+aa766f67-b5a4-4a5e-b4df-23003e44f1d5,e5729c4b-e437-42e5-b2a3-29087b56688f,777d9fa7-8b31-4c89-9306-ca0c0abb658c,Acidity (Amlapitta),Symptom Severity (1-10),7.15,5.05,29.4,1.0,True,2026-03-02 11:53:03.351518
+d70e606e-16b6-466d-a607-5b919ecd9719,922d0a4d-ea34-4c80-abd1-35c8bb075a25,ee76c694-fa3d-45a7-9ff3-ef2c14988e8e,Common Cold,Symptom Severity (1-10),7.27,2.73,62.49,0.804,True,2026-03-02 11:53:08.303586
+d96864cb-a947-4e3c-90a0-2cbdf7f1c199,7f1df43f-7d60-4d06-bc24-fb5512a3ef82,3af0b430-28e2-414a-9cb1-01dc30b6ffb4,Dengue (Dandashthaka Jwara),Symptom Severity (1-10),7.78,4.4,43.42,1.0,True,2026-03-02 11:52:57.679586
+d9925670-03fb-4d8f-b555-ef335002ebdf,3e36a3fe-c655-47b0-a5de-3fdc883da853,c889f5d5-2417-4a86-b6b7-f9732aaec253,Anxiety (Chittodvega),Symptom Severity (1-10),8.41,3.86,54.09,1.0,True,2026-03-02 11:52:57.681543

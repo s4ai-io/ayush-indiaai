@@ -183,8 +183,14 @@ pip install -r requirements.txt
 # Configure environment
 cp .env.example .env
 
-# Seed the initial database
+# Seed the initial database (Option A: from CSVs)
 python migrate_csv_postgres.py
+
+# Seed the initial database (Option B: from custom-format SQL dump)
+# pg_restore -d ayush_db --no-owner --no-privileges -v /path/to/dump.sql
+
+# Export database tables back to db_dump/*.csv files
+# python dump_db_to_csv.py
 
 # Start the FastAPI server
 python main.py

@@ -13,11 +13,12 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
-PATIENTS_CSV = os.path.join(DATA_DIR, "patients.csv")
-MEDICAL_RECORDS_CSV = os.path.join(DATA_DIR, "medical_records.csv")
-AYUSH_TREATMENTS_CSV = os.path.join(DATA_DIR, "ayush_treatments.csv")
-TREATMENT_FEEDBACK_CSV = os.path.join(DATA_DIR, "treatment_feedback.csv")
+DB_DUMP_DIR = os.path.join(os.path.dirname(__file__), "db_dump")
+PATIENTS_CSV = os.path.join(DB_DUMP_DIR, "patients.csv")
+MEDICAL_RECORDS_CSV = os.path.join(DB_DUMP_DIR, "medical_records.csv")
+AYUSH_TREATMENTS_CSV = os.path.join(DB_DUMP_DIR, "ayush_treatments.csv")
+TREATMENT_FEEDBACK_CSV = os.path.join(DB_DUMP_DIR, "treatment_feedback.csv")
+
 
 def run_migration():
     print("Initializing Database...")
