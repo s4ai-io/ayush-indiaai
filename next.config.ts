@@ -25,6 +25,21 @@ const nextConfig: NextConfig = {
       },
     ]
   },
+
+  // Required for WebGPU + threaded WASM (onnxruntime-web) used by the
+  // on-device Gemma-4 voice pipeline (src/services/voiceModel). Cloud-mode
+  // routes are unaffected by these headers.
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'Cross-Origin-Embedder-Policy', value: 'credentialless' },
+        ],
+      },
+    ]
+  },
 };
 
 export default nextConfig;

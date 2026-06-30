@@ -9,3 +9,4 @@
 export * from './clinical';
 export * from './public-health';
 export * from './ml';
+export * from './voiceModel';
