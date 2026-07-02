@@ -968,10 +968,21 @@ async def translate_text(req: TranslateRequest):
 if __name__ == "__main__":
     host = os.getenv("BACKEND_HOST", DEFAULT_BACKEND_HOST)
     port = int(os.getenv("BACKEND_PORT", str(DEFAULT_BACKEND_PORT)))
+    ssl_keyfile = os.getenv("SSL_KEYFILE")
+    ssl_certfile = os.getenv("SSL_CERTFILE")
+
+    # Only pass SSL files to uvicorn if they exist on the filesystem
+    if ssl_keyfile and not os.path.exists(ssl_keyfile):
+        ssl_keyfile = None
+    if ssl_certfile and not os.path.exists(ssl_certfile):
+        ssl_certfile = None
+
     uvicorn.run(
         "main:app",
         host=host,
         port=port,
         reload=True,
-        log_level="info"
+        log_level="info",
+        ssl_keyfile=ssl_keyfile,
+        ssl_certfile=ssl_certfile
     )
