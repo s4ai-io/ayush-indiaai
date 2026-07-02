@@ -15,6 +15,7 @@ AGENT_TIMEOUT = 300          # AG-UI workflow timeout (all agents)
 LLM_REQUEST_TIMEOUT = 300.0  # vLLM HTTP request timeout
 ASR_REQUEST_TIMEOUT = 180.0  # Modal ASR (transcription) HTTP timeout
 TRANSLATE_REQUEST_TIMEOUT = 120.0  # Modal IndicTrans2 (translation) HTTP timeout
+GEMMA_REQUEST_TIMEOUT = 240.0  # Modal Gemma-4-12B voice pipeline HTTP timeout (long audio is chunked server-side)
 
 # ── Server ─────────────────────────────────────────────────────────────────────
 DEFAULT_BACKEND_HOST = "0.0.0.0"

@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Form, Bac
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
+from typing import Optional
 import uvicorn
 import os
 import json
@@ -18,7 +19,7 @@ load_dotenv()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 from config import (
-    ASR_REQUEST_TIMEOUT, TRANSLATE_REQUEST_TIMEOUT,
+    ASR_REQUEST_TIMEOUT, TRANSLATE_REQUEST_TIMEOUT, GEMMA_REQUEST_TIMEOUT,
     DEFAULT_BACKEND_HOST, DEFAULT_BACKEND_PORT,
     DEFAULT_ALLOWED_ORIGINS,
 )
@@ -963,6 +964,55 @@ async def translate_text(req: TranslateRequest):
         rl.update_step("translator", input=translator_input, output=None, error=str(exc))
         rl.finalize()
         raise HTTPException(status_code=500, detail=f"Translation failed: {exc}")
+
+
+@app.post("/api/gemma4-turn", tags=["Voice Pipeline"])
+async def gemma4_turn(
+    audio: Optional[UploadFile] = File(None),
+    flow: str = Form("registration"),
+    conversation_history: Optional[str] = Form(None),
+    user_text_prompt: Optional[str] = Form(None),
+):
+    """
+    Configurable alternative to /api/transcribe + /api/translate: forwards
+    the turn straight to the Modal Gemma-4-12B voice service, which
+    understands audio natively (chunking internally for recordings over
+    Gemma's ~30s per-clip cap) and also accepts plain typed text, returning
+    an acknowledgement + structured JSON extraction in one hop, instead of
+    the two-hop ASR + IndicTrans2 pipeline. This is a separate flow from
+    Cloud (STT+Phi-4) — it does not touch the AG-UI/Phi-4 workflow at all.
+    """
+    modal_gemma_url = os.getenv("MODAL_GEMMA_URL")
+    if not modal_gemma_url:
+        raise HTTPException(status_code=500, detail="MODAL_GEMMA_URL not configured in backend .env")
+
+    if audio is None and not user_text_prompt:
+        raise HTTPException(status_code=400, detail="Provide audio, user_text_prompt, or both")
+
+    try:
+        async with httpx.AsyncClient(timeout=GEMMA_REQUEST_TIMEOUT) as client:
+            form_data = {"flow": flow}
+            if conversation_history:
+                form_data["conversation_history"] = conversation_history
+            if user_text_prompt:
+                form_data["user_text_prompt"] = user_text_prompt
+            files = {}
+            if audio is not None:
+                audio_bytes = await audio.read()
+                files["file"] = (audio.filename or "audio.wav", audio_bytes, audio.content_type or "audio/wav")
+            resp = await client.post(modal_gemma_url, data=form_data, files=files or None)
+
+        if resp.status_code != 200:
+            raise HTTPException(status_code=resp.status_code, detail=f"Modal Gemma-4 error: {resp.text[:300]}")
+
+        return resp.json()
+
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Modal Gemma-4 request timed out")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Gemma-4 turn failed: {exc}")
 
 
 if __name__ == "__main__":

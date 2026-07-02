@@ -20,6 +20,9 @@ import { DiseaseSearchDropdown } from '@/components/ui/DiseaseSearchDropdown';
 import { useRouter } from "next/navigation";
 import { VoiceInputButton } from "@/components/VoiceInputButton";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { VoicePipelineToggle } from "@/components/VoicePipelineToggle";
+import { GemmaVoiceChatPanel } from "@/components/GemmaVoiceChatPanel";
+import type { VoicePipelineMode } from "@/types/voiceModel";
 import { API_BASE } from '@/lib/config';
 import type { VisitPatient, VisitContext, TreatmentPlan } from '@/types';
 
@@ -97,6 +100,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
     // Voice / CopilotKit portal
     const [selectedLanguage, setSelectedLanguage] = useState('hi-IN');
     const [isListening, setIsListening] = useState(false);
+    const [voicePipelineMode, setVoicePipelineMode] = useState<VoicePipelineMode>("cloud");
     const [chatInputNode, setChatInputNode] = useState<Element | null>(null);
     const [showNewChatConfirm, setShowNewChatConfirm] = useState(false);
 
@@ -195,6 +199,26 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
         value: { disease, symptoms, medicalHistory, vikriti, prakriti },
     });
 
+    // Merges newly-extracted fields into proposedData. Shared by the Cloud-mode
+    // CopilotAction handler below and the Gemma-4-mode GemmaVoiceChatPanel
+    // (onExtracted) — identical merge behavior regardless of which pipeline
+    // produced the data, since both use the same flat field names.
+    const applyProposedClinicalAssessment = (args: any) => {
+        setProposedData((prev: any) => {
+            const mergeObj = (existing: any, incoming: any) => {
+                if (!incoming) return existing || undefined;
+                const merged = { ...(existing || {}) };
+                for (const key in incoming) {
+                    if (incoming[key] !== null && incoming[key] !== undefined && incoming[key] !== '') {
+                        merged[key] = incoming[key];
+                    }
+                }
+                return merged;
+            };
+            return mergeObj(prev, args);
+        });
+    };
+
     useCopilotAction({
         name: "propose_clinical_assessment",
         description: "Extract the doctor's spoken notes and propose them to be added into the clinical assessment.",
@@ -210,19 +234,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
             { name: "lifestyle", type: "string", description: "Doctor prescribed lifestyle" },
         ],
         handler: async (args: any) => {
-            setProposedData((prev: any) => {
-                const mergeObj = (existing: any, incoming: any) => {
-                    if (!incoming) return existing || undefined;
-                    const merged = { ...(existing || {}) };
-                    for (const key in incoming) {
-                        if (incoming[key] !== null && incoming[key] !== undefined && incoming[key] !== '') {
-                            merged[key] = incoming[key];
-                        }
-                    }
-                    return merged;
-                };
-                return mergeObj(prev, args);
-            });
+            applyProposedClinicalAssessment(args);
             return "Proposed data updated for doctor review.";
         },
     });
@@ -1105,14 +1117,30 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                             </div>
                         )}
                     </div>
-                    <div className="absolute bottom-1.5 left-1 z-[1000] pointer-events-auto">
+                    <div className="absolute bottom-1.5 left-1 z-[1000] pointer-events-auto flex items-center gap-2">
                         <LanguageSelector selectedLanguage={selectedLanguage} onLanguageChange={setSelectedLanguage} />
+                        <VoicePipelineToggle mode={voicePipelineMode} onChange={setVoicePipelineMode} />
                     </div>
                     <div className="absolute bottom-1.5 right-12 z-[1000] pointer-events-auto">
-                        <VoiceInputButton onTranscript={handleVoiceTranscript} onError={(err) => { console.error('Voice error:', err); }} language={selectedLanguage} />
+                        {voicePipelineMode === "cloud" && (
+                            <VoiceInputButton onTranscript={handleVoiceTranscript} onError={(err) => { console.error('Voice error:', err); }} language={selectedLanguage} />
+                        )}
                     </div>
                 </>,
                 chatInputNode
+            )}
+
+            {/* Gemma-4 (Modal-hosted) assistant — overlays the cloud sidebar's
+                footprint while active, instead of stacking a second input bar
+                on top of it. */}
+            {voicePipelineMode === "gemma4" && (
+                <GemmaVoiceChatPanel
+                    flow="treatment"
+                    onExtracted={applyProposedClinicalAssessment}
+                    onSwitchToCloud={() => setVoicePipelineMode("cloud")}
+                    selectedLanguage={selectedLanguage}
+                    onLanguageChange={setSelectedLanguage}
+                />
             )}
         </>
     );

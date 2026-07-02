@@ -16,6 +16,9 @@ import {
 } from "lucide-react";
 import { VoiceInputButton } from "@/components/VoiceInputButton";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { VoicePipelineToggle } from "@/components/VoicePipelineToggle";
+import { GemmaVoiceChatPanel } from "@/components/GemmaVoiceChatPanel";
+import type { VoicePipelineMode } from "@/types/voiceModel";
 import { useRouter } from "next/navigation";
 
 interface RegistrationData {
@@ -85,6 +88,7 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
     const [voiceError, setVoiceError] = useState<string | null>(null);
     const [isListening, setIsListening] = useState(false);
     const [selectedLanguage, setSelectedLanguage] = useState("hi-IN");
+    const [voicePipelineMode, setVoicePipelineMode] = useState<VoicePipelineMode>("cloud");
     const [chatInputNode, setChatInputNode] = useState<Element | null>(null);
     const [showNewChatConfirm, setShowNewChatConfirm] = useState(false);
     const router = useRouter();
@@ -127,6 +131,48 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
             }).catch(() => { });
         }
         await appendMessage(new TextMessage({ role: MessageRole.User, content: transcript }));
+    };
+
+    // Merges newly-extracted fields into proposedData. Shared by the Cloud-mode
+    // CopilotAction handler below and the Gemma-4-mode GemmaVoiceChatPanel
+    // (onExtracted) — identical merge behavior regardless of which pipeline
+    // produced the data, since both use the exact same basicInfo/contactInfo/
+    // otherInfo field names.
+    const applyProposedRegistrationData = (args: any) => {
+        setProposedData((prev: any) => {
+            const mergeObj = (existing: any, incoming: any) => {
+                if (!incoming) return existing || undefined;
+                const merged = { ...(existing || {}) };
+                for (const key in incoming) {
+                    if (incoming[key] !== null && incoming[key] !== undefined && incoming[key] !== '') {
+                        merged[key] = incoming[key];
+                    }
+                }
+                return merged;
+            };
+
+            // Format mobile number before merging. The model can return this as
+            // a number (e.g. Phi-4 tool calls sometimes coerce digit-only
+            // strings to numbers) even though the schema declares it a string.
+            const incomingContact = { ...args.contactInfo };
+            if (incomingContact.mobileNumber !== undefined && incomingContact.mobileNumber !== null) {
+                let mobile = String(incomingContact.mobileNumber).replace(/\D/g, '');
+                if (mobile.length > 10) mobile = mobile.substring(mobile.length - 10);
+                incomingContact.mobileNumber = mobile;
+            }
+
+            // Format age
+            const incomingBasic = { ...args.basicInfo };
+            if (incomingBasic.age) {
+                incomingBasic.age = String(Number(incomingBasic.age) || 0);
+            }
+
+            return {
+                basicInfo: mergeObj(prev?.basicInfo, incomingBasic),
+                contactInfo: mergeObj(prev?.contactInfo, incomingContact),
+                otherInfo: mergeObj(prev?.otherInfo, args.otherInfo),
+            };
+        });
     };
 
     useCopilotAction({
@@ -173,38 +219,7 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
                 return "No registration data found in this message.";
             }
 
-            setProposedData((prev: any) => {
-                const mergeObj = (existing: any, incoming: any) => {
-                    if (!incoming) return existing || undefined;
-                    const merged = { ...(existing || {}) };
-                    for (const key in incoming) {
-                        if (incoming[key] !== null && incoming[key] !== undefined && incoming[key] !== '') {
-                            merged[key] = incoming[key];
-                        }
-                    }
-                    return merged;
-                };
-
-                // Format mobile number before merging
-                const incomingContact = { ...args.contactInfo };
-                if (incomingContact.mobileNumber) {
-                    let mobile = incomingContact.mobileNumber.replace(/\D/g, '');
-                    if (mobile.length > 10) mobile = mobile.substring(mobile.length - 10);
-                    incomingContact.mobileNumber = mobile;
-                }
-
-                // Format age
-                const incomingBasic = { ...args.basicInfo };
-                if (incomingBasic.age) {
-                    incomingBasic.age = String(Number(incomingBasic.age) || 0);
-                }
-
-                return {
-                    basicInfo: mergeObj(prev?.basicInfo, incomingBasic),
-                    contactInfo: mergeObj(prev?.contactInfo, incomingContact),
-                    otherInfo: mergeObj(prev?.otherInfo, args.otherInfo),
-                };
-            });
+            applyProposedRegistrationData(args);
             return "Registration data proposed successfully for user review.";
         },
     });
@@ -615,17 +630,20 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
                             )}
                         </div>
 
-                        {/* Language selector — left of input */}
-                        <div className="absolute bottom-1.5 left-1 z-[1000] pointer-events-auto">
+                        {/* Language selector + pipeline toggle — left of input */}
+                        <div className="absolute bottom-1.5 left-1 z-[1000] pointer-events-auto flex items-center gap-2">
                             <LanguageSelector selectedLanguage={selectedLanguage} onLanguageChange={setSelectedLanguage} />
+                            <VoicePipelineToggle mode={voicePipelineMode} onChange={setVoicePipelineMode} />
                         </div>
-                        {/* Voice button — right of input */}
+                        {/* Voice button — right of input (Cloud mode only; Gemma-4 mode uses GemmaVoiceChatPanel below) */}
                         <div className="absolute bottom-1.5 right-12 z-[1000] pointer-events-auto">
-                            <VoiceInputButton
-                                onTranscript={handleVoiceTranscript}
-                                onError={(err) => setVoiceError(err)}
-                                language={selectedLanguage}
-                            />
+                            {voicePipelineMode === "cloud" && (
+                                <VoiceInputButton
+                                    onTranscript={handleVoiceTranscript}
+                                    onError={(err) => setVoiceError(err)}
+                                    language={selectedLanguage}
+                                />
+                            )}
                             {isListening && (
                                 <span className="absolute top-0 right-0 flex h-2 w-2 -mt-0.5 -mr-0.5">
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
@@ -635,6 +653,21 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
                         </div>
                     </>,
                     chatInputNode
+                )
+            }
+
+            {/* Gemma-4 (Modal-hosted) assistant — overlays the cloud sidebar's
+                footprint while active, instead of stacking a second input bar
+                on top of it. */}
+            {
+                voicePipelineMode === "gemma4" && (
+                    <GemmaVoiceChatPanel
+                        flow="registration"
+                        onExtracted={applyProposedRegistrationData}
+                        onSwitchToCloud={() => setVoicePipelineMode("cloud")}
+                        selectedLanguage={selectedLanguage}
+                        onLanguageChange={setSelectedLanguage}
+                    />
                 )
             }
 
