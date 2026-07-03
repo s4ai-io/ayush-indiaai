@@ -1138,8 +1138,6 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                     flow="treatment"
                     onExtracted={applyProposedClinicalAssessment}
                     onSwitchToCloud={() => setVoicePipelineMode("cloud")}
-                    selectedLanguage={selectedLanguage}
-                    onLanguageChange={setSelectedLanguage}
                 />
             )}
         </>

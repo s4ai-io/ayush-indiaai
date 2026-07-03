@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowUp, Check, Cloud, Copy, Loader2, Mic, RotateCw, Sparkles, X } from "lucide-react";
 import { useServerGemmaVoiceAgent } from "@/hooks/useServerGemmaVoiceAgent";
-import { LanguageSelector } from "@/components/LanguageSelector";
 import type { VoiceFlow } from "@/types/voiceModel";
 
 interface GemmaVoiceChatPanelProps {
@@ -11,8 +10,6 @@ interface GemmaVoiceChatPanelProps {
   onExtracted: (extracted: Record<string, unknown>) => void;
   /** Switches the page back to Cloud mode. */
   onSwitchToCloud: () => void;
-  selectedLanguage?: string;
-  onLanguageChange?: (lang: string) => void;
 }
 
 /**
@@ -23,30 +20,14 @@ interface GemmaVoiceChatPanelProps {
  * WebGPU/E2B pipeline, there's no on-device model to load — the model runs
  * on Modal, so turns are just a network round trip.
  */
-export function GemmaVoiceChatPanel({
-  flow,
-  onExtracted,
-  onSwitchToCloud,
-  selectedLanguage,
-  onLanguageChange,
-}: GemmaVoiceChatPanelProps) {
+export function GemmaVoiceChatPanel({ flow, onExtracted, onSwitchToCloud }: GemmaVoiceChatPanelProps) {
   const { status, error, messages, isRecording, startRecording, stopRecording, sendTextTurn, reset } =
     useServerGemmaVoiceAgent(flow, { onExtracted });
 
   const [textInput, setTextInput] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [localLanguage, setLocalLanguage] = useState(selectedLanguage || "hi-IN");
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    if (selectedLanguage) setLocalLanguage(selectedLanguage);
-  }, [selectedLanguage]);
-
-  const handleLanguageChange = (lang: string) => {
-    setLocalLanguage(lang);
-    onLanguageChange?.(lang);
-  };
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -186,8 +167,6 @@ export function GemmaVoiceChatPanel({
             <div className="flex items-center justify-between border-t border-border/20 pt-2.5 mt-1 shrink-0">
               {/* Left Controls */}
               <div className="flex items-center gap-2">
-                <LanguageSelector selectedLanguage={localLanguage} onLanguageChange={handleLanguageChange} />
-
                 {/* Segmented Cloud/Gemma-4 Toggle */}
                 <div className="inline-flex items-center rounded-full border border-border/40 bg-muted/40 p-0.5 text-[11px]">
                   <button

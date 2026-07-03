@@ -32,9 +32,12 @@ ASR_MODEL_ID = "ai4bharat/indic-conformer-600m-multilingual"
 
 # Cache the weights so we don't download them on every cold start
 @app.cls(
-    gpu="A100",
+    gpu="A10G",
     scaledown_window=1800,  # 30 minutes
-    secrets=[modal.Secret.from_dotenv(path=_ENV_PATH)]
+    secrets=[
+        modal.Secret.from_dotenv(path=_ENV_PATH),
+        modal.Secret.from_name("huggingface-secret")
+    ]
 )
 class ASRModel:
     @modal.enter()

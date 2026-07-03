@@ -665,8 +665,6 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
                         flow="registration"
                         onExtracted={applyProposedRegistrationData}
                         onSwitchToCloud={() => setVoicePipelineMode("cloud")}
-                        selectedLanguage={selectedLanguage}
-                        onLanguageChange={setSelectedLanguage}
                     />
                 )
             }
