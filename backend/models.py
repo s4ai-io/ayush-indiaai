@@ -40,8 +40,8 @@ class MedicalRecord(Base):
     
     id = Column(String, primary_key=True, index=True)
     patient_id = Column(String, index=True)
-    visit_date = Column(DateTime)
-    diagnosis = Column(String, default="")
+    visit_date = Column(DateTime, index=True)
+    diagnosis = Column(String, default="", index=True)
     symptoms = Column(Text, default="")
     prakriti = Column(String, default="")
     vikriti = Column(String, default="")

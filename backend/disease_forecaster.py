@@ -4,9 +4,11 @@ Replaces the synthetic public_health_trends.csv with real medical_records data.
 Builds time-series features per disease, trains RandomForest, forecasts future months.
 """
 import os
+import time
 import calendar
 import numpy as np
 import pandas as pd
+import joblib
 from datetime import datetime
 from collections import defaultdict
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
@@ -16,6 +18,15 @@ warnings.filterwarnings("ignore")
 
 from models import SessionLocal, Patient, MedicalRecord
 from utils.episode_dedup import dedupe_repeat_diagnoses
+
+# Trained model is expensive to (re)build (RandomForest over the full trend
+# history) so it's persisted here and reused across requests instead of being
+# retrained on every /api/forecast call — see ensure_model_ready().
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+_MODELS_DIR = os.path.join(_BASE_DIR, "data", "models")
+os.makedirs(_MODELS_DIR, exist_ok=True)
+MODEL_PATH = os.path.join(_MODELS_DIR, "disease_forecaster_rf.pkl")
+MODEL_MAX_AGE_SECONDS = 24 * 60 * 60  # retrain at most once a day
 
 
 # Gregorian month → Ayurvedic Ritu (season)
@@ -127,6 +138,7 @@ class DiseaseForecaster:
         self.trends: pd.DataFrame = pd.DataFrame()
         self.forecast_model = None
         self.label_encoders: dict = {}
+        self.last_data: pd.DataFrame = None
         self.initialized = False
 
     def load_trend_data(self):
@@ -206,8 +218,45 @@ class DiseaseForecaster:
 
     # ─── Forecasting ──────────────────────────────────────────────────────────
 
-    def forecast_next_months(self, n_months: int = 3) -> pd.DataFrame:
-        """Forecast disease cases using RandomForest trained on real DB data."""
+    def _model_is_fresh(self) -> bool:
+        if not os.path.exists(MODEL_PATH):
+            return False
+        age = time.time() - os.path.getmtime(MODEL_PATH)
+        return age < MODEL_MAX_AGE_SECONDS
+
+    def _save_model(self) -> None:
+        joblib.dump({
+            "model": self.forecast_model,
+            "label_encoders": self.label_encoders,
+            "last_data": self.last_data,
+        }, MODEL_PATH)
+
+    def _load_cached_model(self) -> bool:
+        try:
+            state = joblib.load(MODEL_PATH)
+            self.forecast_model = state["model"]
+            self.label_encoders = state["label_encoders"]
+            self.last_data = state["last_data"]
+            return True
+        except Exception as e:
+            print(f"⚠️  Failed to load cached forecast model: {e}")
+            return False
+
+    def ensure_model_ready(self, force: bool = False) -> None:
+        """
+        Make sure a trained model is available for inference.
+        Loads the persisted .pkl if it's still fresh (< MODEL_MAX_AGE_SECONDS
+        old); otherwise (re)trains. Call this from a daily background job —
+        never from a request path, since training is the expensive part.
+        """
+        if not force and self._model_is_fresh() and self._load_cached_model():
+            return
+        self.train_model()
+
+    def train_model(self) -> None:
+        """Train the RandomForest on the currently loaded trend data and
+        persist it to disk. Expensive — meant to run on a schedule, not
+        per-request."""
         if self.trends.empty:
             raise ValueError("No trend data loaded. Call load_trend_data() first.")
 
@@ -256,17 +305,21 @@ class DiseaseForecaster:
             n_estimators=200, max_depth=10, random_state=42, n_jobs=-1
         )
         self.forecast_model.fit(X, y)
+        self.last_data = df.groupby("disease").last()
+        self._save_model()
 
-        return self._predict_future(df, n_months)
+    def predict_future(self, n_months: int = 3) -> pd.DataFrame:
+        """Fast inference path — uses the cached/trained model, no training here."""
+        if self.forecast_model is None or self.last_data is None:
+            self.ensure_model_ready()
+        return self._predict_future(n_months)
 
-    def _predict_future(self, df: pd.DataFrame, n_months: int) -> pd.DataFrame:
+    def _predict_future(self, n_months: int) -> pd.DataFrame:
         """Generate future monthly predictions per disease."""
-        last_data = df.groupby("disease").last()
+        last_data = self.last_data
         forecasts = []
 
-        for disease in df["disease"].unique():
-            if disease not in last_data.index:
-                continue
+        for disease in last_data.index:
             row = last_data.loc[disease]
 
             for month_ahead in range(1, n_months + 1):

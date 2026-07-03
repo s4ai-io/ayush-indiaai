@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 from typing import Optional
+import asyncio
 import uvicorn
 import os
 import re
@@ -43,25 +44,44 @@ from services.rl_service import rl_service
 from services.forecast_service import forecast_service
 from services.csv_service import csv_service
 
+FORECAST_RETRAIN_INTERVAL_SECONDS = 24 * 60 * 60  # daily
+
+
+async def _forecast_retrain_loop():
+    """Background job: retrain the disease-forecast RandomForest once a day
+    and persist it, so /api/forecast never trains on the request path.
+    Runs the (blocking, CPU-bound) training in a worker thread to avoid
+    stalling the event loop."""
+    while True:
+        await asyncio.sleep(FORECAST_RETRAIN_INTERVAL_SECONDS)
+        try:
+            await asyncio.to_thread(forecast_service.retrain)
+            print("✓ Forecast model retrained on schedule")
+        except Exception as e:
+            print(f"⚠️  Scheduled forecast retrain failed: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize services on startup"""
     print("\n" + "="*60)
     print("Starting AYUSH ML Backend API")
     print("="*60)
-    
+
     # Initialize ISHAAyush Treatment Service
     ISHAAyush_service.initialize()
-    
-    # Initialize Forecast Service
+
+    # Initialize Forecast Service (loads a cached model if fresh, else trains once)
     forecast_service.initialize()
-    
+    retrain_task = asyncio.create_task(_forecast_retrain_loop())
+
     print("\n✓ Backend API ready!")
     print("="*60 + "\n")
-    
+
     yield
-    
+
     # Cleanup on shutdown
+    retrain_task.cancel()
     print("\nShutting down AYUSH ML Backend API...")
 
 

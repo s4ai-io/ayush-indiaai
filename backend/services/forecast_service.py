@@ -18,11 +18,15 @@ class ForecastService:
         self.initialized: bool = False
 
     def initialize(self) -> bool:
-        """Initialize forecasting service — loads trend data from PostgreSQL."""
+        """Initialize forecasting service — loads trend data from PostgreSQL and
+        makes sure a trained forecast model is ready (loads the persisted .pkl
+        if it's still fresh, otherwise trains once). Actual retraining after
+        that happens on the daily schedule via retrain(), never per-request."""
         try:
             print("Initializing Forecast Service (PostgreSQL-backed)...")
             self.forecaster = DiseaseForecaster()
             self.forecaster.load_trend_data()
+            self.forecaster.ensure_model_ready()
             self.initialized = True
             print("✓ Forecast Service initialized successfully!")
             return True
@@ -36,6 +40,16 @@ class ForecastService:
             self.initialized = False
             return False
 
+    def retrain(self) -> None:
+        """Reload trend data from PostgreSQL and retrain the forecast model.
+        Expensive — intended to be called from a daily background job, not
+        from a request handler."""
+        if self.forecaster is None:
+            self.forecaster = DiseaseForecaster()
+        self.forecaster.load_trend_data()
+        self.forecaster.train_model()
+        self.initialized = True
+
     def get_forecast(self, disease: str = None, months: int = 3) -> dict:
         """Get N-month disease forecast using real DB data."""
         if not self.initialized:
@@ -43,7 +57,7 @@ class ForecastService:
                 "Forecast Service not initialized — no data in medical_records yet."
             )
 
-        forecasts_df = self.forecaster.forecast_next_months(n_months=months)
+        forecasts_df = self.forecaster.predict_future(n_months=months)
 
         if disease:
             forecasts_df = forecasts_df[
