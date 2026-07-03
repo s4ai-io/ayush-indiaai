@@ -10,45 +10,16 @@ import math
 
 import networkx as nx
 from models import SessionLocal, Patient, MedicalRecord
+from services.geo_reference import CITY_COORDS as _CITY_COORDS
 
 
 # ─── Haversine distance (km) between two lat/lon points ──────────────────────
-# We store approximate city centroids for Indian cities using a lookup table.
-# In Phase 2, replace with real lat/lon from geocoded patient addresses.
-
-# Major Indian city centroids (lat, lon)
-_CITY_COORDS: dict[str, tuple[float, float]] = {
-    "delhi":         (28.6139, 77.2090),
-    "new delhi":     (28.6139, 77.2090),
-    "mumbai":        (19.0760, 72.8777),
-    "bangalore":     (12.9716, 77.5946),
-    "bengaluru":     (12.9716, 77.5946),
-    "chennai":       (13.0827, 80.2707),
-    "kolkata":       (22.5726, 88.3639),
-    "hyderabad":     (17.3850, 78.4867),
-    "pune":          (18.5204, 73.8567),
-    "ahmedabad":     (23.0225, 72.5714),
-    "surat":         (21.1702, 72.8311),
-    "jaipur":        (26.9124, 75.7873),
-    "lucknow":       (26.8467, 80.9462),
-    "kanpur":        (26.4499, 80.3319),
-    "nagpur":        (21.1458, 79.0882),
-    "indore":        (22.7196, 75.8577),
-    "bhopal":        (23.2599, 77.4126),
-    "visakhapatnam": (17.6868, 83.2185),
-    "patna":         (25.5941, 85.1376),
-    "vadodara":      (22.3072, 73.1812),
-    "ghaziabad":     (28.6692, 77.4538),
-    "ludhiana":      (30.9009, 75.8573),
-    "agra":          (27.1767, 78.0081),
-    "nashik":        (20.0059, 73.7910),
-    "faridabad":     (28.4089, 77.3178),
-    "meerut":        (28.9845, 77.7064),
-    "coimbatore":    (11.0168, 76.9558),
-    "ranchi":        (23.3441, 85.3096),
-    "amritsar":      (31.6340, 74.8723),
-    "varanasi":      (25.3176, 82.9739),
-}
+# City centroids now come from services/geo_reference.py (~140 cities across
+# every state/UT) instead of a private ~30-entry dict, so fewer patients are
+# silently dropped from the graph for having a city outside a short hardcoded
+# list. Still an approximate centroid table, not real geocoded addresses — see
+# geo_reference.py's docstring. In Phase 2, replace with real lat/lon from
+# geocoded patient addresses.
 
 _ADJACENCY_THRESHOLD_KM = 300
 
