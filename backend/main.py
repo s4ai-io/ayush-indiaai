@@ -430,6 +430,39 @@ async def get_disease_hotspots(disease: str = None):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/analytics/case-details", tags=["Public Health Analytics"])
+async def get_case_details(
+    disease: str,
+    cities: str = None,
+    start_date: str = None,
+    end_date: str = None,
+    days: int = None,
+    limit: int = 100,
+):
+    """
+    Case-level drill-down behind a signal (alert, emerging threat, hotspot, or
+    cluster) — the patient visits that actually produced the aggregate number.
+    `cities` is a comma-separated list. `days` is a relative window (clusters);
+    `start_date`/`end_date` is an explicit window (alerts/emerging threats);
+    omit both for an all-time lookup (hotspots).
+    """
+    try:
+        city_list = [c.strip() for c in cities.split(",")] if cities else None
+        cases, total_count = analytics_service.get_case_details(
+            disease=disease, cities=city_list, start_date=start_date,
+            end_date=end_date, days=days, limit=limit,
+        )
+        entry = get_full_name(disease)
+        return {
+            "cases": cases,
+            "total_count": total_count,
+            "disease": disease,
+            "devanagari": entry["devanagari"],
+            "iast": entry["iast"],
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/analytics/alerts", response_model=list[AlertResponse], tags=["Public Health Analytics"])
 async def get_public_health_alerts():
     """Get active outbreak alerts enriched with Devanāgarī disease names"""

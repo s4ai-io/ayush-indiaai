@@ -4,6 +4,7 @@ Replaces the synthetic public_health_trends.csv with real medical_records data.
 Builds time-series features per disease, trains RandomForest, forecasts future months.
 """
 import os
+import calendar
 import numpy as np
 import pandas as pd
 from datetime import datetime
@@ -14,6 +15,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 from models import SessionLocal, Patient, MedicalRecord
+from utils.episode_dedup import dedupe_repeat_diagnoses
 
 
 # Gregorian month → Ayurvedic Ritu (season)
@@ -46,6 +48,7 @@ def _load_trends_from_db() -> pd.DataFrame:
                 MedicalRecord.severity,
                 Patient.city,
                 Patient.state,
+                MedicalRecord.patient_id,
             )
             .join(Patient, Patient.id == MedicalRecord.patient_id)
             .filter(
@@ -59,8 +62,14 @@ def _load_trends_from_db() -> pd.DataFrame:
     if not rows:
         return pd.DataFrame()
 
+    # Collapse tight-together repeat/follow-up visits (same patient, same
+    # diagnosis, within 14 days) into one episode so a single patient's
+    # follow-up doesn't inflate a month's case count or the forecast/
+    # emerging-trends growth rate — see utils/episode_dedup.py.
+    rows = dedupe_repeat_diagnoses(rows, patient_idx=5, diagnosis_idx=1, date_idx=0, gap_days=14)
+
     records = []
-    for visit_date, diagnosis, severity, city, state in rows:
+    for visit_date, diagnosis, severity, city, state, _patient_id in rows:
         if not visit_date or not diagnosis:
             continue
         d = visit_date.date() if hasattr(visit_date, "date") else visit_date
@@ -155,6 +164,7 @@ class DiseaseForecaster:
             )
             recent_growth = disease_data["growth_rate"].tail(3).mean()
             recent_cases  = disease_data["cases_reported"].tail(3).mean()
+            recent_months = disease_data["month"].tail(3)
 
             disease_trends.append({
                 "disease":         disease,
@@ -165,6 +175,15 @@ class DiseaseForecaster:
                     "Rising" if recent_growth > 10
                     else "Stable" if recent_growth > -10
                     else "Declining"
+                ),
+                # Exact months behind recent_avg_cases/growth_rate, so the UI can
+                # drill down into the actual case records instead of guessing a
+                # window off today's date (the data's "recent" months aren't
+                # necessarily anywhere near the real current date).
+                "window_start": f"{recent_months.min()}-01",
+                "window_end": (
+                    f"{recent_months.max()}-"
+                    f"{calendar.monthrange(*map(int, recent_months.max().split('-')))[1]:02d}"
                 ),
             })
 

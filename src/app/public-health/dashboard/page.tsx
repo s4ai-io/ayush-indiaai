@@ -24,6 +24,7 @@ interface AlertData {
     triggered_by?: string;
     devanagari?: string; iast?: string; hindi?: string;
     week?: string; recent_weeks?: number; baseline_std?: number; detection_type?: string;
+    window_start?: string; window_end?: string;
 }
 interface DashboardSummary {
     total_patients: number;
@@ -44,8 +45,21 @@ interface ForecastData {
 interface EmergingTrend {
     disease: string; growth_rate: number; current_cases: number;
     alert_level: string; trend: string;
+    window_start?: string; window_end?: string;
 }
 type NameMap = Record<string, { devanagari: string; iast: string; hindi: string; english: string }>;
+
+// ─── Case-details drill-down ─────────────────────────────────────────────────
+
+interface CaseDetail {
+    patient_id: string; name: string; age: number; gender: string;
+    city: string; state: string; visit_date: string; severity: string;
+    symptoms: string; prakriti: string; vikriti: string; comorbidities: string;
+}
+interface CaseQuery {
+    title: string; disease: string; cities?: string;
+    startDate?: string; endDate?: string; days?: number;
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -129,6 +143,125 @@ function SectionHeader({ icon, title, subtitle, info }: {
     );
 }
 
+/** Small text-link trigger placed inside alert/threat/hotspot/cluster cards. */
+function ViewCasesButton({ onClick, className = '' }: { onClick: () => void; className?: string }) {
+    return (
+        <button
+            onClick={onClick}
+            className={`text-[11px] font-semibold text-slate-500 hover:text-amber-600 transition-colors inline-flex items-center gap-1 ${className}`}
+        >
+            🔍 View Cases
+        </button>
+    );
+}
+
+/**
+ * Case-level drill-down modal — fetches /api/analytics/case-details for
+ * whichever signal (alert / emerging threat / hotspot / cluster) triggered it.
+ * Rendered once at the page level; opened by setting `query`, closed via onClose.
+ */
+function CaseDetailsModal({ query, onClose }: { query: CaseQuery | null; onClose: () => void }) {
+    const [cases, setCases] = useState<CaseDetail[]>([]);
+    const [totalCount, setTotalCount] = useState(0);
+    const [nameInfo, setNameInfo] = useState<{ devanagari?: string; iast?: string }>({});
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!query) return;
+        setLoading(true);
+        setError(null);
+        const params = new URLSearchParams({ disease: query.disease });
+        if (query.cities) params.set('cities', query.cities);
+        if (query.startDate) params.set('start_date', query.startDate);
+        if (query.endDate) params.set('end_date', query.endDate);
+        if (query.days !== undefined) params.set('days', String(query.days));
+
+        fetch(`${API_BASE}/api/analytics/case-details?${params.toString()}`)
+            .then(r => r.json())
+            .then(data => {
+                setCases(Array.isArray(data.cases) ? data.cases : []);
+                setTotalCount(data.total_count ?? 0);
+                setNameInfo({ devanagari: data.devanagari, iast: data.iast });
+            })
+            .catch(() => setError('Failed to load case details.'))
+            .finally(() => setLoading(false));
+    }, [query]);
+
+    if (!query) return null;
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50" onClick={onClose}>
+            <div
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col"
+                onClick={e => e.stopPropagation()}
+            >
+                <div className="p-5 border-b border-slate-100 flex items-start justify-between gap-4">
+                    <div>
+                        <p className="text-xs text-slate-400">{query.title}</p>
+                        <h3 className="text-lg font-bold text-slate-800" style={{ fontFamily: 'serif' }}>
+                            {nameInfo.devanagari || query.disease}
+                        </h3>
+                        <p className="text-xs text-slate-400 italic">{nameInfo.iast}</p>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="text-slate-400 hover:text-slate-700 text-xl leading-none px-2"
+                        aria-label="Close"
+                    >
+                        ×
+                    </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-5">
+                    {loading ? (
+                        <p className="text-slate-400 text-sm text-center py-8">Loading cases...</p>
+                    ) : error ? (
+                        <p className="text-red-500 text-sm text-center py-8">{error}</p>
+                    ) : cases.length === 0 ? (
+                        <p className="text-slate-400 text-sm text-center py-8">No case records found for this signal.</p>
+                    ) : (
+                        <table className="w-full text-xs">
+                            <thead>
+                                <tr className="border-b border-slate-100 text-left text-slate-500">
+                                    <th className="py-2 pr-3 font-medium">Patient</th>
+                                    <th className="py-2 pr-3 font-medium">Age/Gender</th>
+                                    <th className="py-2 pr-3 font-medium">City</th>
+                                    <th className="py-2 pr-3 font-medium">Visit Date</th>
+                                    <th className="py-2 pr-3 font-medium">Severity</th>
+                                    <th className="py-2 font-medium">Symptoms</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {cases.map((c, i) => (
+                                    <tr key={c.patient_id + i} className="border-b border-slate-50 hover:bg-slate-50">
+                                        <td className="py-2 pr-3 font-semibold text-slate-700 whitespace-nowrap">{c.name}</td>
+                                        <td className="py-2 pr-3 text-slate-500 whitespace-nowrap">{c.age}/{c.gender?.[0]}</td>
+                                        <td className="py-2 pr-3 text-slate-500 capitalize whitespace-nowrap">{c.city}</td>
+                                        <td className="py-2 pr-3 text-slate-500 whitespace-nowrap">
+                                            {c.visit_date ? new Date(c.visit_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                                        </td>
+                                        <td className="py-2 pr-3">
+                                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${SEVERITY_STYLES[c.severity] ?? 'bg-slate-100 text-slate-600'}`}>
+                                                {c.severity}
+                                            </span>
+                                        </td>
+                                        <td className="py-2 text-slate-500 max-w-xs">{c.symptoms}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+                {!loading && cases.length > 0 && (
+                    <div className="px-5 py-3 border-t border-slate-100 text-xs text-slate-400">
+                        Showing {cases.length} of {totalCount} case{totalCount !== 1 ? 's' : ''}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function PublicHealthDashboard() {
@@ -147,6 +280,7 @@ export default function PublicHealthDashboard() {
     const [mounted, setMounted] = useState(false);
     const [selectedDisease, setSelectedDisease] = useState('');
     const [alertTab, setAlertTab] = useState<'monthly' | 'weekly'>('monthly');
+    const [caseQuery, setCaseQuery] = useState<CaseQuery | null>(null);
 
     /** Resolves the best Devanagari label for a disease string.
      *  Priority: inline field  >  nameMap  >  ayurvedicName() fallback. */
@@ -319,6 +453,40 @@ export default function PublicHealthDashboard() {
                 </div>
             </div>
 
+            {/* ── KPI Summary Strip ───────────────────────────────────────────── */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard
+                    icon={<Users className="h-5 w-5" />}
+                    label="Total Patients"
+                    value={summary?.total_patients?.toLocaleString() ?? '—'}
+                    sub="in surveillance"
+                    color="bg-gradient-to-br from-blue-500 to-blue-700"
+                />
+                <StatCard
+                    icon={<Stethoscope className="h-5 w-5" />}
+                    label="Clinical Records"
+                    value={summary?.total_medical_records?.toLocaleString() ?? '—'}
+                    sub="last 12 months"
+                    color="bg-gradient-to-br from-purple-500 to-purple-700"
+                />
+                <StatCard
+                    icon={<AlertTriangle className="h-5 w-5" />}
+                    label="Active Alerts"
+                    value={alerts.length}
+                    sub={alerts.length > 0 ? 'surge detected' : 'all clear'}
+                    color={alerts.length > 0
+                        ? 'bg-gradient-to-br from-red-500 to-red-700'
+                        : 'bg-gradient-to-br from-emerald-500 to-emerald-700'}
+                />
+                <StatCard
+                    icon={<Globe className="h-5 w-5" />}
+                    label="Cities Monitored"
+                    value={[...new Set(hotspots.map(h => h.city))].length || '—'}
+                    sub="geospatial graph"
+                    color="bg-gradient-to-br from-amber-500 to-orange-600"
+                />
+            </div>
+
             {/* ── Active Alerts Banner ────────────────────────────────────────── */}
             {(alerts.length > 0 || weeklyAlerts.length > 0) && (
                 <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
@@ -398,6 +566,15 @@ export default function PublicHealthDashboard() {
                                                     <span className="text-[10px] text-slate-400">{a.triggered_by}</span>
                                                 )}
                                             </div>
+                                            <ViewCasesButton
+                                                className="mt-2"
+                                                onClick={() => setCaseQuery({
+                                                    title: `Monthly surge · ${a.surge_month ?? ''}`,
+                                                    disease: a.disease,
+                                                    startDate: a.window_start,
+                                                    endDate: a.window_end,
+                                                })}
+                                            />
                                         </div>
                                     ))}
                                 </div>
@@ -451,6 +628,15 @@ export default function PublicHealthDashboard() {
                                                         <span className="text-xs font-bold text-orange-600">{a.pct_increase > 0 ? '+' : ''}{a.pct_increase}% vs baseline</span>
                                                     )}
                                                 </div>
+                                                <ViewCasesButton
+                                                    className="mt-2"
+                                                    onClick={() => setCaseQuery({
+                                                        title: `Weekly early signal · ${a.week ?? ''}`,
+                                                        disease: a.disease,
+                                                        startDate: a.window_start,
+                                                        endDate: a.window_end,
+                                                    })}
+                                                />
                                             </div>
                                         ))}
                                     </div>
@@ -460,40 +646,6 @@ export default function PublicHealthDashboard() {
                     </div>
                 </div>
             )}
-
-            {/* ── KPI Summary Strip ───────────────────────────────────────────── */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard
-                    icon={<Users className="h-5 w-5" />}
-                    label="Total Patients"
-                    value={summary?.total_patients?.toLocaleString() ?? '—'}
-                    sub="in surveillance"
-                    color="bg-gradient-to-br from-blue-500 to-blue-700"
-                />
-                <StatCard
-                    icon={<Stethoscope className="h-5 w-5" />}
-                    label="Clinical Records"
-                    value={summary?.total_medical_records?.toLocaleString() ?? '—'}
-                    sub="last 12 months"
-                    color="bg-gradient-to-br from-purple-500 to-purple-700"
-                />
-                <StatCard
-                    icon={<AlertTriangle className="h-5 w-5" />}
-                    label="Active Alerts"
-                    value={alerts.length}
-                    sub={alerts.length > 0 ? 'surge detected' : 'all clear'}
-                    color={alerts.length > 0
-                        ? 'bg-gradient-to-br from-red-500 to-red-700'
-                        : 'bg-gradient-to-br from-emerald-500 to-emerald-700'}
-                />
-                <StatCard
-                    icon={<Globe className="h-5 w-5" />}
-                    label="Cities Monitored"
-                    value={[...new Set(hotspots.map(h => h.city))].length || '—'}
-                    sub="geospatial graph"
-                    color="bg-gradient-to-br from-amber-500 to-orange-600"
-                />
-            </div>
 
             {/* ── Spatial Clusters Panel (DBSCAN) ─────────────────────────────── */}
             {clusters.length > 0 && (
@@ -553,6 +705,15 @@ export default function PublicHealthDashboard() {
                                         spanning {cluster.spread_km} km
                                     </p>
                                 )}
+                                <ViewCasesButton
+                                    className="mt-2"
+                                    onClick={() => setCaseQuery({
+                                        title: `${cluster.is_noise ? 'Hotspot' : 'Cluster'} · last ${cluster.period_days} days`,
+                                        disease: cluster.disease,
+                                        cities: cluster.cities.join(','),
+                                        days: cluster.period_days,
+                                    })}
+                                />
                             </div>
                         ))}
                     </div>
@@ -623,6 +784,14 @@ export default function PublicHealthDashboard() {
                                     </p>
                                     <p className="text-[10px] text-slate-400 italic">{dNameIast(t.disease)}</p>
                                     <p className="text-xs text-slate-400">{t.current_cases} recent cases</p>
+                                    <ViewCasesButton
+                                        onClick={() => setCaseQuery({
+                                            title: 'Emerging threat · recent 3-month window',
+                                            disease: t.disease,
+                                            startDate: t.window_start,
+                                            endDate: t.window_end,
+                                        })}
+                                    />
                                 </div>
                                 <div className="flex items-center gap-2 ml-2">
                                     {t.growth_rate > 0
@@ -684,6 +853,14 @@ export default function PublicHealthDashboard() {
                                             <MapPin className="h-3 w-3 text-slate-400" />
                                             <span className="capitalize">{h.city}</span>
                                         </div>
+                                        <ViewCasesButton
+                                            className="mt-1"
+                                            onClick={() => setCaseQuery({
+                                                title: `Hotspot · ${h.city}`,
+                                                disease: h.diagnosis,
+                                                cities: h.city,
+                                            })}
+                                        />
                                     </div>
                                 </div>
                                 <div className="text-right">
@@ -891,6 +1068,8 @@ export default function PublicHealthDashboard() {
                     </div>
                 </div>
             </div>
+
+            <CaseDetailsModal query={caseQuery} onClose={() => setCaseQuery(null)} />
         </div>
     );
 }
