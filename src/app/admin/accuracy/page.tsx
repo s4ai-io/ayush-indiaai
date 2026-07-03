@@ -50,6 +50,7 @@ interface EvaluationSummary {
 
 interface EvaluationReport {
     timestamp: string;
+    model?: string;
     summary: EvaluationSummary;
     results: EvaluationResult[];
 }
@@ -62,6 +63,7 @@ export default function AccuracyEvaluatorPage() {
     const [processedCount, setProcessedCount] = useState(0);
     const [totalFiles, setTotalFiles] = useState(0);
     const [currentFile, setCurrentFile] = useState<string | null>(null);
+    const [selectedModel, setSelectedModel] = useState<"phi4" | "gemma4">("phi4");
 
     const runEvaluation = async () => {
         setLoading(true);
@@ -73,7 +75,7 @@ export default function AccuracyEvaluatorPage() {
         setCurrentFile(null);
 
         try {
-            const response = await fetch(`${API_BASE}/api/admin/evaluate-voice`);
+            const response = await fetch(`${API_BASE}/api/admin/evaluate-voice?model=${selectedModel}`);
             if (!response.ok) {
                 throw new Error(`Evaluation failed with status: ${response.status}`);
             }
@@ -141,24 +143,54 @@ export default function AccuracyEvaluatorPage() {
                         Batch process {totalFiles || 10} audio files through ASR transcription & AI clinical extraction.
                     </p>
                 </div>
-                <Button
-                    onClick={runEvaluation}
-                    disabled={loading}
-                    size="lg"
-                    className="bg-primary hover:bg-primary/90 shadow-md transition-all active:scale-95"
-                >
-                    {loading ? (
-                        <>
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            Evaluating Pipeline...
-                        </>
-                    ) : (
-                        <>
-                            <Play className="mr-2 h-5 w-5 fill-current" />
-                            Run 10-File Evaluation
-                        </>
-                    )}
-                </Button>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    {/* Model selector segmented control */}
+                    <div className="flex items-center bg-slate-100 p-1.5 rounded-xl border border-slate-200 shadow-sm self-start">
+                        <button
+                            type="button"
+                            onClick={() => setSelectedModel("phi4")}
+                            disabled={loading}
+                            className={`px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all duration-200 select-none ${
+                                selectedModel === "phi4"
+                                    ? "bg-white text-slate-900 shadow-md font-bold"
+                                    : "text-slate-500 hover:text-slate-800"
+                            } ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                        >
+                            Microsoft Phi-4
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setSelectedModel("gemma4")}
+                            disabled={loading}
+                            className={`px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all duration-200 select-none ${
+                                selectedModel === "gemma4"
+                                    ? "bg-white text-slate-900 shadow-md font-bold"
+                                    : "text-slate-500 hover:text-slate-800"
+                            } ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                        >
+                            Google Gemma-4
+                        </button>
+                    </div>
+
+                    <Button
+                        onClick={runEvaluation}
+                        disabled={loading}
+                        size="lg"
+                        className="bg-primary hover:bg-primary/90 shadow-md transition-all active:scale-95 cursor-pointer font-semibold"
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                Evaluating Pipeline...
+                            </>
+                        ) : (
+                            <>
+                                <Play className="mr-2 h-5 w-5 fill-current" />
+                                Run 10-File Evaluation
+                            </>
+                        )}
+                    </Button>
+                </div>
             </div>
 
             {loading && (
@@ -239,7 +271,9 @@ export default function AccuracyEvaluatorPage() {
                     {/* Results Table */}
                     <Card className="shadow-lg border-primary/10 overflow-hidden">
                         <CardHeader className="bg-slate-50/50 border-b">
-                            <CardTitle>Evaluation Pipeline Report</CardTitle>
+                            <CardTitle>
+                                Evaluation Pipeline Report ({data.model === "gemma4" ? "Google Gemma-4" : "Microsoft Phi-4"})
+                            </CardTitle>
                             <CardDescription>
                                 Detailed breakdown of transcription output and AI clinical extraction vs. ground truth.
                             </CardDescription>
@@ -356,9 +390,9 @@ export default function AccuracyEvaluatorPage() {
                         </div>
                         <h3 className="text-xl font-bold text-slate-900 mb-2">Ready to Evaluate Pipeline</h3>
                         <p className="text-slate-500 max-w-md mb-8">
-                            Click the button above to start the sequential processing of 10 ground truth audio files through the full voice-to-data pipeline.
+                            Click the button below to start the sequential processing of 10 ground truth audio files through the full voice-to-data pipeline using <strong>{selectedModel === "gemma4" ? "Google Gemma-4" : "Microsoft Phi-4"}</strong>.
                         </p>
-                        <Button onClick={runEvaluation} size="lg" className="bg-primary hover:bg-primary/90 px-8">
+                        <Button onClick={runEvaluation} size="lg" className="bg-primary hover:bg-primary/90 px-8 cursor-pointer">
                             Start Batch Process
                         </Button>
                     </CardContent>

@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from services.ISHAAyush_service import ISHAAyush_service
 from utils.llm_config import get_llm
-from config import ASR_REQUEST_TIMEOUT
+from config import ASR_REQUEST_TIMEOUT, GEMMA_REQUEST_TIMEOUT
 
 admin_router = APIRouter()
 
@@ -49,7 +49,7 @@ async def get_audio_file(filename: str):
     return FileResponse(audio_path, media_type="audio/wav")
 
 @admin_router.get("/evaluate-voice", tags=["Admin"])
-async def evaluate_voice_accuracy():
+async def evaluate_voice_accuracy(model: str = "phi4"):
     """
     Full pipeline evaluation with StreamingResponse for real-time progress tracking.
     """
@@ -68,7 +68,13 @@ async def evaluate_voice_accuracy():
                 yield f"data: {json.dumps({'type': 'error', 'detail': 'MODAL_ASR_URL not configured'})}\n\n"
                 return
 
-            llm = get_llm()
+            if model == "gemma4":
+                modal_gemma_url = os.getenv("MODAL_GEMMA_URL")
+                if not modal_gemma_url:
+                    yield f"data: {json.dumps({'type': 'error', 'detail': 'MODAL_GEMMA_URL not configured'})}\n\n"
+                    return
+            else:
+                llm = get_llm()
             results = []
             total_files = len(ground_truth_data)
             
@@ -145,17 +151,30 @@ async def evaluate_voice_accuracy():
 
                 # 2. Extract
                 try:
-                    from llama_index.core.llms import ChatMessage
-                    prompt = EXTRACTION_PROMPT.format(transcript=transcription)
-                    llm_resp = await llm.achat([ChatMessage(role="user", content=prompt)])
-                    extraction_text = llm_resp.message.content
-                    
-                    import re
-                    json_match = re.search(r'\{.*\}', extraction_text, re.DOTALL)
-                    if json_match:
-                        extraction = json.loads(json_match.group(0))
+                    if model == "gemma4":
+                        modal_gemma_url = os.getenv("MODAL_GEMMA_URL")
+                        async with httpx.AsyncClient(timeout=GEMMA_REQUEST_TIMEOUT) as client:
+                            form_data = {"flow": "treatment"}
+                            files = {"file": (audio_filename, audio_bytes, "audio/wav")}
+                            resp = await client.post(modal_gemma_url, data=form_data, files=files)
+                        
+                        if resp.status_code != 200:
+                            raise Exception(f"Gemma-4 extraction failed: {resp.text}")
+                        
+                        resp_json = resp.json()
+                        extraction = resp_json.get("extracted") or {}
                     else:
-                        extraction = {"error": "Failed to parse JSON from LLM"}
+                        from llama_index.core.llms import ChatMessage
+                        prompt = EXTRACTION_PROMPT.format(transcript=transcription)
+                        llm_resp = await llm.achat([ChatMessage(role="user", content=prompt)])
+                        extraction_text = llm_resp.message.content
+                        
+                        import re
+                        json_match = re.search(r'\{.*\}', extraction_text, re.DOTALL)
+                        if json_match:
+                            extraction = json.loads(json_match.group(0))
+                        else:
+                            extraction = {"error": "Failed to parse JSON from LLM"}
                 except Exception as e:
                     extraction = {"error": f"Extraction failed: {str(e)}"}
 
@@ -223,12 +242,13 @@ async def evaluate_voice_accuracy():
 
             report = {
                 "timestamp": datetime.datetime.now().isoformat(),
+                "model": model,
                 "summary": summary,
                 "results": results
             }
 
             # Save report
-            report_filename = f"voice_eval_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            report_filename = f"voice_eval_{model}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
             with open(os.path.join(EVALS_DIR, report_filename), 'w', encoding='utf-8') as f:
                 json.dump(report, f, indent=2)
 
