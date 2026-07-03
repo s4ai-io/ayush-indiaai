@@ -264,6 +264,9 @@ class AlertResponse(BaseModel):
     recent_weeks:   Optional[int]   = None
     baseline_std:   Optional[float] = None
     detection_type: Optional[str]   = None
+    # Case-details drill-down window (ISO dates)
+    window_start:   Optional[str]   = None
+    window_end:     Optional[str]   = None
 
 
 class DiseaseCount(BaseModel):

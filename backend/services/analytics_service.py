@@ -8,8 +8,11 @@ Anomaly Detection uses:
 """
 from datetime import datetime, timedelta, date
 from collections import defaultdict
+import calendar
 import math
+from sqlalchemy import func
 from models import SessionLocal, Patient, MedicalRecord
+from utils.episode_dedup import dedupe_repeat_diagnoses
 
 
 # ─── Statistical helpers ─────────────────────────────────────────────────────
@@ -116,28 +119,43 @@ class AnalyticsService:
     # ─── Hotspots ─────────────────────────────────────────────────────────────
 
     def get_hotspots(self, disease: str = None) -> list:
-        """Identify city-level locations with high case counts from real DB."""
+        """
+        Identify city-level locations with high case counts from real DB.
+
+        Counts DISTINCT PATIENTS per (city, diagnosis), not raw visit rows —
+        a patient who visits 3 times for the same complaint is one affected
+        person, not 3 cases (dedupe_repeat_diagnoses with gap_days=None
+        collapses their whole history for that diagnosis to their latest
+        visit). Grouped by (city, diagnosis) rather than (city, pincode,
+        diagnosis) — pincode varies patient-to-patient within the same city,
+        so grouping by it fragmented what should be one city-level count into
+        many single-patient rows.
+        """
         with SessionLocal() as db:
             query = (
-                db.query(Patient.city, Patient.pincode, MedicalRecord.diagnosis)
+                db.query(Patient.id, Patient.city, Patient.pincode, MedicalRecord.diagnosis, MedicalRecord.visit_date)
                 .join(MedicalRecord, MedicalRecord.patient_id == Patient.id)
-                .filter(MedicalRecord.diagnosis != None, MedicalRecord.diagnosis != "")
+                .filter(MedicalRecord.diagnosis != None, MedicalRecord.diagnosis != "", MedicalRecord.visit_date != None)
             )
             if disease:
                 query = query.filter(MedicalRecord.diagnosis.ilike(f"%{disease}%"))
             rows = query.all()
 
+        deduped = dedupe_repeat_diagnoses(rows, patient_idx=0, diagnosis_idx=3, date_idx=4, gap_days=None)
+
         counts: dict = defaultdict(int)
-        for city, pincode, diagnosis in rows:
+        example_pincode: dict = {}
+        for _patient_id, city, pincode, diagnosis, _visit_date in deduped:
             city      = (city or "Unknown").strip()
-            pincode   = (pincode or "").strip()
             diagnosis = (diagnosis or "").strip()
             if not diagnosis:
                 continue
-            counts[(city, pincode, diagnosis)] += 1
+            key = (city, diagnosis)
+            counts[key] += 1
+            example_pincode[key] = (pincode or "").strip()
 
         results = [
-            {"city": k[0], "pincode": k[1], "diagnosis": k[2], "count": v}
+            {"city": k[0], "pincode": example_pincode[k], "diagnosis": k[1], "count": v}
             for k, v in counts.items()
         ]
         results.sort(key=lambda x: x["count"], reverse=True)
@@ -174,7 +192,7 @@ class AnalyticsService:
         """
         with SessionLocal() as db:
             rows = (
-                db.query(MedicalRecord.visit_date, MedicalRecord.diagnosis)
+                db.query(MedicalRecord.visit_date, MedicalRecord.diagnosis, MedicalRecord.patient_id)
                 .filter(
                     MedicalRecord.visit_date != None,
                     MedicalRecord.diagnosis  != None,
@@ -186,9 +204,16 @@ class AnalyticsService:
         if not rows:
             return []
 
+        # Collapse tight-together repeat/follow-up visits (same patient, same
+        # diagnosis, within 14 days) into one episode so a single patient's
+        # follow-up doesn't get counted as a second case in the same month —
+        # but a genuine recurrence weeks/months later still counts, since
+        # that's real distinct incidence for surge detection.
+        rows = dedupe_repeat_diagnoses(rows, patient_idx=2, diagnosis_idx=1, date_idx=0, gap_days=14)
+
         # ── Build disease → { YYYY-MM → count } ─────────────────────────────
         disease_monthly: dict = defaultdict(lambda: defaultdict(int))
-        for visit_date, diagnosis in rows:
+        for visit_date, diagnosis, _patient_id in rows:
             if not visit_date or not diagnosis:
                 continue
             d  = visit_date.date() if hasattr(visit_date, "date") else visit_date
@@ -257,6 +282,8 @@ class AnalyticsService:
                     "triggered_by": ", ".join(triggers),
                     "anchor_date":  ym,
                     "date":         ym,
+                    "window_start": f"{ym}-01",
+                    "window_end":   f"{ym}-{calendar.monthrange(*map(int, ym.split('-')))[1]:02d}",
                     "message": (
                         f"{severity} surge: {disease} in {ym}. "
                         f"{int(count)} cases ({pct_increase:+.0f}% vs "
@@ -303,7 +330,7 @@ class AnalyticsService:
 
         with SessionLocal() as db:
             rows = (
-                db.query(MedicalRecord.visit_date, MedicalRecord.diagnosis)
+                db.query(MedicalRecord.visit_date, MedicalRecord.diagnosis, MedicalRecord.patient_id)
                 .filter(
                     MedicalRecord.visit_date >= cutoff,
                     MedicalRecord.visit_date != None,
@@ -316,10 +343,13 @@ class AnalyticsService:
         if not rows:
             return []
 
+        # Same tight-follow-up collapse as detect_anomalies() — see comment there.
+        rows = dedupe_repeat_diagnoses(rows, patient_idx=2, diagnosis_idx=1, date_idx=0, gap_days=14)
+
         # ── Build disease → { bi-week-bucket → count } ──────────────────────
         # Bi-weekly bucket label: "YYYY-B{n}" where n = ISO-week // 2
         disease_biweekly: dict = defaultdict(lambda: defaultdict(int))
-        for visit_date, diagnosis in rows:
+        for visit_date, diagnosis, _patient_id in rows:
             if not visit_date or not diagnosis:
                 continue
             d   = visit_date.date() if hasattr(visit_date, "date") else visit_date
@@ -365,8 +395,14 @@ class AnalyticsService:
             latest_bucket = sorted_buckets[-1]
             # Convert bucket label to human week range
             year, bnum = latest_bucket.split("-B")
+            year_int = int(year)
             week_start = int(bnum) * 2
             week_label = f"{year} W{week_start}–W{week_start + 1}"
+
+            # ISO week 0 isn't valid — clamp into range for the date conversion below
+            iso_week = max(1, min(53, week_start))
+            window_start_dt = datetime.fromisocalendar(year_int, iso_week, 1)
+            window_end_dt = window_start_dt + timedelta(days=13)
 
             alerts.append({
                 "disease":        disease,
@@ -376,6 +412,8 @@ class AnalyticsService:
                 "week":           week_label,
                 "date":           week_label,
                 "anchor_date":    week_label,
+                "window_start":   window_start_dt.date().isoformat(),
+                "window_end":     window_end_dt.date().isoformat(),
                 "recent_weeks":   recent_windows * 2,
                 "recent_avg":     round(recent_avg, 2),
                 "baseline_avg":   round(base_avg, 2),
@@ -396,6 +434,69 @@ class AnalyticsService:
         alerts.sort(key=lambda x: x["z_score"], reverse=True)
         return alerts
 
+    # ─── Case-level drill-down ────────────────────────────────────────────────
+    # NOTE: returns patient-identifying fields (name, age, gender, city). Safe
+    # only because this dataset is synthetic — a real deployment would need
+    # access control in front of this endpoint before it touched real PHI.
+
+    def get_case_details(
+        self,
+        disease: str,
+        cities: list[str] | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        days: int | None = None,
+        limit: int = 100,
+    ) -> tuple[list[dict], int]:
+        """
+        Return the individual patient visits backing a signal (alert, emerging
+        threat, hotspot, or cluster), plus the total matching count.
+
+        Date scoping (mutually exclusive, checked in this order):
+          - `days`: relative window, `visit_date >= utcnow() - days` (clusters).
+          - `start_date`/`end_date`: explicit window (alerts, emerging threats).
+          - neither: all-time, matching get_hotspots()'s existing semantics.
+        """
+        with SessionLocal() as db:
+            query = (
+                db.query(Patient, MedicalRecord)
+                .join(MedicalRecord, MedicalRecord.patient_id == Patient.id)
+                .filter(MedicalRecord.diagnosis == disease)
+            )
+            if cities:
+                query = query.filter(
+                    func.lower(Patient.city).in_([c.strip().lower() for c in cities])
+                )
+            if days is not None:
+                cutoff = datetime.utcnow() - timedelta(days=days)
+                query = query.filter(MedicalRecord.visit_date >= cutoff)
+            elif start_date or end_date:
+                if start_date:
+                    query = query.filter(MedicalRecord.visit_date >= start_date)
+                if end_date:
+                    query = query.filter(MedicalRecord.visit_date <= f"{end_date} 23:59:59")
+
+            total_count = query.count()
+            rows = query.order_by(MedicalRecord.visit_date.desc()).limit(limit).all()
+
+        cases = [
+            {
+                "patient_id":    p.id,
+                "name":          f"{p.first_name} {p.last_name}".strip(),
+                "age":           p.age,
+                "gender":        p.gender,
+                "city":          p.city,
+                "state":         p.state,
+                "visit_date":    m.visit_date.isoformat() if m.visit_date else None,
+                "severity":      m.severity,
+                "symptoms":      m.symptoms,
+                "prakriti":      m.prakriti,
+                "vikriti":       m.vikriti,
+                "comorbidities": m.comorbidities,
+            }
+            for p, m in rows
+        ]
+        return cases, total_count
 
     # ─── Dashboard Summary ────────────────────────────────────────────────────
 

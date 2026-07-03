@@ -28,6 +28,7 @@ from datetime import datetime, timedelta
 
 from models import SessionLocal, MedicalRecord, Patient
 from services.gnn_service import _CITY_COORDS, _haversine
+from utils.episode_dedup import dedupe_repeat_diagnoses
 
 
 # ─── Pure-Python DBSCAN ───────────────────────────────────────────────────────
@@ -106,7 +107,7 @@ class SpatialService:
 
         with SessionLocal() as db:
             rows = (
-                db.query(Patient.city, MedicalRecord.diagnosis)
+                db.query(Patient.id, Patient.city, MedicalRecord.diagnosis, MedicalRecord.visit_date)
                 .join(MedicalRecord, MedicalRecord.patient_id == Patient.id)
                 .filter(
                     MedicalRecord.visit_date >= cutoff,
@@ -118,9 +119,13 @@ class SpatialService:
                 .all()
             )
 
+        # Collapse each patient's repeat visits for the same diagnosis (within
+        # this window) into one case — a returning patient isn't 3 cases.
+        rows = dedupe_repeat_diagnoses(rows, patient_idx=0, diagnosis_idx=2, date_idx=3, gap_days=None)
+
         # ── Aggregate: (city, disease) → count ───────────────────────────────
         counts: dict[tuple[str, str], int] = defaultdict(int)
-        for city, diagnosis in rows:
+        for _patient_id, city, diagnosis, _visit_date in rows:
             city      = city.strip().lower()
             diagnosis = diagnosis.strip()
             if city and diagnosis:

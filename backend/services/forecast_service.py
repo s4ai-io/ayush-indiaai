@@ -136,6 +136,8 @@ class ForecastService:
                 "risk_score":   round(risk_score, 1),
                 "alert_level":  alert_level,
                 "trend":        row["trend"],
+                "window_start": row.get("window_start"),
+                "window_end":   row.get("window_end"),
             })
 
         return {
