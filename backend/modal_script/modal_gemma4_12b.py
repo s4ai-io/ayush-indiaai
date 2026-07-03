@@ -78,8 +78,16 @@ The JSON block must use this exact shape (all fields optional, omit unknown ones
   "contactInfo": {
     "mobileNumber": string,
     "address": string,
-    "state": "Delhi" | "Maharashtra" | "Karnataka" | "Gujarat" | "Uttar Pradesh",
-    "city": "New Delhi" | "Mumbai" | "Bangalore" | "Ahmedabad" | "Lucknow",
+    "state": "Andhra Pradesh" | "Assam" | "Bihar" | "Chhattisgarh" | "Delhi" | "Goa" | "Gujarat" | "Haryana" |
+      "Jammu and Kashmir" | "Jharkhand" | "Karnataka" | "Kerala" | "Madhya Pradesh" | "Maharashtra" | "Odisha" |
+      "Punjab" | "Rajasthan" | "Tamil Nadu" | "Telangana" | "Uttar Pradesh" | "Uttarakhand" | "West Bengal",
+    "city": string,  // a major city belonging to the extracted state, e.g. Mumbai/Pune/Nagpur/Nashik/Thane
+      // for Maharashtra, New Delhi/Dwarka/Rohini for Delhi, Bangalore/Mysore/Mangalore/Hubli for Karnataka,
+      // Ahmedabad/Surat/Vadodara/Rajkot for Gujarat, Lucknow/Kanpur/Varanasi/Agra/Noida/Ghaziabad for Uttar
+      // Pradesh, Chennai/Coimbatore/Madurai for Tamil Nadu, Kolkata/Howrah/Durgapur for West Bengal,
+      // Hyderabad/Warangal for Telangana, Jaipur/Jodhpur/Udaipur for Rajasthan, Kochi/Thiruvananthapuram for
+      // Kerala, Chandigarh/Amritsar/Ludhiana for Punjab, Bhopal/Indore/Gwalior for Madhya Pradesh, and the
+      // relevant state capital/major city for any other state
     "pincode": string
   },
   "otherInfo": {
@@ -91,6 +99,7 @@ The JSON block must use this exact shape (all fields optional, omit unknown ones
 }
 
 If the user said "Single", map maritalStatus to "Unmarried". If they said "Bengaluru", map city to "Bangalore".
+If the state isn't mentioned but the city is, infer the correct state from the city.
 If nothing extractable was said, omit the json block entirely and just acknowledge/ask a clarifying question."""
 
 TREATMENT_SYSTEM_PROMPT = """You are an AI Clinical Assistant helping a doctor fill out the Clinical Assessment form for an Ayush Treatment Plan.

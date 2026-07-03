@@ -48,8 +48,18 @@ Map the patient's details to these fields:
 2. contactInfo:
    - mobileNumber (MUST be exactly 10 digits. Extract ONLY the digits, ignoring spaces, hyphens, and +91. Ignore any other text.)
    - address
-   - state (MUST strictly be one of: "Delhi", "Maharashtra", "Karnataka", "Gujarat", "Uttar Pradesh")
-   - city (MUST strictly be one of: "New Delhi", "Mumbai", "Bangalore", "Ahmedabad", "Lucknow". Map 'Bengaluru' to 'Bangalore')
+   - state (MUST strictly be one of: "Andhra Pradesh", "Assam", "Bihar", "Chhattisgarh", "Delhi", "Goa",
+     "Gujarat", "Haryana", "Jammu and Kashmir", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh",
+     "Maharashtra", "Odisha", "Punjab", "Rajasthan", "Tamil Nadu", "Telangana", "Uttar Pradesh",
+     "Uttarakhand", "West Bengal")
+   - city (MUST be a major city belonging to the extracted state, e.g. Mumbai/Pune/Nagpur/Nashik/Thane/Aurangabad
+     for Maharashtra, New Delhi/Dwarka/Rohini for Delhi, Bangalore/Mysore/Mangalore/Hubli/Belgaum for Karnataka,
+     Ahmedabad/Surat/Vadodara/Rajkot/Gandhinagar for Gujarat, Lucknow/Kanpur/Varanasi/Agra/Noida/Ghaziabad/Prayagraj
+     for Uttar Pradesh, Chennai/Coimbatore/Madurai for Tamil Nadu, Kolkata/Howrah/Durgapur for West Bengal,
+     Hyderabad/Warangal for Telangana, Jaipur/Jodhpur/Udaipur for Rajasthan, Kochi/Thiruvananthapuram for Kerala,
+     Chandigarh/Amritsar/Ludhiana for Punjab, Bhopal/Indore/Gwalior for Madhya Pradesh, Patna/Gaya for Bihar,
+     Guwahati/Dibrugarh for Assam, and other state capitals/major cities for the remaining states.
+     Map 'Bengaluru' to 'Bangalore'. If the state isn't mentioned, infer it from the city.)
    - pincode
 
 3. otherInfo:

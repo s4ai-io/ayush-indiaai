@@ -1,11 +1,6 @@
 'use client';
 
 import { useEffect, useState, use } from 'react';
-import { createPortal } from 'react-dom';
-import { CopilotKit, useCopilotReadable, useCopilotAction, useCopilotChat } from "@copilotkit/react-core";
-import { TextMessage, MessageRole } from "@copilotkit/runtime-client-gql";
-import { CopilotSidebar } from "@copilotkit/react-ui";
-import "@copilotkit/react-ui/styles.css";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -18,34 +13,14 @@ import {
 } from 'lucide-react';
 import { DiseaseSearchDropdown } from '@/components/ui/DiseaseSearchDropdown';
 import { useRouter } from "next/navigation";
-import { VoiceInputButton } from "@/components/VoiceInputButton";
-import { LanguageSelector } from "@/components/LanguageSelector";
-import { VoicePipelineToggle } from "@/components/VoicePipelineToggle";
 import { GemmaVoiceChatPanel } from "@/components/GemmaVoiceChatPanel";
-import type { VoicePipelineMode } from "@/types/voiceModel";
 import { API_BASE } from '@/lib/config';
 import type { VisitPatient, VisitContext, TreatmentPlan } from '@/types';
 
-
-
-// ─── Outer shell (CopilotKit provider) ───────────────────────────────────────
+// ─── Outer shell ────────────────────────────────────────────────────────────
 export default function TreatmentPage({ params }: { params: Promise<{ visit_id: string }> }) {
     const { visit_id } = use(params);
-    return (
-        <CopilotKit runtimeUrl="/api/copilotkit" agent="treatment_agent">
-            <CopilotSidebar
-                instructions="You are an AI Clinical Assistant helping the doctor fill the treatment assessment form."
-                labels={{
-                    title: "🩺 Treatment Assistant",
-                    initial: "Helps you extract the clinical details from the doctor's patient conversation.",
-                }}
-                defaultOpen={false}
-                clickOutsideToClose={false}
-            >
-                <TreatmentPageContent visitId={visit_id} />
-            </CopilotSidebar>
-        </CopilotKit>
-    );
+    return <TreatmentPageContent visitId={visit_id} />;
 }
 
 // ─── Inner page content ───────────────────────────────────────────────────────
@@ -96,47 +71,6 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
 
     // Ayurvedic dietary plan from CSV
     const [ayurvedicDietPlan, setAyurvedicDietPlan] = useState<{ plan: string; disease: string } | null>(null);
-
-    // Voice / CopilotKit portal
-    const [selectedLanguage, setSelectedLanguage] = useState('hi-IN');
-    const [isListening, setIsListening] = useState(false);
-    const [voicePipelineMode, setVoicePipelineMode] = useState<VoicePipelineMode>("cloud");
-    const [chatInputNode, setChatInputNode] = useState<Element | null>(null);
-    const [showNewChatConfirm, setShowNewChatConfirm] = useState(false);
-
-    const { appendMessage, reset: resetChat } = useCopilotChat();
-
-    useEffect(() => {
-        const iv = setInterval(() => {
-            const el = document.querySelector('.copilotKitInput');
-            if (el) { (el as HTMLElement).style.position = 'relative'; setChatInputNode(el); clearInterval(iv); }
-        }, 100);
-        return () => clearInterval(iv);
-    }, []);
-
-    const handleVoiceTranscript = async (transcript: string, runId?: string) => {
-        // Bind run_id on the backend so the LLM logger can link to the voice pipeline run
-        if (runId) {
-            fetch(`${API_BASE}/api/bind-run-id`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ run_id: runId }),
-            }).catch(() => { });
-        }
-        await appendMessage(new TextMessage({ role: MessageRole.User, content: transcript }));
-    };
-
-    const handleNewChat = (clearForm: boolean) => {
-        resetChat();
-        if (clearForm) {
-            setDisease(''); setSymptoms(''); setMedicalHistory('');
-            setVikriti(''); setPrakriti(''); setTreatmentPlan(null);
-            setDoctorNotes(''); setRating(null); setFeedback('');
-            setDoctorHerbs([]); setDoctorYoga([]); setDoctorDiet([]); setDoctorLifestyle([]);
-            setProposedData(null);
-        }
-        setShowNewChatConfirm(false);
-    };
 
     // ── Load visit context ─────────────────────────────────────────────────
     useEffect(() => {
@@ -193,16 +127,8 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
         fetchVisit();
     }, [visitId]);
 
-    // ── CopilotKit readable + actions ──────────────────────────────────────
-    useCopilotReadable({
-        description: "Current clinical assessment form state",
-        value: { disease, symptoms, medicalHistory, vikriti, prakriti },
-    });
-
-    // Merges newly-extracted fields into proposedData. Shared by the Cloud-mode
-    // CopilotAction handler below and the Gemma-4-mode GemmaVoiceChatPanel
-    // (onExtracted) — identical merge behavior regardless of which pipeline
-    // produced the data, since both use the same flat field names.
+    // Merges newly-extracted fields into proposedData — called from the
+    // Gemma-4 assistant panel's onExtracted callback.
     const applyProposedClinicalAssessment = (args: any) => {
         setProposedData((prev: any) => {
             const mergeObj = (existing: any, incoming: any) => {
@@ -218,26 +144,6 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
             return mergeObj(prev, args);
         });
     };
-
-    useCopilotAction({
-        name: "propose_clinical_assessment",
-        description: "Extract the doctor's spoken notes and propose them to be added into the clinical assessment.",
-        parameters: [
-            { name: "disease", type: "string", description: "Disease name" },
-            { name: "symptoms", type: "string", description: "Comma-separated symptoms" },
-            { name: "comorbidities", type: "string", description: "Medical history / comorbidities" },
-            { name: "vikriti", type: "string", description: "Current dosha imbalance: Vata, Pitta, or Kapha" },
-            { name: "prakriti", type: "string", description: "Constitution: Vata, Pitta, Kapha, Vata-Pitta, Pitta-Kapha, Vata-Kapha" },
-            { name: "herbs", type: "string", description: "Doctor prescribed herbs" },
-            { name: "yoga", type: "string", description: "Doctor prescribed yoga" },
-            { name: "diet", type: "string", description: "Doctor prescribed diet" },
-            { name: "lifestyle", type: "string", description: "Doctor prescribed lifestyle" },
-        ],
-        handler: async (args: any) => {
-            applyProposedClinicalAssessment(args);
-            return "Proposed data updated for doctor review.";
-        },
-    });
 
     const handleAcceptProposed = () => {
         if (!proposedData) return;
@@ -322,13 +228,6 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
         setSuggestedDiseases([]);
         setSelectedSuggestion(null);
     };
-
-    useCopilotAction({
-        name: "generate_treatment_plan",
-        description: "Trigger AI treatment plan generation.",
-        parameters: [],
-        handler: async () => { await generatePlan(); return "Treatment plan generated."; },
-    });
 
     // ── Add/delete helpers ─────────────────────────────────────────────────
     const addHerb = () => {
@@ -477,7 +376,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
     const patientInitial = visitCtx?.patientName?.[0] ?? '?';
 
     return (
-        <>
+        <div className="min-h-screen w-full md:pr-96">
             <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100/50 p-6 pb-24 font-sans text-slate-800">
                 <div className="max-w-6xl mx-auto space-y-8">
 
@@ -1098,48 +997,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                     </div>
                 </div>
             </div>
-
-            {/* ── Voice / chat controls portalled into CopilotKit input ── */}
-            {chatInputNode && createPortal(
-                <>
-                    <div className="absolute -top-11 left-0 right-0 flex items-center justify-center z-[1000] pointer-events-auto">
-                        {!showNewChatConfirm ? (
-                            <button type="button" onClick={() => setShowNewChatConfirm(true)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-background/90 backdrop-blur border border-border text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 shadow-sm transition-all">
-                                <RefreshCw className="w-3.5 h-3.5" /> New Chat
-                            </button>
-                        ) : (
-                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/95 backdrop-blur border border-border shadow-md text-xs font-medium">
-                                <span className="text-muted-foreground">Clear form too?</span>
-                                <button type="button" onClick={() => handleNewChat(true)} className="px-2.5 py-1 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20">Yes, clear</button>
-                                <button type="button" onClick={() => handleNewChat(false)} className="px-2.5 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20">Keep form</button>
-                                <button type="button" onClick={() => setShowNewChatConfirm(false)} className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-muted text-muted-foreground"><X className="w-3 h-3" /></button>
-                            </div>
-                        )}
-                    </div>
-                    <div className="absolute bottom-1.5 left-1 z-[1000] pointer-events-auto flex items-center gap-2">
-                        <LanguageSelector selectedLanguage={selectedLanguage} onLanguageChange={setSelectedLanguage} />
-                        <VoicePipelineToggle mode={voicePipelineMode} onChange={setVoicePipelineMode} />
-                    </div>
-                    <div className="absolute bottom-1.5 right-12 z-[1000] pointer-events-auto">
-                        {voicePipelineMode === "cloud" && (
-                            <VoiceInputButton onTranscript={handleVoiceTranscript} onError={(err) => { console.error('Voice error:', err); }} language={selectedLanguage} />
-                        )}
-                    </div>
-                </>,
-                chatInputNode
-            )}
-
-            {/* Gemma-4 (Modal-hosted) assistant — overlays the cloud sidebar's
-                footprint while active, instead of stacking a second input bar
-                on top of it. */}
-            {voicePipelineMode === "gemma4" && (
-                <GemmaVoiceChatPanel
-                    flow="treatment"
-                    onExtracted={applyProposedClinicalAssessment}
-                    onSwitchToCloud={() => setVoicePipelineMode("cloud")}
-                />
-            )}
-        </>
+            <GemmaVoiceChatPanel flow="treatment" onExtracted={applyProposedClinicalAssessment} />
+        </div>
     );
 }

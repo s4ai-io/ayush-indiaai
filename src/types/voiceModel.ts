@@ -1,13 +1,14 @@
 /**
- * Types for the server-hosted Gemma-4-12B voice pipeline (Modal-hosted,
- * see backend/modal_script/modal_gemma4_12b.py + POST /api/gemma4-turn).
- * This is an opt-in alternative to the Cloud pipeline (Modal ASR +
- * IndicTrans2 + Phi-4 via AG-UI tool-calling) — see src/hooks/useServerGemmaVoiceAgent.ts.
- * Gemma-4 doesn't use AG-UI/tool-calling: the model replies with one
- * acknowledgement sentence + a fenced ```json block, parsed server-side.
+ * Types for the assistant panel's two interchangeable backends:
+ *  - "gemma4": Gemma-4-12B, Modal-hosted (POST /api/gemma4-turn). Understands
+ *    audio directly.
+ *  - "phi4": Phi-4, vLLM-hosted (POST /api/phi4-turn). Text-only — audio must
+ *    be transcribed first (see VoiceInputButton).
+ * Both reply with one acknowledgement sentence + a fenced ```json block,
+ * parsed server-side — no AG-UI/tool-calling involved.
  */
 
-export type VoicePipelineMode = "cloud" | "gemma4";
+export type VoiceModel = "gemma4" | "phi4";
 
 export type VoiceFlow = "registration" | "treatment";
 

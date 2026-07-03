@@ -1,25 +1,16 @@
 "use client";
 
-import { CopilotKit, useCopilotChat } from "@copilotkit/react-core";
-import { CopilotSidebar } from "@copilotkit/react-ui";
-import { useCopilotReadable, useCopilotAction } from "@copilotkit/react-core";
-import { TextMessage, MessageRole } from "@copilotkit/runtime-client-gql";
-import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
-import "@copilotkit/react-ui/styles.css";
+import { useState } from "react";
 import { saveRegistration } from "../actions/saveRegistration";
 import {
-    Minus, Plus, ChevronDown, RefreshCw,
+    Minus, Plus, ChevronDown,
     User, Phone, FileText, Stethoscope,
     CheckCircle2, AlertCircle, Loader2,
-    MapPin, Briefcase, Droplets, CreditCard, X
+    MapPin, Briefcase, Droplets, CreditCard
 } from "lucide-react";
-import { VoiceInputButton } from "@/components/VoiceInputButton";
-import { LanguageSelector } from "@/components/LanguageSelector";
-import { VoicePipelineToggle } from "@/components/VoicePipelineToggle";
 import { GemmaVoiceChatPanel } from "@/components/GemmaVoiceChatPanel";
-import type { VoicePipelineMode } from "@/types/voiceModel";
 import { useRouter } from "next/navigation";
+import { INDIAN_STATES, INDIAN_STATE_CITY_MAP } from "@/data/indianLocations";
 
 interface RegistrationData {
     contactInfo: {
@@ -54,90 +45,10 @@ const INITIAL_DATA: RegistrationData = {
 type StatusType = "info" | "error" | "success" | "loading";
 
 export default function RegistrationPage() {
-    const [isChatOpen, setIsChatOpen] = useState(true);
-    return (
-        <CopilotKit runtimeUrl="/api/copilotkit" agent="registration_agent">
-            <CopilotSidebar
-                instructions="You are an AI Assistant helping the user fill out the registration form."
-                labels={{
-                    title: "Registration Assistant",
-                    initial: "Hello! I can help you fill out this form. Just tell me your details.",
-                }}
-                defaultOpen={true}
-                clickOutsideToClose={false}
-                onSetOpen={(open) => setIsChatOpen(open)}
-            >
-                <div className="flex-1 h-full min-h-screen overflow-y-auto bg-gradient-to-br from-background via-muted/10 to-background">
-                    <div className="max-w-4xl mx-auto px-4 py-6 md:px-8 md:py-10">
-                        <RegistrationForm isChatOpen={isChatOpen} />
-                    </div>
-                </div>
-            </CopilotSidebar>
-        </CopilotKit>
-    );
-}
-
-function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
-    const [formData, setFormData] = useState<RegistrationData>(INITIAL_DATA);
-    const [status, setStatus] = useState<string | null>(null);
-    const [statusType, setStatusType] = useState<StatusType>("info");
-    const [isBasicInfoExpanded, setIsBasicInfoExpanded] = useState(true);
-    const [isContactExpanded, setIsContactExpanded] = useState(true);
-    const [isOtherInfoExpanded, setIsOtherInfoExpanded] = useState(true);
     const [proposedData, setProposedData] = useState<any>(null);
-    const [voiceError, setVoiceError] = useState<string | null>(null);
-    const [isListening, setIsListening] = useState(false);
-    const [selectedLanguage, setSelectedLanguage] = useState("hi-IN");
-    const [voicePipelineMode, setVoicePipelineMode] = useState<VoicePipelineMode>("cloud");
-    const [chatInputNode, setChatInputNode] = useState<Element | null>(null);
-    const [showNewChatConfirm, setShowNewChatConfirm] = useState(false);
-    const router = useRouter();
 
-    useEffect(() => {
-        if (!isChatOpen) { setChatInputNode(null); return; }
-        const interval = setInterval(() => {
-            const inputContainer = document.querySelector('.copilotKitInput');
-            if (inputContainer) {
-                (inputContainer as HTMLElement).style.position = 'relative';
-                setChatInputNode(inputContainer);
-                clearInterval(interval);
-            }
-        }, 100);
-        return () => clearInterval(interval);
-    }, [isChatOpen]);
-
-    const { appendMessage, reset: resetChat } = useCopilotChat();
-
-    const handleNewChat = (clearForm: boolean) => {
-        resetChat();
-        if (clearForm) {
-            setFormData(INITIAL_DATA);
-            setProposedData(null);
-        }
-        setShowNewChatConfirm(false);
-    };
-
-    useCopilotReadable({ description: "The current state of the registration form.", value: formData });
-
-    const handleVoiceTranscript = async (transcript: string, runId?: string) => {
-        setVoiceError(null);
-        // Bind run_id on the backend so the LLM logger can link to the voice pipeline run
-        if (runId) {
-            const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-            fetch(`${API_BASE}/api/bind-run-id`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ run_id: runId }),
-            }).catch(() => { });
-        }
-        await appendMessage(new TextMessage({ role: MessageRole.User, content: transcript }));
-    };
-
-    // Merges newly-extracted fields into proposedData. Shared by the Cloud-mode
-    // CopilotAction handler below and the Gemma-4-mode GemmaVoiceChatPanel
-    // (onExtracted) — identical merge behavior regardless of which pipeline
-    // produced the data, since both use the exact same basicInfo/contactInfo/
-    // otherInfo field names.
+    // Merges newly-extracted fields from the Gemma-4 assistant into
+    // proposedData for the user to review before accepting into the form.
     const applyProposedRegistrationData = (args: any) => {
         setProposedData((prev: any) => {
             const mergeObj = (existing: any, incoming: any) => {
@@ -152,8 +63,7 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
             };
 
             // Format mobile number before merging. The model can return this as
-            // a number (e.g. Phi-4 tool calls sometimes coerce digit-only
-            // strings to numbers) even though the schema declares it a string.
+            // a number even though the schema declares it a string.
             const incomingContact = { ...args.contactInfo };
             if (incomingContact.mobileNumber !== undefined && incomingContact.mobileNumber !== null) {
                 let mobile = String(incomingContact.mobileNumber).replace(/\D/g, '');
@@ -175,54 +85,25 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
         });
     };
 
-    useCopilotAction({
-        name: "propose_registration_data",
-        description: "Extract user details from the conversation and propose them to be filled in the registration form.",
-        parameters: [
-            {
-                name: "contactInfo", type: "object", required: false,
-                attributes: [
-                    { name: "mobileNumber", type: "string", description: "10-digit mobile phone number. Extract ONLY digits, ignore spaces, hyphens, +91.", required: false },
-                    { name: "address", type: "string", description: "Residential address", required: false },
-                    { name: "city", type: "string", description: "Must exactly match: New Delhi, Mumbai, Bangalore, Ahmedabad, Lucknow", required: false },
-                    { name: "state", type: "string", description: "Must exactly match: Delhi, Maharashtra, Karnataka, Gujarat, Uttar Pradesh", required: false },
-                    { name: "pincode", type: "string", description: "6-digit postal pincode", required: false },
-                ],
-            },
-            {
-                name: "basicInfo", type: "object", required: false,
-                attributes: [
-                    { name: "firstName", type: "string", required: false },
-                    { name: "lastName", type: "string", required: false },
-                    { name: "gender", type: "string", description: "Male, Female, or Transgender", required: false },
-                    { name: "age", type: "string", required: false },
-                    { name: "maritalStatus", type: "string", description: "Must exactly match: Married, Unmarried, Divorcee, Widow", required: false },
-                ],
-            },
-            {
-                name: "otherInfo", type: "object", required: false,
-                attributes: [
-                    { name: "occupation", type: "string", required: false },
-                    { name: "bloodGroup", type: "string", description: "Must exactly match: A+, A-, B+, B-, O+, O-, AB+, AB-", required: false },
-                    { name: "idType", type: "string", description: "Must exactly match: Aadhar, PAN Card, Voter ID", required: false },
-                    { name: "idNumber", type: "string", required: false },
-                ],
-            },
-        ],
-        handler: async (args: any) => {
-            // Helper: check if an object has any non-empty values
-            const hasData = (obj: any) =>
-                obj && typeof obj === 'object' && Object.values(obj).some(v => v !== null && v !== undefined && v !== '');
+    return (
+        <div className="min-h-screen w-full md:pr-96 bg-gradient-to-br from-background via-muted/10 to-background">
+            <div className="max-w-4xl mx-auto px-4 py-6 md:px-8 md:py-10">
+                <RegistrationForm proposedData={proposedData} setProposedData={setProposedData} />
+            </div>
+            <GemmaVoiceChatPanel flow="registration" onExtracted={applyProposedRegistrationData} />
+        </div>
+    );
+}
 
-            // If the model returned all empty objects, there's nothing to propose — skip.
-            if (!hasData(args.basicInfo) && !hasData(args.contactInfo) && !hasData(args.otherInfo)) {
-                return "No registration data found in this message.";
-            }
-
-            applyProposedRegistrationData(args);
-            return "Registration data proposed successfully for user review.";
-        },
-    });
+function RegistrationForm({ proposedData, setProposedData }: { proposedData: any; setProposedData: (v: any) => void }) {
+    const [formData, setFormData] = useState<RegistrationData>(INITIAL_DATA);
+    const [status, setStatus] = useState<string | null>(null);
+    const [statusType, setStatusType] = useState<StatusType>("info");
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+    const [isBasicInfoExpanded, setIsBasicInfoExpanded] = useState(true);
+    const [isContactExpanded, setIsContactExpanded] = useState(true);
+    const [isOtherInfoExpanded, setIsOtherInfoExpanded] = useState(true);
+    const router = useRouter();
 
     const handleAcceptProposed = () => {
         if (!proposedData) return;
@@ -249,29 +130,77 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
         setFormData((prev) => {
             const newData = { ...prev };
             (newData[section] as any)[field] = value;
+            // Changing state invalidates a previously-picked city that no longer belongs to it.
+            if (section === "contactInfo" && field === "state") {
+                const validCities = INDIAN_STATE_CITY_MAP[value] || [];
+                if (!validCities.includes((newData.contactInfo as any).city)) {
+                    (newData.contactInfo as any).city = "";
+                }
+            }
             return newData;
+        });
+        // Clear the error for this field as soon as the user starts fixing it.
+        setFieldErrors((prev) => {
+            if (!prev[field]) return prev;
+            const next = { ...prev };
+            delete next[field];
+            return next;
         });
     };
 
-    const validateForm = (): string | null => {
-        if (!formData.basicInfo.firstName.trim()) return "Please enter the patient's first name.";
-        if (!formData.basicInfo.gender) return "Please select a gender.";
-        if (!formData.basicInfo.maritalStatus) return "Please select a marital status.";
-        if (Number(formData.basicInfo.age) <= 0 || Number(formData.basicInfo.age) > 120) return "Please enter a valid age (1–120).";
-        if (!formData.contactInfo.state) return "Please select a state.";
-        if (!formData.contactInfo.city) return "Please select a city.";
+    const validateForm = (): Record<string, string> => {
+        const errors: Record<string, string> = {};
+        if (!formData.basicInfo.firstName.trim()) errors.firstName = "Please enter the patient's first name.";
+        if (!formData.basicInfo.gender) errors.gender = "Please select a gender.";
+        if (!formData.basicInfo.maritalStatus) errors.maritalStatus = "Please select a marital status.";
+        if (!formData.basicInfo.age || Number(formData.basicInfo.age) <= 0 || Number(formData.basicInfo.age) > 120) errors.age = "Please enter a valid age (1–120).";
+        if (!formData.contactInfo.state) errors.state = "Please select a state.";
+        if (!formData.contactInfo.city) errors.city = "Please select a city.";
         const mobileRegex = /^[6-9]\d{9}$/;
-        if (!mobileRegex.test(formData.contactInfo.mobileNumber)) return "Please enter a valid 10-digit Indian mobile number.";
+        if (!mobileRegex.test(formData.contactInfo.mobileNumber)) errors.mobileNumber = "Please enter a valid 10-digit Indian mobile number.";
         const pincodeRegex = /^[1-9][0-9]{5}$/;
-        if (formData.contactInfo.pincode && !pincodeRegex.test(formData.contactInfo.pincode)) return "Please enter a valid 6-digit PIN code.";
+        if (formData.contactInfo.pincode && !pincodeRegex.test(formData.contactInfo.pincode)) errors.pincode = "Please enter a valid 6-digit PIN code.";
         const idType = formData.otherInfo.idType;
         const idNumber = formData.otherInfo.idNumber.toUpperCase();
         if (idType && idNumber) {
-            if (idType === "Aadhar" && !/^\d{12}$/.test(idNumber)) return "Please enter a valid 12-digit Aadhaar number.";
-            if (idType === "PAN Card" && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(idNumber)) return "Please enter a valid PAN number (e.g., ABCDE1234F).";
-            if (idType === "Voter ID" && !/^[A-Z]{3}[0-9]{7}$/.test(idNumber)) return "Please enter a valid Voter ID (e.g., ABC1234567).";
+            if (idType === "Aadhar" && !/^\d{12}$/.test(idNumber)) errors.idNumber = "Please enter a valid 12-digit Aadhaar number.";
+            if (idType === "PAN Card" && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(idNumber)) errors.idNumber = "Please enter a valid PAN number (e.g., ABCDE1234F).";
+            if (idType === "Voter ID" && !/^[A-Z]{3}[0-9]{7}$/.test(idNumber)) errors.idNumber = "Please enter a valid Voter ID (e.g., ABC1234567).";
         }
-        return null;
+        return errors;
+    };
+
+    const FIELD_LABELS: Record<string, string> = {
+        firstName: "First Name", gender: "Gender", maritalStatus: "Marital Status", age: "Age",
+        state: "State", city: "City", mobileNumber: "Mobile Number", pincode: "Pincode", idNumber: "ID Number",
+    };
+
+    // Applies a fresh set of field errors: expands any collapsed section that
+    // now contains an error and scrolls/focuses the first invalid field so
+    // the user isn't left guessing which field the banner refers to.
+    const applyFieldErrors = (errors: Record<string, string>) => {
+        setFieldErrors(errors);
+        const keys = Object.keys(errors);
+        if (keys.length === 0) return;
+
+        const basicKeys = ["firstName", "gender", "maritalStatus", "age"];
+        const contactKeys = ["state", "city", "mobileNumber", "pincode"];
+        if (basicKeys.some((k) => errors[k])) setIsBasicInfoExpanded(true);
+        if (contactKeys.some((k) => errors[k])) setIsContactExpanded(true);
+        if (errors.idNumber) setIsOtherInfoExpanded(true);
+
+        const summary = keys.length === 1
+            ? errors[keys[0]]
+            : `${keys.length} fields need attention — starting with ${FIELD_LABELS[keys[0]] || keys[0]}.`;
+        setStatus(summary);
+        setStatusType("error");
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                const el = document.getElementById(`field-${keys[0]}`);
+                el?.scrollIntoView({ behavior: "smooth", block: "center" });
+            });
+        });
     };
 
     const submitForm = async () => {
@@ -291,22 +220,11 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const error = validateForm();
-        if (error) { setStatus(error); setStatusType("error"); return; }
+        const errors = validateForm();
+        if (Object.keys(errors).length > 0) { applyFieldErrors(errors); return; }
+        setFieldErrors({});
         await submitForm();
     };
-
-    useCopilotAction({
-        name: "confirm_registration",
-        description: "Confirm and submit the registration form.",
-        parameters: [],
-        handler: async () => {
-            const error = validateForm();
-            if (error) { setStatus(error); setStatusType("error"); return `Validation failed: ${error}`; }
-            const result = await submitForm();
-            return `Registration submitted. Status: ${result}`;
-        },
-    });
 
     return (
         <form onSubmit={handleSubmit} className="space-y-5 pb-6">
@@ -396,7 +314,7 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
                 {/* Name row */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormInput
-                        label="First Name" required
+                        label="First Name" required name="firstName" error={fieldErrors.firstName}
                         value={formData.basicInfo.firstName}
                         onChange={(v: string) => handleChange("basicInfo", "firstName", v)}
                         placeholder="e.g. Rahul"
@@ -411,7 +329,7 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
 
                 {/* Gender + Age */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                    <div className="flex flex-col gap-2">
+                    <div id="field-gender" className="flex flex-col gap-2 scroll-mt-24">
                         <label className="text-xs font-semibold text-foreground uppercase tracking-wide">
                             Gender <span className="text-destructive">*</span>
                         </label>
@@ -423,16 +341,24 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
                                     onClick={() => handleChange("basicInfo", "gender", opt)}
                                     className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-150 ${formData.basicInfo.gender === opt
                                         ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                                        : 'bg-background border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
+                                        : fieldErrors.gender
+                                            ? 'bg-background border-destructive/60 text-muted-foreground hover:border-destructive hover:text-foreground'
+                                            : 'bg-background border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
                                         }`}
                                 >
                                     {opt}
                                 </button>
                             ))}
                         </div>
+                        {fieldErrors.gender && (
+                            <p className="flex items-center gap-1 text-xs font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-150">
+                                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                                {fieldErrors.gender}
+                            </p>
+                        )}
                     </div>
                     <FormInput
-                        label="Age" required type="number"
+                        label="Age" required type="number" name="age" error={fieldErrors.age}
                         value={formData.basicInfo.age}
                         onChange={(v: string) => handleChange("basicInfo", "age", v)}
                         placeholder="Years"
@@ -440,7 +366,7 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
                 </div>
 
                 {/* Marital Status */}
-                <div className="mt-4">
+                <div id="field-maritalStatus" className="mt-4 scroll-mt-24">
                     <label className="text-xs font-semibold text-foreground uppercase tracking-wide mb-2 block">
                         Marital Status <span className="text-destructive">*</span>
                     </label>
@@ -452,13 +378,21 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
                                 onClick={() => handleChange("basicInfo", "maritalStatus", opt)}
                                 className={`py-2.5 px-3 rounded-lg border text-sm font-medium transition-all duration-150 text-center ${formData.basicInfo.maritalStatus === opt
                                     ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                                    : 'bg-background border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
+                                    : fieldErrors.maritalStatus
+                                        ? 'bg-background border-destructive/60 text-muted-foreground hover:border-destructive hover:text-foreground'
+                                        : 'bg-background border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
                                     }`}
                             >
                                 {opt}
                             </button>
                         ))}
                     </div>
+                    {fieldErrors.maritalStatus && (
+                        <p className="flex items-center gap-1 text-xs font-medium text-destructive mt-2 animate-in fade-in slide-in-from-top-1 duration-150">
+                            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                            {fieldErrors.maritalStatus}
+                        </p>
+                    )}
                 </div>
             </Section>
 
@@ -470,7 +404,7 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
                 onToggle={() => setIsContactExpanded(!isContactExpanded)}
             >
                 <FormInput
-                    label="Mobile Number" required
+                    label="Mobile Number" required name="mobileNumber" error={fieldErrors.mobileNumber}
                     value={formData.contactInfo.mobileNumber}
                     onChange={(v: string) => handleChange("contactInfo", "mobileNumber", v)}
                     placeholder="10-digit mobile number"
@@ -489,22 +423,24 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                     <FormSelect
-                        label="State" required
-                        options={["Delhi", "Maharashtra", "Karnataka", "Gujarat", "Uttar Pradesh"]}
+                        label="State" required name="state" error={fieldErrors.state}
+                        options={INDIAN_STATES}
                         value={formData.contactInfo.state}
                         onChange={(v: string) => handleChange("contactInfo", "state", v)}
                     />
                     <FormSelect
-                        label="City" required
-                        options={["New Delhi", "Mumbai", "Bangalore", "Ahmedabad", "Lucknow"]}
+                        label="City" required name="city" error={fieldErrors.city}
+                        options={INDIAN_STATE_CITY_MAP[formData.contactInfo.state] || []}
                         value={formData.contactInfo.city}
                         onChange={(v: string) => handleChange("contactInfo", "city", v)}
+                        disabled={!formData.contactInfo.state}
+                        placeholder={formData.contactInfo.state ? "Select City" : "Select a state first"}
                     />
                 </div>
 
                 <div className="mt-4 max-w-xs">
                     <FormInput
-                        label="Pincode"
+                        label="Pincode" name="pincode" error={fieldErrors.pincode}
                         value={formData.contactInfo.pincode}
                         onChange={(v: string) => handleChange("contactInfo", "pincode", v)}
                         placeholder="6-digit PIN"
@@ -546,7 +482,7 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
                         icon={<CreditCard className="w-4 h-4 text-muted-foreground" />}
                     />
                     <FormInput
-                        label="ID Number"
+                        label="ID Number" name="idNumber" error={fieldErrors.idNumber}
                         value={formData.otherInfo.idNumber}
                         onChange={(v: string) => handleChange("otherInfo", "idNumber", v)}
                         placeholder={
@@ -592,94 +528,7 @@ function RegistrationForm({ isChatOpen }: { isChatOpen: boolean }) {
                     </button>
                 </div>
             </div>
-
-            {/* ── All chat controls portalled into .copilotKitInput ── */}
-            {
-                chatInputNode && createPortal(
-                    <>
-                        {/* New Chat button + inline confirm — sits just above the input box */}
-                        <div className="absolute -top-11 left-0 right-0 flex items-center justify-center z-[1000] pointer-events-auto">
-                            {!showNewChatConfirm ? (
-                                <button
-                                    type="button"
-                                    onClick={() => setShowNewChatConfirm(true)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-background/90 backdrop-blur border border-border text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 shadow-sm transition-all duration-150"
-                                >
-                                    <RefreshCw className="w-3.5 h-3.5" />
-                                    New Chat
-                                </button>
-                            ) : (
-                                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/95 backdrop-blur border border-border shadow-md text-xs font-medium">
-                                    <span className="text-muted-foreground">Clear form too?</span>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleNewChat(true)}
-                                        className="px-2.5 py-1 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20 transition-colors"
-                                    >Yes, clear</button>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleNewChat(false)}
-                                        className="px-2.5 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 transition-colors"
-                                    >Keep form</button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowNewChatConfirm(false)}
-                                        className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-muted text-muted-foreground transition-colors"
-                                    ><X className="w-3 h-3" /></button>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Language selector + pipeline toggle — left of input */}
-                        <div className="absolute bottom-1.5 left-1 z-[1000] pointer-events-auto flex items-center gap-2">
-                            <LanguageSelector selectedLanguage={selectedLanguage} onLanguageChange={setSelectedLanguage} />
-                            <VoicePipelineToggle mode={voicePipelineMode} onChange={setVoicePipelineMode} />
-                        </div>
-                        {/* Voice button — right of input (Cloud mode only; Gemma-4 mode uses GemmaVoiceChatPanel below) */}
-                        <div className="absolute bottom-1.5 right-12 z-[1000] pointer-events-auto">
-                            {voicePipelineMode === "cloud" && (
-                                <VoiceInputButton
-                                    onTranscript={handleVoiceTranscript}
-                                    onError={(err) => setVoiceError(err)}
-                                    language={selectedLanguage}
-                                />
-                            )}
-                            {isListening && (
-                                <span className="absolute top-0 right-0 flex h-2 w-2 -mt-0.5 -mr-0.5">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive" />
-                                </span>
-                            )}
-                        </div>
-                    </>,
-                    chatInputNode
-                )
-            }
-
-            {/* Gemma-4 (Modal-hosted) assistant — overlays the cloud sidebar's
-                footprint while active, instead of stacking a second input bar
-                on top of it. */}
-            {
-                voicePipelineMode === "gemma4" && (
-                    <GemmaVoiceChatPanel
-                        flow="registration"
-                        onExtracted={applyProposedRegistrationData}
-                        onSwitchToCloud={() => setVoicePipelineMode("cloud")}
-                    />
-                )
-            }
-
-            {/* Voice Error */}
-            {
-                isChatOpen && voiceError && (
-                    <div className="fixed bottom-24 right-4 z-[1000]">
-                        <div className="bg-destructive/10 text-destructive px-3 py-1.5 rounded-lg border border-destructive/20 shadow-sm text-xs animate-in fade-in slide-in-from-bottom-4">
-                            {voiceError}
-                        </div>
-                    </div>
-                )
-            }
-        </form >
+        </form>
     );
 }
 
@@ -725,12 +574,12 @@ function Section({
 
 // ── FormInput ─────────────────────────────────────────────────────────────────
 
-function FormInput({ label, value, onChange, placeholder, type = "text", required, disabled, prefix }: {
+function FormInput({ label, value, onChange, placeholder, type = "text", required, disabled, prefix, name, error }: {
     label: string; value: string; onChange: (v: string) => void; placeholder?: string;
-    type?: string; required?: boolean; disabled?: boolean; prefix?: React.ReactNode;
+    type?: string; required?: boolean; disabled?: boolean; prefix?: React.ReactNode; name?: string; error?: string;
 }) {
     return (
-        <div className="flex flex-col gap-1.5 w-full">
+        <div id={name ? `field-${name}` : undefined} className="flex flex-col gap-1.5 w-full scroll-mt-24">
             <label className="text-xs font-semibold text-foreground uppercase tracking-wide">
                 {label} {required && <span className="text-destructive">*</span>}
             </label>
@@ -746,12 +595,20 @@ function FormInput({ label, value, onChange, placeholder, type = "text", require
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     disabled={disabled}
-                    className={`w-full h-11 border border-input rounded-lg text-sm text-foreground bg-background placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-150 shadow-sm
+                    aria-invalid={!!error}
+                    className={`w-full h-11 border rounded-lg text-sm text-foreground bg-background placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 transition-all duration-150 shadow-sm
                         ${prefix ? 'pl-9 pr-4' : 'px-4'}
                         ${disabled ? 'bg-muted text-muted-foreground cursor-not-allowed' : ''}
+                        ${error ? 'border-destructive focus:ring-destructive/30 focus:border-destructive' : 'border-input focus:ring-primary/30 focus:border-primary'}
                     `}
                 />
             </div>
+            {error && (
+                <p className="flex items-center gap-1 text-xs font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-150">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {error}
+                </p>
+            )}
         </div>
     );
 }
@@ -781,12 +638,12 @@ function FormTextArea({ label, value, onChange, placeholder, disabled, icon }: {
 
 // ── FormSelect ────────────────────────────────────────────────────────────────
 
-function FormSelect({ label, value, onChange, options, required, disabled, icon }: {
+function FormSelect({ label, value, onChange, options, required, disabled, icon, name, error, placeholder }: {
     label: string; value: string; onChange: (v: string) => void;
-    options: string[]; required?: boolean; disabled?: boolean; icon?: React.ReactNode;
+    options: string[]; required?: boolean; disabled?: boolean; icon?: React.ReactNode; name?: string; error?: string; placeholder?: string;
 }) {
     return (
-        <div className="flex flex-col gap-1.5 w-full">
+        <div id={name ? `field-${name}` : undefined} className="flex flex-col gap-1.5 w-full scroll-mt-24">
             <label className="text-xs font-semibold text-foreground uppercase tracking-wide">
                 {label} {required && <span className="text-destructive">*</span>}
             </label>
@@ -800,19 +657,27 @@ function FormSelect({ label, value, onChange, options, required, disabled, icon 
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     disabled={disabled}
-                    className={`w-full h-11 border border-input rounded-lg text-sm text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-150 shadow-sm appearance-none cursor-pointer
+                    aria-invalid={!!error}
+                    className={`w-full h-11 border rounded-lg text-sm text-foreground bg-background focus:outline-none focus:ring-2 transition-all duration-150 shadow-sm appearance-none cursor-pointer
                         ${icon ? 'pl-9 pr-9' : 'pl-4 pr-9'}
                         ${disabled ? 'bg-muted cursor-not-allowed' : ''}
                         ${value === '' ? 'text-muted-foreground/70' : ''}
+                        ${error ? 'border-destructive focus:ring-destructive/30 focus:border-destructive' : 'border-input focus:ring-primary/30 focus:border-primary'}
                     `}
                 >
-                    <option value="">Select {label}</option>
+                    <option value="">{placeholder || `Select ${label}`}</option>
                     {options.map((opt) => (
                         <option key={opt} value={opt}>{opt}</option>
                     ))}
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             </div>
+            {error && (
+                <p className="flex items-center gap-1 text-xs font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-150">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {error}
+                </p>
+            )}
         </div>
     );
 }

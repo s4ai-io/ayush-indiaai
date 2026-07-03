@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 from typing import Optional
 import uvicorn
 import os
+import re
 import json
 import csv
 import datetime
@@ -24,6 +25,7 @@ from config import (
     DEFAULT_ALLOWED_ORIGINS,
 )
 from utils.run_logger import RunLogger, VOICE_DIR
+from utils import phi4_prompts
 
 from utils.validators import (
     PatientProfile,
@@ -1013,6 +1015,74 @@ async def gemma4_turn(
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Gemma-4 turn failed: {exc}")
+
+
+def _parse_structured_reply(full_text: str):
+    """Pulls a fenced ```json block out of the model's reply and parses it.
+    Tolerates a missing or malformed block — falls back to (text, None).
+    Mirrors backend/modal_script/modal_gemma4_12b.py's parse_structured_reply
+    so both turn endpoints share the same extraction contract."""
+    match = re.search(r"```json\s*([\s\S]*?)\s*```", full_text, re.IGNORECASE)
+    if not match:
+        return full_text.strip(), None
+
+    reply = (full_text[: match.start()] + full_text[match.end():]).strip()
+    try:
+        parsed = json.loads(match.group(1))
+        return (reply, parsed) if isinstance(parsed, dict) else (reply, None)
+    except json.JSONDecodeError:
+        return reply, None
+
+
+@app.post("/api/phi4-turn", tags=["Voice Pipeline"])
+async def phi4_turn(
+    flow: str = Form("registration"),
+    conversation_history: Optional[str] = Form(None),
+    user_text_prompt: str = Form(...),
+):
+    """
+    Text-turn endpoint for the Phi-4 (vLLM-hosted) assistant — same
+    request/response contract as /api/gemma4-turn (one acknowledgement
+    sentence + a fenced ```json extraction block), so the frontend's
+    GemmaVoiceChatPanel can drive either model interchangeably. Phi-4 has
+    no native audio understanding, so callers must transcribe first (the
+    panel's mic button already does this via /api/transcribe when Phi-4
+    is selected).
+    """
+    from llama_index.core.llms import ChatMessage, MessageRole
+    from utils.llm_config import get_llm
+
+    history = []
+    if conversation_history:
+        try:
+            history = json.loads(conversation_history)
+        except json.JSONDecodeError:
+            history = []
+
+    system_prompt = phi4_prompts.get_system_prompt(flow)
+    messages = [ChatMessage(role=MessageRole.SYSTEM, content=system_prompt)]
+    for turn in history:
+        role = MessageRole.ASSISTANT if turn.get("role") == "assistant" else MessageRole.USER
+        content = turn.get("content", "")
+        if content:
+            messages.append(ChatMessage(role=role, content=content))
+    messages.append(ChatMessage(role=MessageRole.USER, content=user_text_prompt))
+
+    try:
+        llm = get_llm()
+        response = await llm.achat(messages)
+        full_text = response.message.content or ""
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Phi-4 turn failed: {exc}")
+
+    reply, extracted = _parse_structured_reply(full_text)
+    return {
+        "reply": reply,
+        "extracted": extracted,
+        "tokens_generated": 0,
+        "chunks_processed": 0,
+        "audio_duration_seconds": 0.0,
+    }
 
 
 if __name__ == "__main__":

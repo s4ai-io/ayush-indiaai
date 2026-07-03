@@ -30,8 +30,9 @@ export default function RootLayout({
       >
         <div className="flex min-h-screen w-full">
           <AppSidebar />
-          <main className="flex-1 overflow-auto w-full">
-            <div className="p-4 md:p-8 pt-20"> {/* Added pt-20 to ensure content isn't hidden under the absolute hamburger menu */}
+          <main className="flex-1 min-w-0 overflow-auto w-full">
+            {/* pt-20 clears the floating mobile hamburger; desktop shows the sidebar in-flow so it needs no extra offset */}
+            <div className="p-4 pt-20 md:p-8">
               {children}
             </div>
           </main>
