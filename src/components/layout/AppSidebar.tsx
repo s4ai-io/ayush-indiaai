@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
     LayoutDashboard, UserPlus, Stethoscope, Menu, X, Users, ShieldAlert,
-    ChevronLeft, ChevronRight, type LucideIcon,
+    ChevronLeft, ChevronRight, type LucideIcon, BarChart2,
 } from "lucide-react";
 
 interface NavItem {
@@ -19,6 +19,13 @@ interface NavItem {
 }
 
 const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
+    {
+        label: "Overview",
+        items: [
+            { href: "/", label: "Dashboard", icon: LayoutDashboard, isActive: (p) => p === "/" },
+            { href: "/public-health/dashboard", label: "Analytics", icon: BarChart2, isActive: (p) => p.includes("/public-health") },
+        ],
+    },
     {
         label: "Reception",
         items: [
@@ -33,15 +40,9 @@ const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
         ],
     },
     {
-        label: "Public Health",
-        items: [
-            { href: "/public-health/dashboard", label: "Dashboard", icon: ShieldAlert, isActive: (p) => p.includes("/public-health") },
-        ],
-    },
-    {
         label: "Admin",
         items: [
-            { href: "/admin/accuracy", label: "Accuracy Evaluator", icon: LayoutDashboard, isActive: (p) => p === "/admin/accuracy" },
+            { href: "/admin/accuracy", label: "Accuracy Evaluator", icon: ShieldAlert, isActive: (p) => p === "/admin/accuracy" },
         ],
     },
 ];
