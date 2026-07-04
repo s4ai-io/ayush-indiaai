@@ -8,7 +8,7 @@ import {
 } from 'recharts';
 import {
     AlertTriangle, Activity, MapPin, TrendingUp, TrendingDown,
-    Brain, Thermometer, Wind, Droplets, RefreshCw, ShieldAlert,
+    Brain, RefreshCw, ShieldAlert,
     Users, Stethoscope, BarChart2, Globe
 } from 'lucide-react';
 import { API_BASE } from '@/lib/config';
@@ -46,6 +46,12 @@ interface EmergingTrend {
     disease: string; growth_rate: number; current_cases: number;
     alert_level: string; trend: string;
     window_start?: string; window_end?: string;
+}
+interface ClusterData {
+    cluster_id: number; disease: string; is_noise: boolean;
+    cities: string[]; city_cases: Record<string, number>; total_cases: number;
+    centroid_lat: number; centroid_lon: number; spread_km: number; period_days: number;
+    devanagari?: string; iast?: string;
 }
 type NameMap = Record<string, { devanagari: string; iast: string; hindi: string; english: string }>;
 
@@ -274,7 +280,7 @@ export default function PublicHealthDashboard() {
     const [emerging, setEmerging] = useState<EmergingTrend[]>([]);
     const [nameMap, setNameMap] = useState<NameMap>({});
     const [weeklyAlerts, setWeeklyAlerts] = useState<AlertData[]>([]);
-    const [clusters, setClusters] = useState<any[]>([]);
+    const [clusters, setClusters] = useState<ClusterData[]>([]);
     const [loading, setLoading] = useState(true);
     const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
     const [mounted, setMounted] = useState(false);
@@ -466,7 +472,7 @@ export default function PublicHealthDashboard() {
                     icon={<Stethoscope className="h-5 w-5" />}
                     label="Clinical Records"
                     value={summary?.total_medical_records?.toLocaleString() ?? '—'}
-                    sub="last 12 months"
+                    sub="all-time"
                     color="bg-gradient-to-br from-purple-500 to-purple-700"
                 />
                 <StatCard
@@ -773,7 +779,7 @@ export default function PublicHealthDashboard() {
                         icon={<TrendingUp className="h-5 w-5" />}
                         title="Emerging Threats"
                         subtitle="Month-over-month growth rate"
-                        info="Compares cases in the most recent month vs. the same period 3 months ago. Growth rate = (recent − prior) / prior × 100. Alert levels: Low < 25%, Medium 25–50%, High 50–100%, Critical > 100%. Powered by the /api/forecast/emerging endpoint."
+                        info="Compares cases in the most recent month vs. the same period 3 months ago. Growth rate = (recent − prior) / prior × 100. Alert levels: Low < 10%, Medium 10–25%, High 25–50%, Critical > 50%. Powered by the /api/forecast/emerging endpoint."
                     />
                     <div className="space-y-3">
                         {emerging.length > 0 ? emerging.slice(0, 6).map((t, i) => (

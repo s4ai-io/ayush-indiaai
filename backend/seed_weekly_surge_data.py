@@ -51,6 +51,10 @@ SYMPTOMS_MAP = {
 }
 
 SEVERITY_CHOICES = ["Mild", "Moderate", "Severe"]
+# Numeric encoding, matching generate_historical_data.py's convention — medical_records.severity
+# is a numeric 1-10 string everywhere else (real registration/voice-pipeline data included), so
+# seeded rows must use the same scale rather than the raw text label.
+SEVERITY_SCORES = {"Mild": "3", "Moderate": "6", "Severe": "9"}
 
 # Weekly case pattern (relative weights, 52 weeks)
 # Weeks 0–45: baseline (1–3 cases/wk), weeks 46–50: rising, week 51: spike
@@ -105,7 +109,7 @@ def main():
                         visit_date = visit_day,
                         diagnosis  = disease,
                         symptoms   = symptoms,
-                        severity   = random.choice(SEVERITY_CHOICES),
+                        severity   = SEVERITY_SCORES[random.choice(SEVERITY_CHOICES)],
                         prakriti   = random.choice(["Vata", "Pitta", "Kapha", "Vata-Pitta", "Pitta-Kapha"]),
                         vikriti    = random.choice(["Vata", "Pitta", "Kapha"]),
                         notes      = f"Seeded weekly surge data — week {week_idx + 1}/52",

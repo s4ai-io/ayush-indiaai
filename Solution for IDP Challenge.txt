@@ -1,0 +1,197 @@
+IndiaAI Intelligent Document Processing Challenge
+Solution by S4AI Technologies
+S4AI
+
+TEAM MEMBERS
+Nisarg Gandhi
+Co-Founder
+Khyati Majmudar
+Co-Founder
+Milan Sadairya
+Senior ML Engineer
+Kevin Bhensdadiya
+AI/ML Engineer
+
+
+
+
+
+S4AI won the Union IT Ministry’s India AI Mission & I4C (Home Ministry) AI hackathon —selected from over 263 submissions teams to develop a comprehensive AI system for cyber-crime mitigation—and received the top prize 
+GoI Press Release
+
+
+
+Government of India AI Hackathon 
+Winner
+S4AI
+Key Achievement
+
+Problem Statement
+Objective: To Develop a high-accuracy, scalable, and secure AI-powered engine leveraging OCR and NLP technologies to perform end-to-end document processing while ensuring high accuracy and cost optimisation. 
+Data Extraction
+Document Segmentation
+Structured Output & Summarization 
+Stage 2 Requirements:
+Extract specific information such as Name, Qualification, Caste, Issuing Authority etc from wide range of documents such as Caste Certificate, Degree Certificate, Name Change document, APAR etc.
+Total Document types:18
+Prepare Brief Reports for Disciplinary Cases which contains key events and timelines etc.
+Total Reports to be Generated: 4
+Input Documents for each Report: 4-20 Approx
+
+Core Solution
+Completely configurable and Scalable System for Extraction, Summarization, Report Generation for diverse documents
+Languages - Hindi, English, Hinglish
+Extendable to Other indic languages by changing the open source LLM
+End to End pipeline for On-premise Solution handling
+Pre-processing - Deskewing & removing watermarks and seals
+OCR for handwritten as well as typed documents
+Extraction of tables, notes, key features
+Generative Reasoning and Summarization
+Report Generation
+Automated Bulk Validation pipeline on Test Dataset
+Completely On-prem Air-gapped solution can be deployed 
+Complete data sovereignty and security
+
+Category
+Model / Methodology
+Pre-processing
+OpenCV Workflow - on CPU
+OCR - For English documents
+Visual Language Model - IBM Granite Vision 3.3 2B on A100 GPU
+OCR - For Indic Content
+Tesseract on CPU and RT-DETR for document segmentation 
+Field level extraction and Summarization
+LLM - Microsoft/Phi-4-14b running on 2 x L40s
+Factual Integrity Evaluation for Disciplinary cases
+LLM as a Jury for hallucination detection:  google/flan-t5-large on L40s
+Encryption
+AES 256 encryption for uploaded files
+System Configuration
+
+Pipeline Data Flow
+
+System Architecture
+
+Key Features - S4AI edge
+Efficient Watermark and background text removal 
+Modular and Scalable - Config based Extraction Layer
+Configurable by end users , no need of additional coding
+Multilingual understanding - Smart routing by language detection
+Handwritten text identification
+End to End Bulk Evaluation pipeline
+Plug and play to add sophisticated open source models as they evolve
+In future new VLMs and LLMs can be directly added without code change
+
+Evaluation Methodology
+Ground Truth Generation:
+Manual Annotation: Manual, character-perfect extraction of all fields as Ground Truth
+Testing Methodology:
+Short Fields : <=2 words and <30 characters
+Character similarity: 1- Levenshtein Distance
+Long Fields: Hybrid Score
+0.3* Char. sim. + 0.7 * Token Similarity (Jaccard)
+Correctness Threshold for accuracy : 0.8
+Hallucination Detection for Disciplinary cases:
+Model as a Jury approach using MiniCheck library with on-prem flan-t5-large model
+https://www.cs.cmu.edu/~wcohen/postscript/kdd-2003-match-ws.pdf .. 
+
+Document Agnosticism:  Whether it’s an APAR (Performance Report) or a Name Change Gazette, the logic is entirely contained within the JSON fields definition.
+Atomic Field Definitions:  Each field has validation rules - data types (text, date, table), & extraction (descriptions).
+Advanced Conditional Intelligence
+Variable Injection: The use of placeholders like ${given} helps us inject runtime variables into the configuration - e.g Name Change case
+Execution Flow Control: The conditional_params block (e.g., fetch: "old_name") allows the system to trigger specific extraction paths based on the document's content.
+Feature Toggling: Enables per-document customization of advanced outputs like LLM summaries or folder-level analysis without global code changes.
+Zero-Redeployment Onboarding: New document types are "programmed" via JSON updates, eliminating the need for engine restarts or code pushes.
+Complex use cases - Single Modular Config
+
+Creating New Document Configuration
+
+Complex use cases - Single Modular Config
+
+Results and Screenshots
+
+Original
+Watermark removal - After Pre-processing
+Pre-processing of document
+
+Original
+Watermark removal - After Pre-processing
+Pre-processing of document
+
+Parsed Text
+
+Configuration for Extraction
+
+Extraction and Results
+
+Extraction and Results - Name Change Case
+
+Extraction and Results - Hindi Document
+
+Extraction and Results - Multiple values from Multiple pages
+
+Extraction and Results - Multiple values from Multiple pages
+
+Category
+Metric
+Value
+Methodology
+OCR Quality
+Character Error Rate (CER)
+0.34
+Field Extraction - Similarity score
+Adaptive Similarity score based on Levenshtein Similarity and Jaccard Similarity 
+Goal >80%
+Fields are marked as accurate only if Adaptive Score is greater than 80%
+Final Accuracy on ORA and NIC
+62.11%
+Factual Integrity
+Hallucination Rate
+<33%
+MiniCheck automated fact-checking engine. Low score due to preformatted text
+Throughput
+Operational Speed
+40-60 s / page
+Benchmarked on L40S GPU - VLLM and VLM Granite on - A100 GPU (Bulk processing mode).
+Results - Key Metrics
+
+Combined Accuracy for ORA and SOAP 
+
+APAR Results
+
+APAR Results
+
+IO Brief - Hallucination check - Minicheck Report
+
+Challenges and Way Forward
+
+Challenges
+VLM misaligns multi-line cell values across adjacent rows during the serialization process at times
+The system struggles when a document mixes English and regional scripts (like Hindi or Marathi) in the same sentence, making it hard to extract a single, unified answer.
+Confusion in Issuing Authority Ground Truth led to a drop in accuracy in many cases:
+Eg. Government of Jammu and Kashmir or Tehsildar ?
+Handling large documents for summary generation beyond context 
+
+https://www.cs.cmu.edu/~wcohen/postscript/kdd-2003-match-ws.pdf .. 
+
+causing it to misalign multi-line cell values across adjacent rows during the serialization process  
+
+Way Forward - Improvements
+More Stronger Indic supported open source models can be used for non-hindi Indic documents 
+Add parallel processing in the entire pipeline to reduce document processing time
+Add Active Human in the Loop learning for feedback to improve accuracy of Extract Reasoning layer
+Fine tune RT-DETR for better layout understanding of Reference document
+For IO/PO brief generation -
+Page-wise summarization and context retrieval needs to be done
+Thoroughness evaluation based on a ground truth needs to be done
+Storage of results in AES encrypted format
+https://www.cs.cmu.edu/~wcohen/postscript/kdd-2003-match-ws.pdf .. 
+
+Phone Number
+Nisarg: +91-8156008204 
+Khyati: +91-9920610820
+Website
+https://s4ai.io
+Email Address
+contact@s4ai.io
+CONTACT INFORMATION
