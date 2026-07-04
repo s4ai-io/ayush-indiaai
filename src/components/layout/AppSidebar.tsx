@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
     LayoutDashboard, UserPlus, Stethoscope, Menu, X, Users, ShieldAlert,
-    ChevronLeft, ChevronRight, type LucideIcon, BarChart2,
+    ChevronLeft, ChevronRight, type LucideIcon, BarChart2, BrainCircuit,
 } from "lucide-react";
 
 interface NavItem {
@@ -43,6 +43,7 @@ const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
         label: "Admin",
         items: [
             { href: "/admin/accuracy", label: "Accuracy Evaluator", icon: ShieldAlert, isActive: (p) => p === "/admin/accuracy" },
+            { href: "/admin/model-dashboard", label: "Model Intelligence", icon: BrainCircuit, isActive: (p) => p === "/admin/model-dashboard" },
         ],
     },
 ];

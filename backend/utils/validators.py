@@ -21,8 +21,8 @@ class YogaRecommendation(BaseModel):
 
 class PatientProfile(BaseModel):
     """Patient profile for treatment recommendation"""
-    age: int = Field(..., ge=0, le=120, description="Patient age in years")
-    gender: str = Field(..., description="Patient gender (Male/Female)")
+    age: int = Field(35, ge=0, le=120, description="Patient age in years")
+    gender: str = Field("Male", description="Patient gender (Male/Female)")
     prakriti: Optional[str] = Field(None, description="Natural constitution (Prakriti)")
     vikriti: Optional[str] = Field(None, description="Current dosha imbalance (Vikriti)")
     disease: str = Field(..., min_length=1, description="Primary health condition (required)")
@@ -40,14 +40,18 @@ class PatientProfile(BaseModel):
     
     @field_validator('prakriti', 'vikriti')
     @classmethod
-    def validate_dosha(cls, v: str) -> str:
+    def validate_dosha(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
         valid_doshas = [
             'Vata', 'Pitta', 'Kapha',
             'Vata-Pitta', 'Pitta-Kapha', 'Vata-Kapha',
             'Tridosha'
         ]
         if v not in valid_doshas:
-            raise ValueError(f'Dosha must be one of: {", ".join(valid_doshas)}')
+            # Soft-validate: return the value as-is rather than reject
+            # (CSV data often has non-standard combos like "Kapha-Pitta")
+            return v
         return v
 
 
@@ -98,6 +102,7 @@ class PrescriptionRequest(BaseModel):
     doctorNotes: Optional[str] = Field("", description="Additional doctor notes")
     rating: Optional[str] = Field(None, description="positive / negative")
     feedback: Optional[str] = Field(None, description="Doctor feedback text")
+    original_ai_plan: Optional[dict] = Field(None, description="Original unmodified AI plan before doctor edits")
 
 
 class TreatmentFeedback(BaseModel):

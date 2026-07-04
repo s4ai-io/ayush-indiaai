@@ -219,22 +219,32 @@ async def get_dietary_plan(disease: str, prakriti: str):
         raise HTTPException(status_code=500, detail=f"Failed to fetch dietary plan: {str(e)}")
 
 
-@app.post("/api/recommend", response_model=TreatmentRecommendation, tags=["Treatment Recommendations"])
+@app.post("/api/recommend", tags=["Treatment Recommendations"])
 async def get_recommendation(patient: PatientProfile):
     """
     Get personalized AYUSH treatment recommendation using Hybrid Engine (Clustering + RL + Codified Data).
-    
+
     Args:
         patient: Patient profile with disease, symptoms, prakriti, vikriti, severity, age, gender
-        
+
     Returns:
-        Treatment plan with herbs, yoga, diet, lifestyle, formulation, prevention, prognosis
+        Treatment plan with herbs, yoga, diet, lifestyle, formulation, prevention, prognosis.
+        Also includes `original_ai_plan` key mirroring the full recommendation for frontend tracking.
     """
     try:
         patient_data = patient.model_dump()
         recommendation = hybrid_service.get_recommendation(patient_data)
+        # Mirror the recommendation as original_ai_plan so the frontend can store
+        # the unmodified AI plan and later send it back with any doctor edits.
+        if isinstance(recommendation, dict):
+            recommendation["original_ai_plan"] = {k: v for k, v in recommendation.items() if k != "original_ai_plan"}
+        else:
+            # Pydantic model — convert to dict and add the key
+            rec_dict = recommendation.model_dump() if hasattr(recommendation, "model_dump") else dict(recommendation)
+            rec_dict["original_ai_plan"] = {k: v for k, v in rec_dict.items() if k != "original_ai_plan"}
+            return rec_dict
         return recommendation
-        
+
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except RuntimeError as e:
@@ -1137,6 +1147,256 @@ async def phi4_turn(
         "audio_duration_seconds": 0.0,
     }
 
+
+# ── AI Treatment Engine Revamp Endpoints ──────────────────────────────────────
+
+from fastapi import Body
+from pydantic import BaseModel as PydanticBase
+
+@app.post("/api/ml/demo-submit", tags=["ML"])
+async def demo_submit(
+    disease: str = Body(..., embed=True),
+    namc_code: str = Body("", embed=True),
+    state_key: str = Body("", embed=True),
+    prakriti: str = Body("Vata", embed=True),
+    vikriti: str = Body("Vata", embed=True),
+    original_plan: dict = Body({}, embed=True),
+    final_plan: dict = Body({}, embed=True),
+    rating: Optional[str] = Body(None, embed=True),
+    demo_session: bool = Body(True, embed=True),
+):
+    """
+    Save a demo prescription feedback row without requiring a real patient record.
+    Returns feedback_id for use with retrain-instant.
+    """
+    import uuid, json as _json
+    from models import SessionLocal, TreatmentFeedback as TFModel
+
+    # Compute herb diffs
+    original_herb_names = [
+        h.get("name", "") if isinstance(h, dict) else str(h)
+        for h in original_plan.get("herbs", [])
+    ]
+    final_herb_names = [
+        h.get("name", "") if isinstance(h, dict) else str(h)
+        for h in final_plan.get("herbs", [])
+    ]
+    added_herbs   = [h for h in final_herb_names if h not in original_herb_names]
+    removed_herbs = [h for h in original_herb_names if h not in final_herb_names]
+
+    feedback_id = str(uuid.uuid4())
+    with SessionLocal() as db:
+        fb = TFModel(
+            id=feedback_id,
+            patient_id="demo-patient",
+            medical_record_id="demo-record",
+            doctor_rating=rating or "",
+            ml_context=_json.dumps({
+                "namc_code": namc_code,
+                "prakriti":  prakriti,
+                "vikriti":   vikriti,
+                "disease":   disease,
+            }),
+            ai_plan=_json.dumps(original_plan),
+            original_ai_plan=_json.dumps(original_plan),
+            final_plan=_json.dumps(final_plan),
+            added_herbs=_json.dumps(added_herbs),
+            removed_herbs=_json.dumps(removed_herbs),
+            demo_session=demo_session,
+            is_retrained=False,
+        )
+        db.add(fb)
+        db.commit()
+
+    return {
+        "feedback_id": feedback_id,
+        "added_herbs": added_herbs,
+        "removed_herbs": removed_herbs,
+        "status": "saved",
+    }
+
+
+@app.post("/api/ml/retrain-instant", tags=["ML"])
+async def retrain_instant(
+    feedback_id: str = Body(..., embed=True),
+    demo_session: bool = Body(False, embed=True),
+    background_tasks: BackgroundTasks = None,
+):
+    """
+    Perform a single-row Q-update for the given feedback row.
+    Returns updated Q-values per herb for frontend animation.
+    """
+    from models import SessionLocal
+    with SessionLocal() as db:
+        result = rl_service.retrain_instant(feedback_id, db, demo_mode=demo_session)
+    return result
+
+
+@app.post("/api/ml/demo-reset", tags=["ML"])
+async def demo_reset():
+    """Reset the demo Q-table by copying from the production Q-table."""
+    return rl_service.reset_demo_q_table()
+
+
+@app.get("/api/model/q-table-state", tags=["Model"])
+async def get_q_table_state(
+    namc_code: Optional[str] = None,
+    prakriti: Optional[str] = None,
+    vikriti: Optional[str] = None,
+    demo_session: bool = False,
+):
+    """
+    Inspect the current Q-table state.
+    If namc_code + prakriti + vikriti are provided, returns actions for that state.
+    Otherwise returns a summary of all states.
+    """
+    # Always use real Q-table — demo writes directly into it
+    q_table = rl_service.q_table
+
+    if namc_code and prakriti is not None and vikriti is not None:
+        state_key = rl_service._get_state_key(namc_code, prakriti, vikriti)
+        actions = q_table.get(state_key, {})
+        return {
+            "state_key": state_key,
+            "actions": [
+                {"name": k, "q_value": round(v, 4), "is_learned": v > 0}
+                for k, v in sorted(actions.items(), key=lambda x: -x[1])
+            ],
+            "total_prescriptions": len(actions),
+        }
+    else:
+        return {
+            "states": [
+                {"state_key": sk, "n_actions": len(acts), "max_q": round(max(acts.values(), default=0), 4)}
+                for sk, acts in q_table.items()
+            ],
+            "total_states": len(q_table),
+        }
+
+
+@app.get("/api/model/state-history/{state_key}", tags=["Model"])
+async def get_state_history(state_key: str):
+    """Replay Q-value history for a state from TreatmentFeedback rows."""
+    from models import SessionLocal, TreatmentFeedback
+    import json as _json
+    import math
+
+    with SessionLocal() as db:
+        rows = db.query(TreatmentFeedback).filter(
+            TreatmentFeedback.ml_context.contains(state_key.split("_")[0])
+        ).order_by(TreatmentFeedback.created_at).all()
+
+    events = []
+    running_q = {}  # simulate Q-table replay
+
+    for i, fb in enumerate(rows):
+        try:
+            ctx = _json.loads(fb.ml_context or "{}")
+            namc = ctx.get("namc_code", "")
+            prak = ctx.get("prakriti", "")
+            vikr = ctx.get("vikriti", "")
+            sk   = f"{namc}_{prak}_{vikr}"
+            if sk != state_key:
+                continue
+
+            final_plan    = _json.loads(fb.final_plan or fb.ai_plan or "{}")
+            added_herbs   = _json.loads(fb.added_herbs or "[]")
+            removed_herbs = _json.loads(fb.removed_herbs or "[]")
+            doctor_rating = fb.doctor_rating or ""
+
+            all_herbs = list(set(
+                [h.get("name", "") if isinstance(h, dict) else str(h) for h in final_plan.get("herbs", [])]
+                + removed_herbs
+            ))
+
+            q_updates = {}
+            for herb in filter(None, all_herbs):
+                reward  = rl_service._compute_herb_reward(herb, added_herbs, removed_herbs, doctor_rating)
+                old_q   = running_q.get(herb, 0.0)
+                new_q   = old_q + 0.1 * (reward - old_q)
+                running_q[herb] = new_q
+                q_updates[herb] = {"before": round(old_q, 4), "after": round(new_q, 4), "reward": round(reward, 2)}
+
+            events.append({
+                "visit_number":   len(events) + 1,
+                "date":           fb.created_at.isoformat() if fb.created_at else None,
+                "original_herbs": _json.loads(fb.original_ai_plan or "{}").get("herbs", []) if fb.original_ai_plan else [],
+                "added_herbs":    added_herbs,
+                "removed_herbs":  removed_herbs,
+                "doctor_rating":  doctor_rating,
+                "q_updates":      q_updates,
+            })
+        except Exception:
+            continue
+
+    return {"state_key": state_key, "events": events}
+
+
+class OutcomeRequest(PydanticBase):
+    medical_record_id: str
+    followup_value: float
+    adherence: Optional[str] = None
+    notes: Optional[str] = None
+
+
+_VITAL_DIRECTION = {
+    "HbA1c (%)": False,
+    "Systolic BP (mmHg)": False,
+    "BMI (kg/m²)": False,
+    "PEFR (L/min)": True,
+    "Symptom Severity (1-10)": False,
+}
+_VITAL_NORMALISER = {
+    "HbA1c (%)": 10.0,
+    "Systolic BP (mmHg)": 15.0,
+    "BMI (kg/m²)": 10.0,
+    "PEFR (L/min)": 20.0,
+    "Symptom Severity (1-10)": 30.0,
+}
+
+
+@app.post("/api/outcomes", tags=["Outcomes"])
+async def save_outcome(req: OutcomeRequest, background_tasks: BackgroundTasks):
+    """
+    Record a clinical follow-up outcome value for a visit and compute the RL reward.
+    Triggers background RL retraining from outcomes after saving.
+    """
+    from models import SessionLocal, ClinicalOutcomeScore
+    with SessionLocal() as db:
+        cos = db.query(ClinicalOutcomeScore).filter(
+            ClinicalOutcomeScore.medical_record_id == req.medical_record_id
+        ).first()
+        if not cos:
+            raise HTTPException(status_code=404, detail="No pending outcome for this visit")
+
+        cos.followup_value   = req.followup_value
+        higher_is_better     = _VITAL_DIRECTION.get(cos.target_vital, False)
+        normaliser           = _VITAL_NORMALISER.get(cos.target_vital, 30.0)
+
+        if cos.baseline_value is not None:
+            if higher_is_better:
+                pct = ((req.followup_value - cos.baseline_value) / max(cos.baseline_value, 0.001)) * 100
+            else:
+                pct = ((cos.baseline_value - req.followup_value) / max(cos.baseline_value, 0.001)) * 100
+        else:
+            pct = 0.0
+
+        cos.percentage_change = round(pct, 2)
+        cos.calculated_reward = round(min(1.0, max(0.0, pct / normaliser)), 4)
+        cos.is_retrained      = False
+        db.commit()
+        outcome_id            = cos.id
+        calculated_reward     = cos.calculated_reward
+
+    background_tasks.add_task(rl_service.retrain_from_outcomes)
+    return {
+        "outcome_id":        outcome_id,
+        "percentage_change": pct,
+        "calculated_reward": calculated_reward,
+    }
+
+
+# ── End of Revamp Endpoints ────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     host = os.getenv("BACKEND_HOST", DEFAULT_BACKEND_HOST)

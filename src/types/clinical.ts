@@ -13,7 +13,7 @@ export interface BasicInfo {
     middleName?: string;
     lastName: string;
     age: string;
-    gender: 'Male' | 'Female' | 'Transgender' | 'Other' | 'Prefer not to say' | '';
+    gender: 'Male' | 'Female' | 'Transgender' | 'Other' | 'Prefer not to say' | '' | string;
     bloodGroup?: string;
     maritalStatus: string;
     height?: number; // cm
@@ -22,7 +22,8 @@ export interface BasicInfo {
 }
 
 export interface ContactInfo {
-    mobile: string;
+    mobileNumber: string;
+    mobile?: string;
     email?: string;
     address?: string;
     taluka?: string;
@@ -219,12 +220,15 @@ export interface HerbRecommendation {
     name: string;
     dosage: string;
     benefits: string;
+    ai_learned?: boolean;
+    source?: string;
 }
 
 export interface YogaRecommendation {
     practice: string;
     duration: string;
     benefits: string;
+    ai_learned?: boolean;
 }
 
 /** Full AI-generated treatment plan returned by /api/recommend */
@@ -248,4 +252,16 @@ export interface TreatmentPlan {
     namc_term_devanagari?: string;
     no_match_found?: boolean;
     message?: string;
+    // Revamp fields
+    state_key?: string;
+    original_ai_plan?: Record<string, unknown>;
+    match_requires_confirmation?: boolean;
+    match_alternatives?: Array<{ name: string; namc_code: string; confidence: number }>;
+    explanation_text?: string;
+    confidence_interval?: [number, number];
+    improvement_model_samples?: number;
+    cluster_id?: number;
+    is_hybrid_modified?: boolean;
+    target_vital?: string;
+    baseline_value?: number;
 }

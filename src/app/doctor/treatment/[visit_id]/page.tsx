@@ -57,6 +57,17 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
     // AI Proposal Banner State
     const [proposedData, setProposedData] = useState<any>(null);
 
+    // Step 9: original AI plan + feedback_id storage
+    const [originalAiPlan, setOriginalAiPlan] = useState<Record<string, unknown> | null>(null);
+    const [feedbackId, setFeedbackId] = useState<string | null>(null);
+
+    // Step 11: follow-up outcome state
+    const [followupValue, setFollowupValue] = useState('');
+    const [adherence, setAdherence] = useState('full');
+    const [followupSaved, setFollowupSaved] = useState(false);
+    const [followupResult, setFollowupResult] = useState<{ percentage_change?: number } | null>(null);
+    const [medicalRecordId, setMedicalRecordId] = useState<string | null>(null);
+
     // Inline add/delete state
     const [addingHerb, setAddingHerb] = useState(false);
     const [newHerbName, setNewHerbName] = useState('');
@@ -282,6 +293,9 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
             if (!res.ok) throw new Error('Failed to generate plan');
             const generatedPlan = await res.json();
 
+            // Step 9a: store the original AI plan
+            setOriginalAiPlan(generatedPlan.original_ai_plan ?? generatedPlan);
+
             if (!generatedPlan.no_match_found) {
                 // Merge doctor specifics
                 if (doctorHerbs.length > 0) {
@@ -343,16 +357,47 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                     doctorNotes,
                     rating,
                     feedback,
+                    // Step 9b: send original AI plan
+                    original_ai_plan: originalAiPlan,
                 }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || 'Failed to save');
+            // Step 9e: store feedback_id for retrain-instant
+            if (data.feedback_id) setFeedbackId(data.feedback_id);
+            // Step 11: store medical_record_id from response
+            if (data.medical_record_id || data.record_id) {
+                setMedicalRecordId(data.medical_record_id || data.record_id);
+            }
             alert("Treatment Plan Prescribed & Saved Successfully!");
             setTimeout(() => router.push('/doctor?tab=completed'), 500);
         } catch (err: any) {
             alert(err.message || "Failed to save prescription");
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    // ── Step 11: Save follow-up outcome ───────────────────────────────────
+    const handleSaveFollowup = async () => {
+        if (!followupValue || !medicalRecordId) return;
+        try {
+            const res = await fetch('/api/outcomes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    medical_record_id: medicalRecordId,
+                    followup_value: parseFloat(followupValue),
+                    adherence,
+                }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setFollowupResult(data);
+                setFollowupSaved(true);
+            }
+        } catch (err) {
+            console.error('Failed to save follow-up:', err);
         }
     };
 
@@ -658,6 +703,17 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                 </div>
                             ) : (
                                 <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
+                                    {/* Step 9d: Low confidence match banner */}
+                                    {treatmentPlan.match_requires_confirmation && (
+                                        <div className="bg-yellow-50 border border-yellow-300 rounded-xl px-4 py-3 text-sm text-yellow-800 flex flex-col gap-1">
+                                            <span className="font-semibold">Low confidence match.</span>
+                                            <span>Consider reviewing alternatives:{' '}
+                                                {Array.isArray(treatmentPlan.match_alternatives)
+                                                    ? treatmentPlan.match_alternatives.join(', ')
+                                                    : treatmentPlan.match_alternatives}
+                                            </span>
+                                        </div>
+                                    )}
                                     {/* Explainability / NAMC Details Banner */}
                                     <Card className="bg-gradient-to-br from-slate-900 to-slate-800 text-slate-100 border-none shadow-xl overflow-hidden relative rounded-2xl">
                                         <div className="absolute -top-4 -right-4 p-3 opacity-10">
@@ -719,7 +775,15 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                             {(treatmentPlan.herbs || []).map((herb: any, idx: number) => (
                                                 <div key={idx} className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
                                                     <div>
-                                                        <h4 className="font-bold text-slate-900">{herb.name}</h4>
+                                                        <div className="flex items-center flex-wrap gap-1">
+                                                            <h4 className="font-bold text-slate-900">{herb.name}</h4>
+                                                            {/* Step 9c: AI-learned badge */}
+                                                            {(herb.ai_learned || (herb.source && herb.source.includes('RL'))) && (
+                                                                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+                                                                    ✦ AI-learned
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                         {herb.benefits && <p className="text-xs text-slate-400 mt-0.5">{herb.benefits}</p>}
                                                     </div>
                                                     <button onClick={() => deleteHerb(idx)} className="w-8 h-8 rounded-full bg-slate-50 hover:bg-red-50 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors">
@@ -992,6 +1056,70 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                                 </Button>
                                             </div>
                                         </div>
+                                    </div>
+
+                                    {/* Step 11: Follow-up Outcome section */}
+                                    <div className="mt-6 border rounded-lg p-4 bg-white shadow-sm">
+                                        <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                                            <TrendingUp className="w-5 h-5 text-blue-500" />
+                                            Follow-up Outcome
+                                        </h3>
+                                        {followupSaved ? (
+                                            <div className="text-green-600 font-medium flex items-center gap-2">
+                                                <CheckCircle className="w-5 h-5" />
+                                                Follow-up recorded.{followupResult?.percentage_change !== undefined && (
+                                                    <span> Improvement: {followupResult.percentage_change.toFixed(1)}%</span>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <label className="text-sm text-gray-600">
+                                                        {treatmentPlan.target_vital
+                                                            ? <>Target vital: <span className="font-medium">{treatmentPlan.target_vital}</span></>
+                                                            : 'Enter follow-up measurement'}
+                                                    </label>
+                                                    {treatmentPlan.baseline_value && (
+                                                        <span className="ml-2 text-sm text-gray-500">
+                                                            Baseline: {treatmentPlan.baseline_value}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {!medicalRecordId && (
+                                                    <p className="text-xs text-amber-600 italic">
+                                                        Prescribe the treatment first to enable follow-up recording.
+                                                    </p>
+                                                )}
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <input
+                                                        type="number"
+                                                        step="0.1"
+                                                        placeholder={treatmentPlan.target_vital ? `Current ${treatmentPlan.target_vital}` : 'Follow-up value'}
+                                                        value={followupValue}
+                                                        onChange={e => setFollowupValue(e.target.value)}
+                                                        className="border rounded px-3 py-2 w-48 text-sm"
+                                                        disabled={!medicalRecordId}
+                                                    />
+                                                    <select
+                                                        value={adherence}
+                                                        onChange={e => setAdherence(e.target.value)}
+                                                        className="border rounded px-3 py-2 text-sm"
+                                                        disabled={!medicalRecordId}
+                                                    >
+                                                        <option value="full">Full adherence</option>
+                                                        <option value="partial">Partial</option>
+                                                        <option value="none">None</option>
+                                                    </select>
+                                                    <button
+                                                        onClick={handleSaveFollowup}
+                                                        disabled={!medicalRecordId || !followupValue}
+                                                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        Save Follow-up
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                 </div>

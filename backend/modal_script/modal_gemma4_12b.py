@@ -147,9 +147,15 @@ CHUNK_LISTEN_INSTRUCTION = (
     "summarize the whole conversation yet and do NOT output a json block."
 )
 
+NARRATION_SYSTEM_PROMPT = """You are an Ayurvedic clinical explainer integrated into an AYUSH Electronic Health Record system.
+Your sole role is to explain why a finalised treatment plan was chosen for a specific patient.
+You must NOT add, suggest, or remove any herbs, yoga practices, or treatments.
+Respond in exactly 2-3 concise sentences. Be clinically grounded and reference the patient's dosha profile."""
+
 FLOW_PROMPTS = {
     "registration": REGISTRATION_SYSTEM_PROMPT,
     "treatment": TREATMENT_SYSTEM_PROMPT,
+    "narration": NARRATION_SYSTEM_PROMPT,
 }
 
 

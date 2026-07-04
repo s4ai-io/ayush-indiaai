@@ -8,7 +8,30 @@ import json
 from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, desc
-from models import SessionLocal, Patient, MedicalRecord, AyushTreatment, TreatmentFeedback
+from models import SessionLocal, Patient, MedicalRecord, AyushTreatment, TreatmentFeedback, ClinicalOutcomeScore
+
+
+# ─── Vital target helpers ────────────────────────────────────────────────────
+
+_VITAL_MAP = {
+    "diabetes": ("HbA1c (%)", False),      # False = lower is better
+    "madhumeha": ("HbA1c (%)", False),
+    "asthma": ("PEFR (L/min)", True),      # True = higher is better
+    "tamaka": ("PEFR (L/min)", True),
+    "shwasa": ("PEFR (L/min)", True),
+    "hypertension": ("Systolic BP (mmHg)", False),
+    "raktachapa": ("Systolic BP (mmHg)", False),
+    "obesity": ("BMI (kg/m²)", False),
+    "sthoulya": ("BMI (kg/m²)", False),
+}
+
+
+def _get_target_vital(disease: str):
+    d = disease.lower()
+    for key, val in _VITAL_MAP.items():
+        if key in d:
+            return val[0]
+    return "Symptom Severity (1-10)"
 
 class DBService:
     """PostgreSQL-backed data service."""
@@ -119,9 +142,20 @@ class DBService:
             raise ValueError(f"Patient {patient_id} not found")
 
         treatment_plan = data.get("treatmentPlan") or {}
+        original_ai_plan = data.get("original_ai_plan") or {}
         disease = data.get("disease", "")
         symptoms = data.get("symptoms", "")
         doctor_notes = data.get("doctorNotes", "")
+
+        # Compute herb diff between original AI plan and final (possibly doctor-edited) plan
+        def _herb_names(plan):
+            return [h.get("name", "") if isinstance(h, dict) else str(h)
+                    for h in plan.get("herbs", [])]
+
+        original_herb_names = _herb_names(original_ai_plan)
+        final_herb_names    = _herb_names(treatment_plan)
+        added_herbs   = [h for h in final_herb_names if h not in original_herb_names]
+        removed_herbs = [h for h in original_herb_names if h not in final_herb_names]
         
         treatment_id = str(uuid.uuid4())
         feedback_id = str(uuid.uuid4())
@@ -221,15 +255,35 @@ class DBService:
                 ml_context=json.dumps(ml_context),
                 doctor_rating=str(data.get("rating", "")),
                 doctor_comments=str(data.get("feedback", "")),
-                is_retrained=False
+                is_retrained=False,
+                original_ai_plan=json.dumps(original_ai_plan),
+                final_plan=json.dumps(treatment_plan),
+                added_herbs=json.dumps(added_herbs),
+                removed_herbs=json.dumps(removed_herbs),
+                demo_session=bool(data.get("demo_session", False)),
             )
             db.add(f)
-            
+
+            # Create a pending ClinicalOutcomeScore row for this visit
+            pending_outcome = ClinicalOutcomeScore(
+                id=str(uuid.uuid4()),
+                patient_id=patient_id,
+                medical_record_id=record_id,
+                disease=disease,
+                target_vital=_get_target_vital(disease),
+                baseline_value=None,
+                followup_value=None,
+                percentage_change=None,
+                calculated_reward=0.0,
+                is_retrained=False,
+            )
+            db.add(pending_outcome)
+
             # Mark patient as diagnosed
             p = db.query(Patient).filter(Patient.id == patient_id).first()
             if p:
                 p.diagnosis_done = True
-                
+
             db.commit()
 
         print(f"✓ Treatment saved (Postgres): patient={patient_id}, diagnosis={disease}")
@@ -238,6 +292,7 @@ class DBService:
             "medical_record_id": record_id,
             "ayush_treatment_id": treatment_id,
             "treatment_feedback_id": feedback_id,
+            "feedback_id": feedback_id,
         }
 
     def save_treatment_feedback(self, feedback_data: dict):

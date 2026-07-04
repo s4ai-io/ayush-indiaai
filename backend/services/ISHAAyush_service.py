@@ -4,10 +4,11 @@ ISHAAyush Treatment Recommendation Service
 Uses Codified_Ayurvedic_disease.csv to provide disease-specific Ayurvedic treatment recommendations based on standardized NAMC codes.
 
 Matching Strategy:
-  Direct substring search against normalized dataset columns.
+  Semantic search (sentence-transformers) → direct substring search → TF-IDF fuzzy fallback.
 """
 import os
 import re
+import logging
 import pandas as pd
 import numpy as np
 import difflib
@@ -15,9 +16,14 @@ import json
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+logger = logging.getLogger(__name__)
+
 # Base directory
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, 'data')
+
+# Semantic embeddings cache path (Step 7)
+EMBEDDINGS_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'disease_embeddings.pkl')
 
 class ISHAAyushService:
     """
@@ -155,8 +161,30 @@ class ISHAAyushService:
         if not disease_input:
             raise ValueError("Disease name is required.")
 
-        # --- Direct Search Matching ---
-        matched_row = self._direct_search(disease_input)
+        # --- Semantic Search (Step 7) ---
+        matched_row = None
+        match_confidence = 0.0
+        match_alternatives = []
+        match_requires_confirmation = False
+
+        sem_results = self._semantic_search(disease_input)
+        if sem_results:
+            top_row, top_conf = sem_results[0]
+            if top_conf >= 0.5:
+                matched_row = top_row
+                match_confidence = top_conf
+                match_requires_confirmation = top_conf < 0.85
+                # Build alternatives from positions 2 and 3
+                for alt_row, alt_conf in sem_results[1:]:
+                    match_alternatives.append({
+                        "disease": self._safe_get(alt_row, 'Name English') or self._safe_get(alt_row, 'Disease'),
+                        "namc_code": self._safe_get(alt_row, 'NAMC_CODE'),
+                        "confidence": round(alt_conf, 3),
+                    })
+
+        # --- Direct Search Fallback ---
+        if matched_row is None:
+            matched_row = self._direct_search(disease_input)
 
         # No match found
         if matched_row is None:
@@ -170,32 +198,99 @@ class ISHAAyushService:
         vikriti = patient_data.get('vikriti', 'Vata')
         age = patient_data.get('age', 30)
 
-        # Override clinical assessment with dataset values if available
+        # Log a warning instead of silently substituting prakriti/vikriti from CSV
         ds_doshas = self._safe_get(matched_row, 'Doshas')
         ds_prakriti = self._safe_get(matched_row, 'Constitution/Prakriti')
-        
-        if ds_doshas:
-            vikriti = ds_doshas
-        if ds_prakriti:
-            prakriti = ds_prakriti
+
+        if ds_doshas and ds_doshas != vikriti:
+            logger.warning(
+                f"CSV vikriti/doshas '{ds_doshas}' differs from submitted '{vikriti}' "
+                f"for disease '{disease_input}' — using submitted value"
+            )
+        if ds_prakriti and ds_prakriti != prakriti:
+            logger.warning(
+                f"CSV prakriti '{ds_prakriti}' differs from submitted '{prakriti}' "
+                f"for disease '{disease_input}' — using submitted value"
+            )
 
         # Source disease display string
         source_disease = self._safe_get(matched_row, 'Name English') or self._safe_get(matched_row, 'Disease')
 
+        # Resolve NAMC code for the improvement model
+        namc_code = self._safe_get(matched_row, 'NAMC_CODE') or ''
+
         # Build response from matched disease row
         response = self._build_dataset_response(
-            matched_row, source_disease, vikriti, prakriti, age
+            matched_row, source_disease, vikriti, prakriti, age,
+            patient_data=patient_data, namc_code=namc_code,
         )
-        
+
         # Inject NAMC data explicitly at the top level
-        response["namc_code"] = self._safe_get(matched_row, 'NAMC_CODE')
+        response["namc_code"] = namc_code
         response["namc_term"] = self._safe_get(matched_row, 'NAMC_term')
         response["namc_term_devanagari"] = self._safe_get(matched_row, 'NAMC_term_DEVANAGARI')
+
+        # Semantic search metadata (Step 7)
+        response["match_confidence"] = round(match_confidence, 3)
+        response["match_alternatives"] = match_alternatives
+        response["match_requires_confirmation"] = match_requires_confirmation
 
         return response
 
 
 
+
+    # ------------------------------------------------------------------
+    # Semantic Search (Step 7)
+    # ------------------------------------------------------------------
+
+    def _load_or_build_embeddings(self):
+        """Pre-compute sentence embeddings for all disease names. Cached to disk."""
+        import pickle, os
+        if os.path.exists(EMBEDDINGS_PATH):
+            try:
+                with open(EMBEDDINGS_PATH, 'rb') as f:
+                    data = pickle.load(f)
+                return data['names'], data['embeddings']
+            except Exception as e:
+                logger.warning(f"Could not load embeddings cache: {e}")
+
+        try:
+            from sentence_transformers import SentenceTransformer
+            model = SentenceTransformer('all-MiniLM-L6-v2')
+            # Get all disease names from the loaded CSV dataframe (self.df)
+            names = self.df['Name English'].fillna('').tolist()
+            embeddings = model.encode(names, normalize_embeddings=True, show_progress_bar=False)
+            os.makedirs(os.path.dirname(EMBEDDINGS_PATH), exist_ok=True)
+            with open(EMBEDDINGS_PATH, 'wb') as f:
+                pickle.dump({'names': names, 'embeddings': embeddings}, f)
+            return names, embeddings
+        except ImportError:
+            return None, None
+
+    def _semantic_search(self, query: str):
+        """Returns list of (row, confidence) sorted by descending confidence, max 3."""
+        try:
+            from sentence_transformers import SentenceTransformer
+            from sklearn.metrics.pairwise import cosine_similarity as sk_cosine_similarity
+            import numpy as np
+
+            if not hasattr(self, '_sem_names') or self._sem_names is None:
+                self._sem_names, self._sem_embeddings = self._load_or_build_embeddings()
+
+            if self._sem_names is None:
+                return []
+
+            if not hasattr(self, '_sem_model'):
+                self._sem_model = SentenceTransformer('all-MiniLM-L6-v2')
+
+            q_emb = self._sem_model.encode([query], normalize_embeddings=True)
+            sims  = sk_cosine_similarity(q_emb, self._sem_embeddings)[0]
+            top3  = sims.argsort()[-3:][::-1]
+            return [(self.df.iloc[i], float(sims[i])) for i in top3 if float(sims[i]) > 0.3]
+        except Exception as e:
+            logger.debug(f"Semantic search unavailable: {e}")
+            return []
 
     # ------------------------------------------------------------------
     # Direct Search Algorithm
@@ -241,7 +336,8 @@ class ISHAAyushService:
     # ------------------------------------------------------------------
 
     def _build_dataset_response(
-        self, row, source_disease, vikriti, prakriti, age
+        self, row, source_disease, vikriti, prakriti, age,
+        patient_data: dict = None, namc_code: str = '',
     ) -> dict:
         """Build response from a matched CSV row."""
 
@@ -262,8 +358,20 @@ class ISHAAyushService:
         medical_intervention = self._safe_get(row, 'Medical Intervention')
         doshas_affected = self._safe_get(row, 'Doshas')
 
-        # Predicted improvement
-        predicted_improvement = self._calculate_improvement(prakriti, vikriti)
+        # Predicted improvement via GBM model (Step 6)
+        pd_data = patient_data or {}
+        improvement_result = _improvement_svc.predict(
+            age=age,
+            severity=pd_data.get("severity", 5),
+            comorbidities=pd_data.get("comorbidities", ""),
+            symptoms=pd_data.get("symptoms", ""),
+            prakriti=prakriti,
+            vikriti=vikriti,
+            namc_code=namc_code,
+        )
+        predicted_improvement = improvement_result["predicted_improvement"]
+        confidence_interval = improvement_result["confidence_interval"]
+        improvement_model_samples = improvement_result["n_training_samples"]
 
         # Duration
         recommended_duration_weeks = self._parse_duration(row)
@@ -288,6 +396,8 @@ class ISHAAyushService:
             "doshas_affected": doshas_affected,
             "source_disease": source_disease,
             "predicted_improvement": predicted_improvement,
+            "confidence_interval": confidence_interval,
+            "improvement_model_samples": improvement_model_samples,
             "recommended_duration_weeks": recommended_duration_weeks,
             "explainability": explainability
         }
@@ -485,3 +595,21 @@ class ISHAAyushService:
 
 # Global singleton instance
 ISHAAyush_service = ISHAAyushService()
+
+# Improvement model singleton (Step 6)
+# Wrapped in try/except so sklearn import errors don't break the service
+try:
+    from services.improvement_model_service import ImprovementModelService
+    _improvement_svc = ImprovementModelService()
+except Exception as _imp_err:
+    import logging as _logging
+    _logging.getLogger(__name__).warning(f"ImprovementModelService unavailable: {_imp_err}")
+
+    class _FallbackImprovementSvc:
+        def predict(self, **kwargs):
+            prakriti = kwargs.get('prakriti', '')
+            vikriti = kwargs.get('vikriti', '')
+            val = 85.0 if prakriti == vikriti else 75.0
+            return {"predicted_improvement": val, "confidence_interval": [val - 10.0, val + 5.0], "n_training_samples": 0}
+
+    _improvement_svc = _FallbackImprovementSvc()

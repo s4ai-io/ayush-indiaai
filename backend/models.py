@@ -77,6 +77,11 @@ class TreatmentFeedback(Base):
     doctor_comments = Column(Text, default="")
     is_retrained = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    original_ai_plan = Column(Text, nullable=True)
+    final_plan = Column(Text, nullable=True)
+    added_herbs = Column(Text, nullable=True)
+    removed_herbs = Column(Text, nullable=True)
+    demo_session = Column(Boolean, default=False)
 
 class ClinicalOutcomeScore(Base):
     __tablename__ = "clinical_outcome_scores"
