@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Model Report — Clustering &amp; RL</title>
+<style>
+:root {
+  --page:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink-2:#52514e; --ink-muted:#898781;
+  --line:#e1e0d9; --accent:#2a78d6; --accent-2:#1baf7a; --good:#0ca30c; --warning:#c98500; --critical:#d03b3b;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --page:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink-2:#c3c2b7; --ink-muted:#898781;
+    --line:#2c2c2a; --accent:#3987e5; --accent-2:#199e70; --good:#0ca30c; --warning:#c98500; --critical:#e66767; }
+}
+:root[data-theme="dark"] { --page:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink-2:#c3c2b7; --ink-muted:#898781;
+  --line:#2c2c2a; --accent:#3987e5; --accent-2:#199e70; --good:#0ca30c; --warning:#c98500; --critical:#e66767; }
+:root[data-theme="light"] { --page:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink-2:#52514e; --ink-muted:#898781;
+  --line:#e1e0d9; --accent:#2a78d6; --accent-2:#1baf7a; --good:#0ca30c; --warning:#c98500; --critical:#d03b3b; }
+
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink);
+  font-family: system-ui,-apple-system,"Segoe UI",sans-serif; }
+.wrap { max-width:920px; margin:0 auto; padding:40px 20px 80px; display:flex; flex-direction:column; gap:40px; }
+header.top { display:flex; flex-direction:column; gap:6px; border-bottom:1px solid var(--line); padding-bottom:24px; }
+h1 { font-size:26px; font-weight:700; margin:0; text-wrap:balance; letter-spacing:-0.01em; }
+.meta { color:var(--ink-muted); font-size:13px; }
+.safety-note { font-size:13px; color:var(--ink-2); background:var(--surface); border:1px solid var(--line);
+  border-radius:8px; padding:10px 14px; margin-top:8px; }
+section { display:flex; flex-direction:column; gap:16px; }
+h2 { font-size:19px; font-weight:650; margin:0; }
+h2 .eyebrow { display:block; font-size:11px; font-weight:600; letter-spacing:0.07em; text-transform:uppercase;
+  color:var(--ink-muted); margin-bottom:4px; }
+p.lead { color:var(--ink-2); font-size:14.5px; line-height:1.6; max-width:70ch; margin:0; }
+.card { background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:20px 24px; }
+.stat-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:1px; background:var(--line);
+  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+.stat { background:var(--surface); padding:16px 18px; display:flex; flex-direction:column; gap:4px; }
+.stat .label { font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-muted); }
+.stat .value { font-size:26px; font-weight:700; font-variant-numeric:tabular-nums; }
+.stat .sub { font-size:12px; color:var(--ink-2); }
+.callout { border-radius:10px; padding:14px 18px; display:flex; gap:12px; align-items:flex-start; border:1px solid; }
+.callout.critical { border-color:color-mix(in srgb, var(--critical) 40%, transparent); background:color-mix(in srgb, var(--critical) 8%, var(--surface)); }
+.callout.good { border-color:color-mix(in srgb, var(--good) 40%, transparent); background:color-mix(in srgb, var(--good) 8%, var(--surface)); }
+.callout .icon { font-weight:700; font-size:15px; flex:none; width:20px; text-align:center; }
+.callout.critical .icon { color:var(--critical); }
+.callout.good .icon { color:var(--good); }
+.callout .body { font-size:14px; line-height:1.55; color:var(--ink-2); }
+.callout .body b { color:var(--ink); }
+table { border-collapse:collapse; width:100%; font-size:13px; }
+table.data-table { min-width:640px; }
+.table-scroll { overflow-x:auto; border:1px solid var(--line); border-radius:8px; }
+th, td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--line); white-space:nowrap; }
+th { color:var(--ink-muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; }
+td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+tr:last-child td { border-bottom:none; }
+.mono { font-family:var(--mono); font-size:12.5px; }
+.chart-card { padding:18px 20px 12px; }
+.chart-title { font-size:13px; font-weight:600; color:var(--ink-2); margin-bottom:6px; }
+.legend { display:flex; gap:16px; font-size:12px; color:var(--ink-2); margin-bottom:8px; flex-wrap:wrap; }
+.legend .dot { display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:6px; vertical-align:middle; }
+svg.chart-svg { width:100%; height:auto; overflow:visible; }
+.gridline { stroke:var(--line); stroke-width:1; }
+.baseline { stroke:var(--ink-muted); stroke-width:1; }
+.axis-label { fill:var(--ink-muted); font-size:10.5px; font-family:system-ui,sans-serif; }
+.bar { cursor:pointer; transition:opacity .12s; }
+.bar:hover { opacity:0.75; }
+circle { cursor:pointer; }
+circle:hover { r:6; }
+#tooltip { position:fixed; pointer-events:none; background:var(--ink); color:var(--page); font-size:12px;
+  padding:6px 10px; border-radius:6px; white-space:pre-line; line-height:1.4; opacity:0; transform:translate(-50%,-115%);
+  transition:opacity .08s; z-index:50; max-width:240px; }
+#tooltip.show { opacity:0.96; }
+footer.foot { border-top:1px solid var(--line); padding-top:20px; font-size:12.5px; color:var(--ink-muted); }
+</style>
+</head>
+<body>
+<div id="tooltip"></div>
+<div class="wrap">
+
+  <header class="top">
+    <h1>What's in the models, and what changes when they retrain</h1>
+    <div class="meta">Generated 2026-07-04 11:23 UTC · patient_cluster_model.pkl &amp; rl_q_table.pkl</div>
+    <div class="safety-note">Read-only against production: model files are only ever copied before any refit, and the
+    one production step that writes to the database (marking feedback rows <span class="mono">is_retrained</span>)
+    was replayed here as a simulation with no commit. Verified counts are in the footer.</div>
+  </header>
+
+  <section>
+    <h2><span class="eyebrow">Section 1</span>Current production state</h2>
+    <p class="lead">Everything the two model files and the underlying tables hold right now, before any operation runs.</p>
+    <div class="stat-row">
+      <div class="stat"><div class="label">Patients</div><div class="value">3,685</div><div class="sub"></div></div>
+      <div class="stat"><div class="label">Visits (medical records)</div><div class="value">16,126</div><div class="sub">trains the K-Means clusterer</div></div>
+      <div class="stat"><div class="label">Doctor feedback rows</div><div class="value">14,689</div><div class="sub">11,120 accurate · 3,568 needs changes</div></div>
+      <div class="stat"><div class="label">Clinical outcome scores</div><div class="value">0</div><div class="sub">objective reward source</div></div>
+      <div class="stat"><div class="label">K-Means clusters</div><div class="value">10</div><div class="sub">n_clusters hyperparameter</div></div>
+      <div class="stat"><div class="label">Q-table states seen</div><div class="value">16</div><div class="sub">16 with zero learned actions</div></div>
+    </div>
+    <div class="card">
+      <div class="chart-title">Patients per cluster (current fitted model, predicted on real historical data)</div>
+      <svg viewBox="0 0 700 280" class="chart-svg" role="img"><line x1="44" y1="234.0" x2="684" y2="234.0" class="gridline" /><text x="36" y="238.0" class="axis-label" text-anchor="end">0.0</text><line x1="44" y1="161.3" x2="684" y2="161.3" class="gridline" /><text x="36" y="165.3" class="axis-label" text-anchor="end">722.6666666666666</text><line x1="44" y1="88.7" x2="684" y2="88.7" class="gridline" /><text x="36" y="92.7" class="axis-label" text-anchor="end">1,445.3333333333333</text><line x1="44" y1="16.0" x2="684" y2="16.0" class="gridline" /><text x="36" y="20.0" class="axis-label" text-anchor="end">2,168.0</text><rect x="56.2" y="79.4" width="36.7" height="154.6" rx="3" fill="var(--accent)" class="bar" data-tip="Patients: 0&#10;1,537" /><text x="76.0" y="252" class="axis-label" text-anchor="middle">0</text><rect x="120.2" y="131.5" width="36.7" height="102.5" rx="3" fill="var(--accent)" class="bar" data-tip="Patients: 1&#10;1,019" /><text x="140.0" y="252" class="axis-label" text-anchor="middle">1</text><rect x="184.2" y="82.6" width="36.7" height="151.4" rx="3" fill="var(--accent)" class="bar" data-tip="Patients: 2&#10;1,506" /><text x="204.0" y="252" class="axis-label" text-anchor="middle">2</text><rect x="248.2" y="23.2" width="36.7" height="210.8" rx="3" fill="var(--accent)" class="bar" data-tip="Patients: 3&#10;2,096" /><text x="268.0" y="252" class="axis-label" text-anchor="middle">3</text><rect x="312.2" y="80.2" width="36.7" height="153.8" rx="3" fill="var(--accent)" class="bar" data-tip="Patients: 4&#10;1,530" /><text x="332.0" y="252" class="axis-label" text-anchor="middle">4</text><rect x="376.2" y="16.0" width="36.7" height="218.0" rx="3" fill="var(--accent)" class="bar" data-tip="Patients: 5&#10;2,168" /><text x="396.0" y="252" class="axis-label" text-anchor="middle">5</text><rect x="440.2" y="41.4" width="36.7" height="192.6" rx="3" fill="var(--accent)" class="bar" data-tip="Patients: 6&#10;1,915" /><text x="460.0" y="252" class="axis-label" text-anchor="middle">6</text><rect x="504.2" y="77.8" width="36.7" height="156.2" rx="3" fill="var(--accent)" class="bar" data-tip="Patients: 7&#10;1,553" /><text x="524.0" y="252" class="axis-label" text-anchor="middle">7</text><rect x="568.2" y="88.3" width="36.7" height="145.7" rx="3" fill="var(--accent)" class="bar" data-tip="Patients: 8&#10;1,449" /><text x="588.0" y="252" class="axis-label" text-anchor="middle">8</text><rect x="632.2" y="98.0" width="36.7" height="136.0" rx="3" fill="var(--accent)" class="bar" data-tip="Patients: 9&#10;1,353" /><text x="652.0" y="252" class="axis-label" text-anchor="middle">9</text><line x1="44" y1="234" x2="684" y2="234" class="baseline" /></svg>
+    </div>
+    <div class="table-scroll"><table class="data-table"><thead><tr><th class="">Cluster</th><th class="num">Patients</th><th class="num">% of total</th><th class="">Dominant disease</th><th class="">Prakriti</th><th class="">Vikriti</th><th class="">Gender</th><th class="num">Avg age</th><th class="num">Avg severity</th></tr></thead><tbody><tr><td class="">0</td><td class="num">1,537</td><td class="num">9.5%</td><td class="">Rhinitis (Pratishyaya)</td><td class="">Kapha</td><td class="">Kapha</td><td class="">Male</td><td class="num">27.7</td><td class="num">3.0</td></tr><tr><td class="">1</td><td class="num">1,019</td><td class="num">6.3%</td><td class="">Dengue (Dandashthaka Jwara)</td><td class="">Pitta</td><td class="">Pitta</td><td class="">Female</td><td class="num">62.9</td><td class="num">9.0</td></tr><tr><td class="">2</td><td class="num">1,506</td><td class="num">9.3%</td><td class="">Constipation (Vibandha)</td><td class="">Vata</td><td class="">Vata</td><td class="">Male</td><td class="num">29.1</td><td class="num">3.0</td></tr><tr><td class="">3</td><td class="num">2,096</td><td class="num">13.0%</td><td class="">Joint Pain (Amavata)</td><td class="">Vata</td><td class="">Vata</td><td class="">Male</td><td class="num">26.9</td><td class="num">6.6</td></tr><tr><td class="">4</td><td class="num">1,530</td><td class="num">9.5%</td><td class="">Acidity (Amlapitta)</td><td class="">Pitta</td><td class="">Pitta</td><td class="">Male</td><td class="num">62.1</td><td class="num">5.1</td></tr><tr><td class="">5</td><td class="num">2,168</td><td class="num">13.4%</td><td class="">Fever (Jwara)</td><td class="">Pitta</td><td class="">Pitta</td><td class="">Female</td><td class="num">23.6</td><td class="num">6.0</td></tr><tr><td class="">6</td><td class="num">1,915</td><td class="num">11.9%</td><td class="">Cough (Kasa)</td><td class="">Kapha</td><td class="">Kapha</td><td class="">Male</td><td class="num">27.7</td><td class="num">6.8</td></tr><tr><td class="">7</td><td class="num">1,553</td><td class="num">9.6%</td><td class="">Dengue (Dandashthaka Jwara)</td><td class="">Pitta</td><td class="">Pitta</td><td class="">Female</td><td class="num">23.8</td><td class="num">9.0</td></tr><tr><td class="">8</td><td class="num">1,449</td><td class="num">9.0%</td><td class="">Cough (Kasa)</td><td class="">Kapha</td><td class="">Kapha</td><td class="">Female</td><td class="num">69.3</td><td class="num">4.5</td></tr><tr><td class="">9</td><td class="num">1,353</td><td class="num">8.4%</td><td class="">Skin Rash (Kushtha)</td><td class="">Pitta</td><td class="">Pitta</td><td class="">Male</td><td class="num">24.4</td><td class="num">3.0</td></tr></tbody></table></div>
+  </section>
+
+  <section>
+    <h2><span class="eyebrow">Section 2</span>The RL Q-table, as it stands</h2>
+    <p class="lead">Non-zero (state, action) pairs learned so far — the only ones an epsilon-greedy exploit step can return.</p>
+    <div class="table-scroll"><table class="data-table"><thead><tr><th class="">State (cluster_disease)</th><th class="">Action</th><th class="num">Q-value</th></tr></thead><tbody><tr><td class="">-</td><td class="">no non-zero entries yet</td><td class="num">-</td></tr></tbody></table></div>
+    <div class="callout critical"><div class="icon">!</div><div class="body"><b>14,689 of 14,689</b> doctor-feedback rows have no
+    <span class="mono">cluster_id</span> in their stored ml_context. <span class="mono">retrain_from_feedback()</span> requires it
+    (services/rl_service.py) — every one of those rows gets marked
+    processed and skipped without touching a single Q-value. That's why the table above is still almost entirely empty
+    despite 14,688 real doctor ratings on file.</div></div>
+  </section>
+
+  <section>
+    <h2><span class="eyebrow">Section 3 · Operation</span>Clustering retrain — before vs after</h2>
+    <p class="lead">Simulated in a sandbox: refit the same pipeline (StandardScaler + OneHotEncoder → KMeans, k=10, random_state=42) on the
+    real 16,126 historical visits plus 150 synthetic new patients
+    (same profile as the example we've been tracing: Abdominal distension disorder (TM2), Pitta/Pitta). Nothing here is written to the real model file.
+    Both inertia numbers below are recomputed on the identical 16,126 real rows, so they're
+    a fair before/after — not sklearn's stored <span class="mono">.inertia_</span>, which reflects whatever data the model happened to be fit
+    on originally and isn't comparable across fits.</p>
+    <div class="stat-row">
+      <div class="stat"><div class="label">Inertia before</div><div class="value">39,194</div><div class="sub">current live model, scored on today's real data</div></div>
+      <div class="stat"><div class="label">Inertia after</div><div class="value">40,396</div><div class="sub">retrained model, scored on the same real data</div></div>
+      <div class="stat"><div class="label">Example patient's cluster</div><div class="value">→</div><div class="sub">unchanged (still <b>Cluster 4</b>)</div></div>
+    </div>
+    <div class="callout critical"><div class="icon">!</div><div class="body">The live production model has never seen <b>0</b> of these
+    16,126 real patients' diagnoses — it only recognizes
+    <b>111</b> disease names from whenever it was last trained. For those patients, disease
+    contributes nothing to which cluster they land in (silently dropped by <span class="mono">OneHotEncoder(handle_unknown="ignore")</span>)
+    — only age/gender/prakriti/vikriti/severity decide it. This is a bigger, pre-existing accuracy gap than the synthetic-patient
+    experiment below; it means the live clustering model is due for a retrain against current data independent of anything new
+    being added.</div></div>
+    <div class="card">
+      <div class="legend">
+        <span><span class="dot" style="background:var(--accent)"></span>Before</span>
+        <span><span class="dot" style="background:var(--accent-2)"></span>After (+150 synthetic)</span>
+      </div>
+      <div class="chart-title">Cluster sizes, same 16,126 real patients, re-labeled by each model</div>
+      <svg viewBox="0 0 700 280" class="chart-svg" role="img"><line x1="44" y1="234.0" x2="684" y2="234.0" class="gridline" /><text x="36" y="238.0" class="axis-label" text-anchor="end">0.0</text><line x1="44" y1="161.3" x2="684" y2="161.3" class="gridline" /><text x="36" y="165.3" class="axis-label" text-anchor="end">967.3333333333334</text><line x1="44" y1="88.7" x2="684" y2="88.7" class="gridline" /><text x="36" y="92.7" class="axis-label" text-anchor="end">1,934.6666666666667</text><line x1="44" y1="16.0" x2="684" y2="16.0" class="gridline" /><text x="36" y="20.0" class="axis-label" text-anchor="end">2,902.0</text><rect x="56.2" y="118.5" width="16.8" height="115.5" rx="3" fill="var(--accent)" class="bar" data-tip="Before: 0&#10;1,537" /><rect x="76.0" y="36.8" width="16.8" height="197.2" rx="3" fill="var(--accent-2)" class="bar" data-tip="After (+150 synthetic): 0&#10;2,625" /><text x="76.0" y="252" class="axis-label" text-anchor="middle">0</text><rect x="120.2" y="157.5" width="16.8" height="76.5" rx="3" fill="var(--accent)" class="bar" data-tip="Before: 1&#10;1,019" /><rect x="140.0" y="148.3" width="16.8" height="85.7" rx="3" fill="var(--accent-2)" class="bar" data-tip="After (+150 synthetic): 1&#10;1,141" /><text x="140.0" y="252" class="axis-label" text-anchor="middle">1</text><rect x="184.2" y="120.9" width="16.8" height="113.1" rx="3" fill="var(--accent)" class="bar" data-tip="Before: 2&#10;1,506" /><rect x="204.0" y="129.6" width="16.8" height="104.4" rx="3" fill="var(--accent-2)" class="bar" data-tip="After (+150 synthetic): 2&#10;1,390" /><text x="204.0" y="252" class="axis-label" text-anchor="middle">2</text><rect x="248.2" y="76.5" width="16.8" height="157.5" rx="3" fill="var(--accent)" class="bar" data-tip="Before: 3&#10;2,096" /><rect x="268.0" y="92.2" width="16.8" height="141.8" rx="3" fill="var(--accent-2)" class="bar" data-tip="After (+150 synthetic): 3&#10;1,887" /><text x="268.0" y="252" class="axis-label" text-anchor="middle">3</text><rect x="312.2" y="119.1" width="16.8" height="114.9" rx="3" fill="var(--accent)" class="bar" data-tip="Before: 4&#10;1,530" /><rect x="332.0" y="154.7" width="16.8" height="79.3" rx="3" fill="var(--accent-2)" class="bar" data-tip="After (+150 synthetic): 4&#10;1,055" /><text x="332.0" y="252" class="axis-label" text-anchor="middle">4</text><rect x="376.2" y="71.1" width="16.8" height="162.9" rx="3" fill="var(--accent)" class="bar" data-tip="Before: 5&#10;2,168" /><rect x="396.0" y="130.0" width="16.8" height="104.0" rx="3" fill="var(--accent-2)" class="bar" data-tip="After (+150 synthetic): 5&#10;1,385" /><text x="396.0" y="252" class="axis-label" text-anchor="middle">5</text><rect x="440.2" y="90.1" width="16.8" height="143.9" rx="3" fill="var(--accent)" class="bar" data-tip="Before: 6&#10;1,915" /><rect x="460.0" y="16.0" width="16.8" height="218.0" rx="3" fill="var(--accent-2)" class="bar" data-tip="After (+150 synthetic): 6&#10;2,902" /><text x="460.0" y="252" class="axis-label" text-anchor="middle">6</text><rect x="504.2" y="117.3" width="16.8" height="116.7" rx="3" fill="var(--accent)" class="bar" data-tip="Before: 7&#10;1,553" /><rect x="524.0" y="129.7" width="16.8" height="104.3" rx="3" fill="var(--accent-2)" class="bar" data-tip="After (+150 synthetic): 7&#10;1,389" /><text x="524.0" y="252" class="axis-label" text-anchor="middle">7</text><rect x="568.2" y="125.2" width="16.8" height="108.8" rx="3" fill="var(--accent)" class="bar" data-tip="Before: 8&#10;1,449" /><rect x="588.0" y="156.0" width="16.8" height="78.0" rx="3" fill="var(--accent-2)" class="bar" data-tip="After (+150 synthetic): 8&#10;1,038" /><text x="588.0" y="252" class="axis-label" text-anchor="middle">8</text><rect x="632.2" y="132.4" width="16.8" height="101.6" rx="3" fill="var(--accent)" class="bar" data-tip="Before: 9&#10;1,353" /><rect x="652.0" y="135.3" width="16.8" height="98.7" rx="3" fill="var(--accent-2)" class="bar" data-tip="After (+150 synthetic): 9&#10;1,314" /><text x="652.0" y="252" class="axis-label" text-anchor="middle">9</text><line x1="44" y1="234" x2="684" y2="234" class="baseline" /></svg>
+    </div>
+    <p class="lead"><b>Caveat that matters:</b> K-Means cluster indices aren't stable across separate fits — "Cluster 8" in the
+    before-model and "Cluster 8" in the after-model are not guaranteed to describe the same population. Every retrain can silently
+    renumber clusters, which is also why the RL Q-table's <span class="mono">cluster_id</span> keys can go stale the moment
+    <span class="mono">retrain_clusters()</span> runs again.</p>
+  </section>
+
+  <section>
+    <h2><span class="eyebrow">Section 4 · Operation</span>RL retrain — real data vs a synthetic walkthrough</h2>
+    <p class="lead">Part A replays <span class="mono">retrain_from_feedback()</span>'s exact decision logic against your real
+    14,689 unprocessed feedback rows, read-only. Part B fabricates a small event sequence (not real patients) to show
+    the update rule itself: <span class="mono">Q(s,a) += 0.1 × (reward − Q(s,a))</span>.</p>
+
+    <div class="callout good"><div class="icon">i</div><div class="body">Part A result: of 14,689 unprocessed rows,
+    <b>14,689</b> were skipped for missing cluster_id/disease, <b>0</b> had no reward, and
+    <b>0</b> Q-values were actually updated. Q-table copy unchanged: <b>True</b>.</div></div>
+
+    <div class="card">
+      <div class="chart-title">Part B — synthetic event ledger</div>
+      <div class="table-scroll"><table class="data-table"><thead><tr><th class="">Step</th><th class="">State</th><th class="">Action</th><th class="num">Reward</th><th class="num">Old Q</th><th class="num">New Q</th></tr></thead><tbody><tr><td class="">1</td><td class=""><span class="mono">8_abdominal distension disorder (tm2)</span></td><td class=""><span class="mono">ashwagandha</span></td><td class="num">+1.0</td><td class="num">+0.000</td><td class="num">+0.100</td></tr><tr><td class="">2</td><td class=""><span class="mono">8_abdominal distension disorder (tm2)</span></td><td class=""><span class="mono">ashwagandha</span></td><td class="num">+1.0</td><td class="num">+0.100</td><td class="num">+0.190</td></tr><tr><td class="">3</td><td class=""><span class="mono">8_abdominal distension disorder (tm2)</span></td><td class=""><span class="mono">ashwagandha</span></td><td class="num">-1.0</td><td class="num">+0.190</td><td class="num">+0.071</td></tr><tr><td class="">4</td><td class=""><span class="mono">8_abdominal distension disorder (tm2)</span></td><td class=""><span class="mono">ashwagandha</span></td><td class="num">+1.0</td><td class="num">+0.071</td><td class="num">+0.164</td></tr><tr><td class="">5</td><td class=""><span class="mono">8_abdominal distension disorder (tm2)</span></td><td class=""><span class="mono">ashwagandha</span></td><td class="num">+1.0</td><td class="num">+0.164</td><td class="num">+0.248</td></tr><tr><td class="">6</td><td class=""><span class="mono">8_abdominal distension disorder (tm2)</span></td><td class=""><span class="mono">yoga:pawanmuktasana</span></td><td class="num">+1.0</td><td class="num">+0.000</td><td class="num">+0.100</td></tr><tr><td class="">7</td><td class=""><span class="mono">8_abdominal distension disorder (tm2)</span></td><td class=""><span class="mono">yoga:pawanmuktasana</span></td><td class="num">+1.0</td><td class="num">+0.100</td><td class="num">+0.190</td></tr><tr><td class="">8</td><td class=""><span class="mono">3_acidity (amlapitta)</span></td><td class=""><span class="mono">triphala</span></td><td class="num">-1.0</td><td class="num">+0.000</td><td class="num">-0.100</td></tr><tr><td class="">9</td><td class=""><span class="mono">3_acidity (amlapitta)</span></td><td class=""><span class="mono">triphala</span></td><td class="num">-1.0</td><td class="num">-0.100</td><td class="num">-0.190</td></tr><tr><td class="">10</td><td class=""><span class="mono">3_acidity (amlapitta)</span></td><td class=""><span class="mono">triphala</span></td><td class="num">-1.0</td><td class="num">-0.190</td><td class="num">-0.271</td></tr><tr><td class="">11</td><td class=""><span class="mono">3_acidity (amlapitta)</span></td><td class=""><span class="mono">triphala</span></td><td class="num">+1.0</td><td class="num">-0.271</td><td class="num">-0.144</td></tr></tbody></table></div>
+    </div>
+    <div class="card chart-card">
+      <div class="legend"><span><span class="dot" style="background:var(--accent)"></span>8_abdominal distension disorder (tm2) · ashwagandha</span><span><span class="dot" style="background:var(--accent-2)"></span>8_abdominal distension disorder (tm2) · yoga:pawanmuktasana</span><span><span class="dot" style="background:#eda100"></span>3_acidity (amlapitta) · triphala</span></div>
+      <div class="chart-title">Q-value trajectory per (state, action) across its own updates</div>
+      <svg viewBox="0 0 700 280" class="chart-svg" role="img"><line x1="44" y1="240.5" x2="684" y2="240.5" class="gridline" /><text x="36" y="244.5" class="axis-label" text-anchor="end">-1.0</text><line x1="44" y1="185.8" x2="684" y2="185.8" class="gridline" /><text x="36" y="189.8" class="axis-label" text-anchor="end">-0.5</text><line x1="44" y1="131.0" x2="684" y2="131.0" class="gridline" /><text x="36" y="135.0" class="axis-label" text-anchor="end">+0.0</text><line x1="44" y1="76.2" x2="684" y2="76.2" class="gridline" /><text x="36" y="80.2" class="axis-label" text-anchor="end">+0.5</text><line x1="44" y1="21.5" x2="684" y2="21.5" class="gridline" /><text x="36" y="25.5" class="axis-label" text-anchor="end">+1.0</text><line x1="44" y1="131.0" x2="684" y2="131.0" class="baseline" /><path d="M44.0,120.0 L204.0,110.2 L364.0,123.2 L524.0,113.0 L684.0,103.9" fill="none" stroke="var(--accent)" stroke-width="2" /><circle cx="44.0" cy="120.0" r="4" fill="var(--accent)" data-tip="8_abdominal distension disorder (tm2) · ashwagandha&#10;update 1: Q=+0.100" /><circle cx="204.0" cy="110.2" r="4" fill="var(--accent)" data-tip="8_abdominal distension disorder (tm2) · ashwagandha&#10;update 2: Q=+0.190" /><circle cx="364.0" cy="123.2" r="4" fill="var(--accent)" data-tip="8_abdominal distension disorder (tm2) · ashwagandha&#10;update 3: Q=+0.071" /><circle cx="524.0" cy="113.0" r="4" fill="var(--accent)" data-tip="8_abdominal distension disorder (tm2) · ashwagandha&#10;update 4: Q=+0.164" /><circle cx="684.0" cy="103.9" r="4" fill="var(--accent)" data-tip="8_abdominal distension disorder (tm2) · ashwagandha&#10;update 5: Q=+0.248" /><path d="M44.0,120.0 L204.0,110.2" fill="none" stroke="var(--accent-2)" stroke-width="2" /><circle cx="44.0" cy="120.0" r="4" fill="var(--accent-2)" data-tip="8_abdominal distension disorder (tm2) · yoga:pawanmuktasana&#10;update 1: Q=+0.100" /><circle cx="204.0" cy="110.2" r="4" fill="var(--accent-2)" data-tip="8_abdominal distension disorder (tm2) · yoga:pawanmuktasana&#10;update 2: Q=+0.190" /><path d="M44.0,142.0 L204.0,151.8 L364.0,160.7 L524.0,146.8" fill="none" stroke="#eda100" stroke-width="2" /><circle cx="44.0" cy="142.0" r="4" fill="#eda100" data-tip="3_acidity (amlapitta) · triphala&#10;update 1: Q=-0.100" /><circle cx="204.0" cy="151.8" r="4" fill="#eda100" data-tip="3_acidity (amlapitta) · triphala&#10;update 2: Q=-0.190" /><circle cx="364.0" cy="160.7" r="4" fill="#eda100" data-tip="3_acidity (amlapitta) · triphala&#10;update 3: Q=-0.271" /><circle cx="524.0" cy="146.8" r="4" fill="#eda100" data-tip="3_acidity (amlapitta) · triphala&#10;update 4: Q=-0.144" /></svg>
+    </div>
+  </section>
+
+  <footer class="foot">
+    Safety verification: cluster model file unchanged: True · Q-table file unchanged: True · is_retrained=True count unchanged (0 → 0): True<br/>
+    Re-run: <span class="mono">python3 backend/scripts/model_report.py</span> — every number here is recomputed live from the
+    current DB and model files at run time, nothing is cached.
+  </footer>
+
+</div>
+<script>
+const tip = document.getElementById('tooltip');
+document.querySelectorAll('[data-tip]').forEach(el => {
+  el.addEventListener('mousemove', e => {
+    tip.textContent = el.getAttribute('data-tip');
+    tip.style.left = e.clientX + 'px';
+    tip.style.top = e.clientY + 'px';
+    tip.classList.add('show');
+  });
+  el.addEventListener('mouseleave', () => tip.classList.remove('show'));
+});
+</script>
+</body>
+</html>
