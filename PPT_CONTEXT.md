@@ -182,7 +182,93 @@ sequenceDiagram
 ```
 Verified against `services/ISHAAyush_service.py` (direct substring search on `data/Codified_Ayurvedic_disease.csv`, NAMC codes), `services/patient_clustering_service.py` (sklearn Pipeline: StandardScaler + OneHotEncoder → KMeans, n_clusters=10, persisted as `data/models/patient_cluster_model.pkl`), `services/rl_service.py` (epsilon-greedy contextual bandit, Q-table keyed `"{cluster_id}_{disease}"`, persisted as `data/models/rl_q_table.pkl`, updated via `Q(s,a) += learning_rate * (reward - Q(s,a))` with `learning_rate=0.1, epsilon=0.2`), and `services/hybrid_service.py` (the merge orchestrator). Closed loop confirmed via `main.py`: `/api/prescribe` → `background_tasks.add_task(trigger_retraining)` → calls `clustering_service.retrain_clusters()` + `rl_service.retrain_from_feedback()` + `rl_service.retrain_from_outcomes()`. This is the strongest "continuously learns from clinician feedback" evidence in the whole codebase — worth emphasizing verbally in the demo.
 
-### Slide — Datasets & Methodology — ⬜ NOT STARTED
+### Slide 5 — System Architecture (component diagram) — ✅ FINALIZED (2026-07-04)
+User provided a reference image (styled after the existing `README.md` architecture diagram — 4 colored subgraph boxes: Presentation Layer / Core Processing / Data Persistence / Cloud GPU Services) and asked for a diagram in that visual style, built with the same verification rigor as the Slide 4 sequence diagrams (i.e., checked against current code, not copied from the stale README diagram, which still says "ARIMA + GNN" and omits Gemma-4-12B).
+```mermaid
+flowchart TD
+    subgraph PRESENTATION["Presentation Layer (Next.js)"]
+        WEBUI["Web Interfaces<br/>(Registration / Doctor / Public Health Dashboard)"]
+        CHATUI["CopilotKit Voice Chat Interface<br/>(GemmaVoiceChatPanel)"]
+        EVAL["Evaluation<br/>(Voice & Recommendation Accuracy — /admin/accuracy)"]
+    end
+
+    subgraph CORE["Core Processing (FastAPI)"]
+        ORCH["Orchestration<br/>(main.py — REST + AG-UI routes)"]
+        AGENTS["LlamaIndex / CopilotKit Agents<br/>(Registration & Treatment, AG-UI protocol)"]
+        RECOMMEND["ISHAAyush Hybrid ML<br/>(Rule Engine + K-Means + RL Bandit)"]
+        OUTBREAK["Outbreak Forecasting<br/>(Z-score + DBSCAN + Graph Diffusion + Random Forest)"]
+    end
+
+    subgraph DATA["Data Persistence"]
+        PG["PostgreSQL<br/>(Patient, MedicalRecord, Treatment, Feedback)"]
+        CSV["Curated CSV Knowledge Base<br/>(NAMASTE + AyurGenixAI merged data)"]
+    end
+
+    subgraph CLOUD["Cloud GPU Services (Modal.run)"]
+        GEMMA["Gemma-4-12B Multimodal<br/>(A100 — primary voice pipeline)"]
+        ASR["AI4Bharat ASR & IndicTrans2<br/>(fallback voice pipeline)"]
+        PHI4["Microsoft Phi-4-14B via vLLM<br/>(2x L40S — fallback reasoning)"]
+    end
+
+    PRESENTATION <--> CORE
+    CORE <--> DATA
+    CORE <--> CLOUD
+
+    classDef presentationStyle fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef coreStyle fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    classDef dataStyle fill:#eceff1,stroke:#37474f,stroke-width:2px
+    classDef cloudStyle fill:#fff8e1,stroke:#f9a825,stroke-width:2px
+
+    class PRESENTATION presentationStyle
+    class CORE coreStyle
+    class DATA dataStyle
+    class CLOUD cloudStyle
+```
+Verified placement of "Evaluation" via git history: `src/app/admin/accuracy/page.tsx` + `backend/services/admin_router.py` (commits `a29dd6e`, `1ebefb9`) — a real admin accuracy-evaluation page, not aspirational. Corrections vs. the reference's underlying (stale) architecture: replaced "ARIMA & Deterministic graph diffusion" with the actual verified methods (Z-score + DBSCAN + Graph Diffusion + Random Forest — no ARIMA anywhere in code); added Gemma-4-12B as its own Cloud GPU Services box since it's the primary voice model, not a footnote; labeled the ML box "ISHAAyush Hybrid ML" to reflect the full rule+cluster+RL engine, not just the base rule engine.
+
+### Slide 6 — Datasets & Methodology — ✅ FINALIZED (2026-07-04)
+```
+Datasets
+
+• NAMASTE Portal (Ministry of AYUSH) — official National AYUSH
+  Morbidity & Standardized Terminologies source
+    2,910 standardized NAMC codes (Ayurveda / Siddha / Unani),
+    WHO-ICD-10 & ICD-11 aligned, in English + Devanagari
+
+• AyurGenixAI Ayurvedic Dataset — curated clinical-Ayurveda
+  knowledge base
+    446 diseases → herbs, formulations, yoga & physical therapy,
+    diet & lifestyle, dosha/prakriti profiles, prognosis & complications
+
+Methodology
+
+• Disease cross-mapping: AyurGenixAI diseases matched onto NAMASTE
+  NAMC codes via Exact String → Substring → Fuzzy matching — every
+  treatment recommendation traceable to an official standardized code
+• Retrieval-based recommendation (not generative): every herb/yoga/diet
+  suggestion is sourced verbatim from curated data — zero hallucination
+  risk in a clinical setting
+• Fuzzy disease-name search: character n-gram TF-IDF + cosine
+  similarity for doctor-facing autocomplete
+• Personalisation layer: Prakriti/Vikriti dosha logic + K-Means patient
+  clustering + reinforcement-learning feedback loop (see Recommendation
+  Engine, Slide 4)
+
+Key Features
+
+• Full traceability — NAMC code + Devanagari term cited with every
+  recommendation
+• Explainability trail — dosha reasoning, predicted improvement %, and
+  dataset provenance returned with every plan
+• Continuously improves — clinician feedback & patient outcomes retrain
+  the clustering + RL layers in a closed loop
+```
+Sources: user-provided links — NAMASTE portal (https://namaste.ayush.gov.in/ayurveda, confirmed via WebFetch: official Ministry of AYUSH "National Ayush Morbidity and Standardized Terminologies Electronic Portal," WHO-ICD-10/11 aligned) and AyurGenixAI Kaggle dataset (https://www.kaggle.com/datasets/kagglekirti123/ayurgenixai-ayurvedic-dataset — page is JS-rendered, couldn't verify stats directly via WebFetch; 446-disease figure confirmed by user, matches stale internal docs `backend/docs/AyurGenixAI_Model_Report.md`/`AyurGenixAI_OnePager.md`).
+
+**Internal note — NOT for the slide, user's explicit call (2026-07-04):** actual measured merge coverage in `backend/data/Codified_Ayurvedic_disease.csv` is only **297 of 2,910 NAMASTE rows (≈10%) have merged AyurGenixAI treatment content, corresponding to 97 unique diseases** (Exact String: 33, Substring Match: 141, Fuzzy Match: 123 — computed directly via pandas). User was shown this gap and explicitly chose to state only the 2,910 total on the slide without surfacing the 297/97 detail. Keep this number here so the team has the real figure on hand if a reviewer probes during Q&A — don't get caught flat-footed by your own slide.
+
+Also confirmed stale vs. current code: `AyurGenixAI_Model_Report.md`/`OnePager.md` describe an **older engine version** (446-disease `ISHAAyushAI_Dataset.csv`, 4-tier TF-IDF symptom matching, `/api/ml/recommend` endpoint) that no longer exists in `backend/data/`. Current live `ISHAAyush_service.py` does direct substring search on the NAMASTE-merged CSV instead — the slide above describes the **current** method, not the stale docs' method. The TF-IDF piece that *is* still live is `get_suggestions()` — character n-gram (2-3) TF-IDF + cosine similarity, used only for disease-name autocomplete, not the recommendation match itself.
+
 ### Slide — Live Demo flow/script — ⬜ NOT STARTED
 ### Slide — Team/Contact (if following IDP deck template) — ⬜ NOT STARTED
 

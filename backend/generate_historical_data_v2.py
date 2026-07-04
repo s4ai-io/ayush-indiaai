@@ -38,7 +38,7 @@ import json
 import os
 import sys
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import random
 
 import numpy as np
@@ -111,10 +111,16 @@ def _weighted_choice(rng: random.Random, options, weights):
     return rng.choices(options, weights=weights, k=1)[0]
 
 
-def _sample_visit_date(rng: random.Random, year: int, month: int) -> datetime:
-    """Weekday-skewed day within the month (fewer Sunday visits, like a real clinic)."""
+def _sample_visit_date(rng: random.Random, year: int, month: int, max_day: int | None = None) -> datetime:
+    """Weekday-skewed day within the month (fewer Sunday visits, like a real clinic).
+
+    `max_day` caps the sampled day (used for the current/cutoff month so no
+    visit lands after the requested end date, e.g. today).
+    """
     import calendar
     _, days_in_month = calendar.monthrange(year, month)
+    if max_day is not None:
+        days_in_month = min(days_in_month, max_day)
     days = list(range(1, days_in_month + 1))
     weights = []
     for d in days:
@@ -130,7 +136,8 @@ def _maybe_blank(rng: random.Random, value: str, blank_prob: float) -> str:
     return "" if rng.random() < blank_prob else value
 
 
-def generate(seed: int, years: list[int], n_patients: int, out_dir: str) -> None:
+def generate(seed: int, years: list[int], n_patients: int, out_dir: str,
+             end_date: date | None = None) -> None:
     py_rng = random.Random(seed)
     np_rng = np.random.default_rng(seed)
 
@@ -208,10 +215,10 @@ def generate(seed: int, years: list[int], n_patients: int, out_dir: str) -> None
     seasonal_means = {m: v * pop_scale for m, v in seasonal_means_base.items()}
     chronic_mean = 45 * pop_scale  # roughly flat all year - real chronic-disease OPD load
 
-    def _make_record(disease, dosha, severity_label, prakriti, herbs, yoga, symptoms, year, month):
+    def _make_record(disease, dosha, severity_label, prakriti, herbs, yoga, symptoms, year, month, max_day=None):
         pid = py_rng.choice(patient_ids)
         severity_score = SEVERITY_SCORES[severity_label]
-        visit_dt = _sample_visit_date(py_rng, year, month)
+        visit_dt = _sample_visit_date(py_rng, year, month, max_day=max_day)
         diet = DIET_MAP.get(prakriti, DIET_MAP["Vata"])
         outcome = _weighted_choice(py_rng, OUTCOME_OPTIONS, OUTCOME_WEIGHTS)
         dur_weeks = {"Mild": py_rng.randint(1, 3), "Moderate": py_rng.randint(3, 8),
@@ -269,7 +276,7 @@ def generate(seed: int, years: list[int], n_patients: int, out_dir: str) -> None
         # ~4% chance of a realistic short-interval follow-up visit for the same complaint
         if py_rng.random() < 0.04:
             follow_dt = visit_dt + timedelta(days=py_rng.randint(2, 6))
-            if follow_dt.month == month:
+            if follow_dt.month == month and (end_date is None or follow_dt.date() <= end_date):
                 follow_id = str(uuid.uuid4())
                 records.append({
                     "id": follow_id,
@@ -288,21 +295,30 @@ def generate(seed: int, years: list[int], n_patients: int, out_dir: str) -> None
     for year in years:
         print(f"\n  -- Year {year} --")
         for month in range(1, 13):
+            if end_date is not None and (year, month) > (end_date.year, end_date.month):
+                continue  # beyond the cutoff — don't generate future-dated months
+            max_day = end_date.day if (end_date is not None and (year, month) == (end_date.year, end_date.month)) else None
+
             n_seasonal = int(np_rng.poisson(lam=seasonal_means.get(month, 50)))
             n_chronic = int(np_rng.poisson(lam=chronic_mean))
+            if max_day is not None:
+                # Partial month — scale expected volume down proportionally.
+                n_seasonal = int(round(n_seasonal * max_day / 30.0))
+                n_chronic = int(round(n_chronic * max_day / 30.0))
 
             for _ in range(n_seasonal):
                 options = SEASONAL_DISEASES.get(month, SEASONAL_DISEASES[1])
                 disease, dosha, severity_label, prakriti, herbs, yoga = py_rng.choice(options)
                 symptoms = SEASONAL_SYMPTOMS.get(disease, f"Symptoms related to {disease}")
-                _make_record(disease, dosha, severity_label, prakriti, herbs, yoga, symptoms, year, month)
+                _make_record(disease, dosha, severity_label, prakriti, herbs, yoga, symptoms, year, month, max_day=max_day)
 
             for _ in range(n_chronic):
                 name, dosha, prakriti, sev_profile, herbs, yoga, symptoms, _tier = sample_chronic_disease(py_rng)
                 severity_label = sample_severity(sev_profile, py_rng)
-                _make_record(name, dosha, severity_label, prakriti, herbs, yoga, symptoms, year, month)
+                _make_record(name, dosha, severity_label, prakriti, herbs, yoga, symptoms, year, month, max_day=max_day)
 
-            print(f"  Month {year}-{month:02d} ({ritu_map[month]:10s}): {n_seasonal} seasonal + {n_chronic} chronic records")
+            print(f"  Month {year}-{month:02d} ({ritu_map[month]:10s}): {n_seasonal} seasonal + {n_chronic} chronic records"
+                  + (f"  [partial: 1-{max_day}]" if max_day is not None else ""))
 
     # ── Write CSVs ────────────────────────────────────────────────────────────
     print("\n[3/3] Writing CSVs...")
@@ -345,6 +361,12 @@ if __name__ == "__main__":
                               "listed, so patients realistically recur across years.")
     parser.add_argument("--patients", type=int, default=900, help="Number of patients to generate")
     parser.add_argument("--out-dir", type=str, default=OUT_DIR, help="Output directory for CSVs")
+    parser.add_argument("--end-date", type=str, default=None,
+                         help="YYYY-MM-DD cutoff — the last year in --years is generated only up to this "
+                              "date instead of a full Jan-Dec year, so no visit lands after it (e.g. "
+                              "pass today's date so the dataset runs right up to 'now' with no "
+                              "future-dated rows).")
     args = parser.parse_args()
 
-    generate(seed=args.seed, years=args.years, n_patients=args.patients, out_dir=args.out_dir)
+    end_date = datetime.strptime(args.end_date, "%Y-%m-%d").date() if args.end_date else None
+    generate(seed=args.seed, years=args.years, n_patients=args.patients, out_dir=args.out_dir, end_date=end_date)
