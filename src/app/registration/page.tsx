@@ -46,6 +46,7 @@ type StatusType = "info" | "error" | "success" | "loading";
 
 export default function RegistrationPage() {
     const [proposedData, setProposedData] = useState<any>(null);
+    const [isAssistantOpen, setIsAssistantOpen] = useState(true);
 
     // Merges newly-extracted fields from the Gemma-4 assistant into
     // proposedData for the user to review before accepting into the form.
@@ -86,11 +87,11 @@ export default function RegistrationPage() {
     };
 
     return (
-        <div className="min-h-screen w-full md:pr-96 bg-gradient-to-br from-background via-muted/10 to-background">
+        <div className={`min-h-screen w-full transition-all duration-300 ${isAssistantOpen ? "md:pr-96" : "md:pr-0"} bg-gradient-to-br from-background via-muted/10 to-background`}>
             <div className="max-w-4xl mx-auto px-4 py-6 md:px-8 md:py-10">
                 <RegistrationForm proposedData={proposedData} setProposedData={setProposedData} />
             </div>
-            <GemmaVoiceChatPanel flow="registration" onExtracted={applyProposedRegistrationData} />
+            <GemmaVoiceChatPanel flow="registration" onExtracted={applyProposedRegistrationData} isOpen={isAssistantOpen} onOpenChange={setIsAssistantOpen} />
         </div>
     );
 }

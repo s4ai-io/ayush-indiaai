@@ -72,6 +72,9 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
     // Ayurvedic dietary plan from CSV
     const [ayurvedicDietPlan, setAyurvedicDietPlan] = useState<{ plan: string; disease: string } | null>(null);
 
+    // Assistant panel open/closed state for dynamic page padding
+    const [isAssistantOpen, setIsAssistantOpen] = useState(true);
+
     // ── Load visit context ─────────────────────────────────────────────────
     useEffect(() => {
         const fetchVisit = async () => {
@@ -376,7 +379,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
     const patientInitial = visitCtx?.patientName?.[0] ?? '?';
 
     return (
-        <div className="min-h-screen w-full md:pr-96">
+        <div className={`min-h-screen w-full transition-all duration-300 ${isAssistantOpen ? "md:pr-96" : "md:pr-0"}`}>
             <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100/50 p-6 pb-24 font-sans text-slate-800">
                 <div className="max-w-6xl mx-auto space-y-8">
 
@@ -997,7 +1000,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                     </div>
                 </div>
             </div>
-            <GemmaVoiceChatPanel flow="treatment" onExtracted={applyProposedClinicalAssessment} />
+            <GemmaVoiceChatPanel flow="treatment" onExtracted={applyProposedClinicalAssessment} isOpen={isAssistantOpen} onOpenChange={setIsAssistantOpen} />
         </div>
     );
 }

@@ -11,6 +11,8 @@ import type { VoiceFlow, VoiceModel } from "@/types/voiceModel";
 interface GemmaVoiceChatPanelProps {
   flow: VoiceFlow;
   onExtracted: (extracted: Record<string, unknown>) => void;
+  isOpen?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
 const MODEL_LABEL: Record<VoiceModel, string> = { gemma4: "Gemma-4", phi4: "Phi-4" };
@@ -28,11 +30,18 @@ const MODEL_LABEL: Record<VoiceModel, string> = { gemma4: "Gemma-4", phi4: "Phi-
  * Both reply with the same {reply, extracted} shape, so switching models
  * mid-conversation doesn't change how results are consumed.
  */
-export function GemmaVoiceChatPanel({ flow, onExtracted }: GemmaVoiceChatPanelProps) {
+export function GemmaVoiceChatPanel({ flow, onExtracted, isOpen: controlledIsOpen, onOpenChange }: GemmaVoiceChatPanelProps) {
   const { status, error, messages, isRecording, startRecording, stopRecording, sendTextTurn, stopGeneration, reset } =
     useServerGemmaVoiceAgent(flow, { onExtracted });
 
-  const [isOpen, setIsOpen] = useState(true);
+  const [internalIsOpen, setInternalIsOpen] = useState(true);
+  const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+
+  const setIsOpen = (open: boolean) => {
+    setInternalIsOpen(open);
+    onOpenChange?.(open);
+  };
+
   const [model, setModel] = useState<VoiceModel>("gemma4");
   const [textInput, setTextInput] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
