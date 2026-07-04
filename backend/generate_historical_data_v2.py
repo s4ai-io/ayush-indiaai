@@ -28,11 +28,13 @@ PUBLIC_HEALTH_DASHBOARD.md and the data-realism plan for the full rationale):
 
 Run from backend/:
     ./venv/bin/python3.11 generate_historical_data_v2.py --seed 42
+    ./venv/bin/python3.11 generate_historical_data_v2.py --seed 42 --years 2024 2025 2026 --patients 3500
 """
 from __future__ import annotations
 
 import argparse
 import csv
+import json
 import os
 import sys
 import uuid
@@ -49,6 +51,7 @@ from services.disease_pool import (
     SEASONAL_SYMPTOMS,
     sample_chronic_disease,
     sample_severity,
+    vary_symptoms,
 )
 
 OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "synthetic_data_v2")
@@ -127,7 +130,7 @@ def _maybe_blank(rng: random.Random, value: str, blank_prob: float) -> str:
     return "" if rng.random() < blank_prob else value
 
 
-def generate(seed: int, year: int, n_patients: int, out_dir: str) -> None:
+def generate(seed: int, years: list[int], n_patients: int, out_dir: str) -> None:
     py_rng = random.Random(seed)
     np_rng = np.random.default_rng(seed)
 
@@ -139,7 +142,7 @@ def generate(seed: int, year: int, n_patients: int, out_dir: str) -> None:
 
     print("=" * 60)
     print("  Ayurveda Historical Data Generator v2")
-    print(f"  Target year: {year}   seed: {seed}   patients: {n_patients}")
+    print(f"  Target years: {years}   seed: {seed}   patients: {n_patients}")
     print("=" * 60)
 
     # ── Patients ──────────────────────────────────────────────────────────────
@@ -193,11 +196,19 @@ def generate(seed: int, year: int, n_patients: int, out_dir: str) -> None:
     ritu_map = {1: "Shishira", 2: "Shishira", 3: "Vasanta", 4: "Vasanta",
                 5: "Grishma", 6: "Grishma", 7: "Varsha", 8: "Varsha",
                 9: "Sharad", 10: "Sharad", 11: "Hemanta", 12: "Hemanta"}
-    seasonal_means = {7: 90, 8: 140, 9: 110, 1: 80, 2: 75, 5: 70, 6: 65,
-                      3: 55, 4: 55, 10: 50, 11: 60, 12: 65}
-    chronic_mean = 45  # roughly flat all year - real chronic-disease OPD load
+    # Base monthly case-volume means, calibrated against a 900-patient population.
+    # Scaled by the actual --patients count so per-capita monthly incidence stays
+    # constant instead of spreading a fixed case volume across a bigger/smaller
+    # patient pool (which would just dilute or concentrate hotspot/alert density
+    # for no epidemiological reason).
+    BASELINE_POPULATION = 900
+    pop_scale = n_patients / BASELINE_POPULATION
+    seasonal_means_base = {7: 90, 8: 140, 9: 110, 1: 80, 2: 75, 5: 70, 6: 65,
+                           3: 55, 4: 55, 10: 50, 11: 60, 12: 65}
+    seasonal_means = {m: v * pop_scale for m, v in seasonal_means_base.items()}
+    chronic_mean = 45 * pop_scale  # roughly flat all year - real chronic-disease OPD load
 
-    def _make_record(disease, dosha, severity_label, prakriti, herbs, yoga, symptoms, month):
+    def _make_record(disease, dosha, severity_label, prakriti, herbs, yoga, symptoms, year, month):
         pid = py_rng.choice(patient_ids)
         severity_score = SEVERITY_SCORES[severity_label]
         visit_dt = _sample_visit_date(py_rng, year, month)
@@ -206,6 +217,7 @@ def generate(seed: int, year: int, n_patients: int, out_dir: str) -> None:
         dur_weeks = {"Mild": py_rng.randint(1, 3), "Moderate": py_rng.randint(3, 8),
                      "Severe": py_rng.randint(6, 16)}[severity_label]
         season = ritu_map[month]
+        patient_symptoms = vary_symptoms(symptoms, py_rng)
 
         record_id = str(uuid.uuid4())
         records.append({
@@ -213,14 +225,14 @@ def generate(seed: int, year: int, n_patients: int, out_dir: str) -> None:
             "patient_id": pid,
             "visit_date": visit_dt.isoformat(),
             "diagnosis": disease,
-            "symptoms": symptoms,
+            "symptoms": patient_symptoms,
             "prakriti": prakriti,
             "vikriti": dosha,
             "severity": severity_score,
             "comorbidities": _maybe_blank(py_rng, py_rng.choice(
                 ["None", "Hypertension", "Diabetes", "Obesity", "Stress", ""]), 0.10),
             "notes": f"Patient presents with {severity_label.lower()} {disease}. Season: {season}. Dosha predominant: {dosha}.",
-            "prescription": "{}",
+            "prescription": json.dumps({"herbs": herbs, "yoga": yoga}),
         })
         treatments.append({
             "id": str(uuid.uuid4()),
@@ -264,31 +276,33 @@ def generate(seed: int, year: int, n_patients: int, out_dir: str) -> None:
                     "patient_id": pid,
                     "visit_date": follow_dt.isoformat(),
                     "diagnosis": disease,
-                    "symptoms": symptoms,
+                    "symptoms": patient_symptoms,
                     "prakriti": prakriti,
                     "vikriti": dosha,
                     "severity": severity_score,
                     "comorbidities": "",
                     "notes": f"Follow-up visit for {disease}. Season: {season}.",
-                    "prescription": "{}",
+                    "prescription": json.dumps({"herbs": herbs, "yoga": yoga}),
                 })
 
-    for month in range(1, 13):
-        n_seasonal = int(np_rng.poisson(lam=seasonal_means.get(month, 50)))
-        n_chronic = int(np_rng.poisson(lam=chronic_mean))
+    for year in years:
+        print(f"\n  -- Year {year} --")
+        for month in range(1, 13):
+            n_seasonal = int(np_rng.poisson(lam=seasonal_means.get(month, 50)))
+            n_chronic = int(np_rng.poisson(lam=chronic_mean))
 
-        for _ in range(n_seasonal):
-            options = SEASONAL_DISEASES.get(month, SEASONAL_DISEASES[1])
-            disease, dosha, severity_label, prakriti, herbs, yoga = py_rng.choice(options)
-            symptoms = SEASONAL_SYMPTOMS.get(disease, f"Symptoms related to {disease}")
-            _make_record(disease, dosha, severity_label, prakriti, herbs, yoga, symptoms, month)
+            for _ in range(n_seasonal):
+                options = SEASONAL_DISEASES.get(month, SEASONAL_DISEASES[1])
+                disease, dosha, severity_label, prakriti, herbs, yoga = py_rng.choice(options)
+                symptoms = SEASONAL_SYMPTOMS.get(disease, f"Symptoms related to {disease}")
+                _make_record(disease, dosha, severity_label, prakriti, herbs, yoga, symptoms, year, month)
 
-        for _ in range(n_chronic):
-            name, dosha, prakriti, sev_profile, herbs, yoga, symptoms, _tier = sample_chronic_disease(py_rng)
-            severity_label = sample_severity(sev_profile, py_rng)
-            _make_record(name, dosha, severity_label, prakriti, herbs, yoga, symptoms, month)
+            for _ in range(n_chronic):
+                name, dosha, prakriti, sev_profile, herbs, yoga, symptoms, _tier = sample_chronic_disease(py_rng)
+                severity_label = sample_severity(sev_profile, py_rng)
+                _make_record(name, dosha, severity_label, prakriti, herbs, yoga, symptoms, year, month)
 
-        print(f"  Month {month:02d} ({ritu_map[month]:10s}): {n_seasonal} seasonal + {n_chronic} chronic records")
+            print(f"  Month {year}-{month:02d} ({ritu_map[month]:10s}): {n_seasonal} seasonal + {n_chronic} chronic records")
 
     # ── Write CSVs ────────────────────────────────────────────────────────────
     print("\n[3/3] Writing CSVs...")
@@ -325,9 +339,12 @@ def _write_csv(path: str, rows: list[dict], fieldnames: list[str]) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate v2 synthetic Ayurvedic clinical data")
     parser.add_argument("--seed", type=int, default=42, help="RNG seed (default 42, reproducible)")
-    parser.add_argument("--year", type=int, default=2025, help="Target year for visit dates")
+    parser.add_argument("--years", type=int, nargs="+", default=[2025],
+                         help="One or more target years for visit dates, e.g. --years 2024 2025 2026. "
+                              "The same generated patient pool gets a full year of visits for each year "
+                              "listed, so patients realistically recur across years.")
     parser.add_argument("--patients", type=int, default=900, help="Number of patients to generate")
     parser.add_argument("--out-dir", type=str, default=OUT_DIR, help="Output directory for CSVs")
     args = parser.parse_args()
 
-    generate(seed=args.seed, year=args.year, n_patients=args.patients, out_dir=args.out_dir)
+    generate(seed=args.seed, years=args.years, n_patients=args.patients, out_dir=args.out_dir)

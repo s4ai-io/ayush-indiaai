@@ -1,6 +1,7 @@
 """
 GNN Service — Dynamic graph built from real patient location data.
-Replaces hardcoded 6 Delhi pincodes with actual cities/pincodes from PostgreSQL.
+City coordinates come from the shared ~140-city centroid table in
+services/geo_reference.py (also used by spatial_service's DBSCAN clustering).
 Uses graph diffusion for short-term spread simulation.
 (Phase 2 will upgrade this to a real PyTorch Geometric ST-GNN.)
 """
@@ -72,6 +73,9 @@ def _build_dynamic_graph(location_case_loads: dict[str, int]) -> nx.Graph:
 
 
 class GNNService:
+    # NOTE: no trained graph neural network here — this is deterministic
+    # graph diffusion (see module docstring). Name kept for API/import
+    # stability; don't assume ML behavior from the class name alone.
     """
     Disease spread prediction using dynamic graph diffusion on real DB data.
     Phase 1: Graph diffusion (current)

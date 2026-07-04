@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import os
 import random
 import sys
@@ -34,6 +35,9 @@ import uuid
 from datetime import datetime, timedelta
 
 import numpy as np
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from services.disease_pool import vary_symptoms
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -72,7 +76,25 @@ SYMPTOMS_MAP = {
     "Joint Pain (Amavata)":        "Morning stiffness, swelling in joints, pain on movement",
 }
 
+# Herb/yoga pairs matching disease_pool.py's SEASONAL_DISEASES entries for these
+# exact diagnoses, so a seeded record's (still-empty-of-a-real-treatment-row)
+# prescription field reflects the same source data the main generator uses.
+HERBS_YOGA_MAP = {
+    "Fever (Jwara)":               ("Sudarshan Churna, Tulsi",  "Shavasana"),
+    "Rhinitis (Pratishyaya)":      ("Shadabindu Taila",         "Jal Neti"),
+    "Asthma (Tamaka Shwasa)":      ("Vasaka, Kantakari",        "Anulom Vilom"),
+    "Dengue (Dandashthaka Jwara)": ("Papaya leaf, Guduchi",     "Bed rest, Shavasana"),
+    "Cough (Kasa)":                ("Sitopaladi Churna, Tulsi", "Pranayama, Bhujangasana"),
+    "Diarrhea (Atisara)":          ("Bilva, Kutaj",             "Pawanmuktasana"),
+    "Acidity (Amlapitta)":         ("Shatavari, Licorice",      "Vajrasana, Setu Bandha"),
+    "Joint Pain (Amavata)":        ("Ashwagandha, Guggulu",     "Pawanmuktasana, Trikonasana"),
+}
+
 SEVERITY_CHOICES = ["Mild", "Moderate", "Severe"]
+# Numeric encoding, matching generate_historical_data_v2.py's convention — medical_records.severity
+# is a numeric 1-10 string everywhere else (real registration/voice-pipeline data included), so
+# seeded rows must use the same scale rather than the raw text label.
+SEVERITY_SCORES = {"Mild": "3", "Moderate": "6", "Severe": "9"}
 PRAKRITI_CHOICES = ["Vata", "Pitta", "Kapha", "Vata-Pitta", "Pitta-Kapha"]
 VIKRITI_CHOICES = ["Vata", "Pitta", "Kapha"]
 
@@ -127,21 +149,28 @@ def main(seed: int, demo_spike: bool) -> None:
                 continue
 
             week_date = week_start + timedelta(weeks=week_idx)
+            herbs, yoga = HERBS_YOGA_MAP[disease]
             for _ in range(n_cases):
                 patient_id = py_rng.choice(patient_ids)
-                visit_day = week_date + timedelta(days=py_rng.randint(0, 6))
+                severity_label = py_rng.choice(SEVERITY_CHOICES)
+                day_offset = py_rng.randint(0, 6)
+                visit_day = (week_date + timedelta(days=day_offset)).replace(
+                    hour=py_rng.randint(8, 18),
+                    minute=py_rng.choice([0, 15, 30, 45]),
+                    second=0, microsecond=0,
+                )
                 new_records.append({
                     "id": str(uuid.uuid4()),
                     "patient_id": patient_id,
                     "visit_date": visit_day.isoformat(),
                     "diagnosis": disease,
-                    "symptoms": symptoms,
+                    "symptoms": vary_symptoms(symptoms, py_rng),
                     "prakriti": py_rng.choice(PRAKRITI_CHOICES),
                     "vikriti": py_rng.choice(VIKRITI_CHOICES),
-                    "severity": py_rng.choice(SEVERITY_CHOICES),
+                    "severity": SEVERITY_SCORES[severity_label],
                     "comorbidities": "",
-                    "notes": f"Weekly-seed record (v2, {'demo-spike' if demo_spike else 'organic'}) - week {week_idx + 1}/52",
-                    "prescription": "{}",
+                    "notes": f"Patient presents with {severity_label.lower()} {disease}.",
+                    "prescription": json.dumps({"herbs": herbs, "yoga": yoga}),
                 })
 
         mode = f"spike week ~{spike_lvl} cases" if demo_spike else f"organic mean ~{organic_mean:.1f}/week"

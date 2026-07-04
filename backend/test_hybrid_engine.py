@@ -6,7 +6,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
 
 from services.hybrid_service import hybrid_service
-from services.clustering_service import clustering_service
+from services.patient_clustering_service import clustering_service
 from services.rl_service import rl_service
 from services.ayurgenix_service import ayurgenix_service
 

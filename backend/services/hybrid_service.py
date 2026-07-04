@@ -1,5 +1,5 @@
 from services.ISHAAyush_service import ISHAAyush_service
-from services.clustering_service import clustering_service
+from services.patient_clustering_service import clustering_service
 from services.rl_service import rl_service
 import copy
 

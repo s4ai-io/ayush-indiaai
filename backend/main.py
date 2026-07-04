@@ -39,7 +39,7 @@ from utils.validators import (
 )
 from services.ISHAAyush_service import ISHAAyush_service
 from services.hybrid_service import hybrid_service
-from services.clustering_service import clustering_service
+from services.patient_clustering_service import clustering_service
 from services.rl_service import rl_service
 from services.forecast_service import forecast_service
 from services.csv_service import csv_service
@@ -513,7 +513,7 @@ async def get_weekly_alerts():
     """
     Weekly rolling Z-score anomaly detection.
     Detects disease surges 3–4 weeks earlier than the monthly detector.
-    Uses a 4-week recent window vs 12-week baseline window.
+    Uses a 6-week recent window vs 20-week baseline window.
     """
     try:
         alerts = analytics_service.detect_weekly_anomalies()

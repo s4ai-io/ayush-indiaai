@@ -1,0 +1,49 @@
+Problem Statement 3: AI-enabled Integrated Early Warning, Treatment &
+Lifestyle Recommendation System
+The Ayush Hospital Management Information System (AHMIS), now expanded to
+over 12,000 centres nationwide, generates large-scale data on patient diagnoses
+and care delivery. This growing and rich dataset presents a significant opportunity
+to develop an AI-enabled system that can support both population-level public
+health intelligence and individual-level personalised AYUSH care.
+Strengthening AYUSH systems through advanced AI capabilities can significantly
+enhance their effectiveness and scale by enabling voice-based, multilingual inputs
+for efficient creation of Electronic Health Records (EHRs) by AYUSH professionals;
+dynamic detection and prediction of disease outbreaks to support proactive public
+health interventions; and personalised, data-driven treatment and lifestyle
+recommendations for chronic lifestyle conditions such as nephrolithiasis,
+urolithiasis, obesity, and hypertension. By integrating advanced AI and ML
+technologies, AHMIS can evolve into an intelligent health system that supports
+early outbreak detection, public health risk forecasting, and evidence-informed
+AYUSH treatment planning, thereby strengthening India’s preventive and
+personalised AYUSH healthcare ecosystem.
+Use Case:
+An AI-enabled system that allows AYUSH professionals to create EHRs on AHIMS
+using secure, voice-based, multilingual inputs, while leveraging historical clinical
+data to detect early signs of local disease outbreaks and generate real-time alerts.
+The system facilitates timely AYUSH interventions and informs public health
+forecasting and preventive planning. It also generates personalised AYUSH
+treatment plans, including herbal, dietary, yoga and other lifestyle
+recommendations, based on diagnoses, comorbidities, and past outcomes of
+similar demographics, and continuously improves these recommendations
+through real-time clinical feedback and long-term patient outcomes.
+
+Indicative Capabilities:
+The solution may leverage AI/ML techniques such as NLP, ensemble learning,
+reinforcement learning and hybrid recommendation architectures to support: (1)
+secure, voice-based multilingual EHR creation through advanced speech-to-text
+and machine translation models across Indian languages, integrated with AHIMS
+and AYUSH Grid; (2) early detection and forecasting of localised disease surges
+using anomaly detection on historical clinical data, combined with geospatial
+clustering and spatiotemporal graph neural networks to predict short-term
+regional spread; (3) generation of personalised AYUSH treatment plans through
+hybrid recommendation engines that integrate codified AYUSH knowledge systems 
+(such as Prakriti-based logic) with patient clustering on historical AHIMS
+outcomes, with reinforcement learning continuously refining recommendations
+based on clinician feedback and longitudinal patient outcomes, including in cases
+of limited patient history; and (4) explainable recommendations supported by
+evidence-generation and confidence-scoring mechanisms with adaptive learning
+frameworks ensuring continuous improvement and clinical trust through realworld validation.
+These capabilities are indicative and not exhaustive. Solution providers may
+modify, update or prioritise features as needed. Applicants may use publicly
+available datasets including clinical EMR data, AYUSH treatment protocols,
+hospital/disease registries, and sample data shared via AIKosh

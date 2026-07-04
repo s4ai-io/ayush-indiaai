@@ -224,7 +224,7 @@ CHRONIC_DISEASES: list[tuple[str, str, str, str, str, str, str, str]] = [
     ("Vitiligo (Shwitra)",                  "Pitta-Vata","Pitta",  "balanced",   "Bakuchi, Neem, Manjistha",      "Sheetali Pranayama",           "White patches on the skin", "uncommon"),
     ("Chickenpox (Laghu Masurika)",         "Pitta",     "Pitta",  "balanced",   "Neem, Tulsi, Guduchi",          "Rest",                         "Itchy rashes, fever, tiredness", "uncommon"),
     ("Measles (Romantika)",                 "Pitta",     "Pitta",  "balanced",   "Tulsi, Guduchi, Neem",          "Rest",                         "Fever, cough, runny nose, red eyes, skin rash", "uncommon"),
-    ("Warts (Charmakeela)",                 "Kapha",     "Kapha",  "mild_heavy", "Thuja, Neem",                   "None specific",                "Small rough skin growths", "common"),
+    ("Warts (Charmakeela)",                 "Kapha",     "Kapha",  "mild_heavy", "Thuja, Neem",                   "Gentle skin care, avoid scratching",                "Small rough skin growths", "common"),
     ("Boils (Vidradhi)",                    "Pitta-Kapha","Pitta", "mild_heavy", "Neem, Turmeric, Manjistha",     "Sheetali Pranayama",           "Painful red lumps, pus formation", "common"),
 
     # ── Endocrine / metabolic ──
@@ -280,7 +280,7 @@ CHRONIC_DISEASES: list[tuple[str, str, str, str, str, str, str, str]] = [
     ("Chikungunya (Sandhi Jwara)",          "Vata-Pitta","Pitta",  "severe_heavy","Guduchi, Papaya leaf",         "Rest",                          "Joint pain, fever, rash", "uncommon"),
     ("Whooping Cough (Deergha Kasa)",       "Kapha",     "Kapha",  "balanced",   "Vasaka, Tulsi",                 "Rest",                          "Severe coughing fits, whooping sound, vomiting after cough", "uncommon"),
     ("Mumps (Karnamoola Shotha)",           "Kapha",     "Kapha",  "balanced",   "Guduchi, Tulsi",                "Rest",                          "Swollen salivary glands, fever, jaw pain", "uncommon"),
-    ("Leprosy (Kushtha Roga)",              "Pitta-Vata","Pitta",  "severe_heavy","Amla, Guduchi, Neem",         "None specific",                 "Skin lesions, nerve damage, muscle weakness", "rare"),
+    ("Leprosy (Kushtha Roga)",              "Pitta-Vata","Pitta",  "severe_heavy","Amla, Guduchi, Neem",         "None specific (medical referral)",                 "Skin lesions, nerve damage, muscle weakness", "rare"),
 
     # ── Rare / referral-only (very low weight, present for realism only) ──
     ("Liver Cancer (Yakrit Arbuda)",        "Pitta",     "Pitta",  "severe_heavy","Guduchi (supportive)",        "Gentle breathing",              "Abdominal pain, weight loss, jaundice", "rare"),
@@ -299,3 +299,30 @@ def sample_severity(profile: str, rng: random.Random | None = None) -> str:
     r = rng or random
     dist = SEVERITY_PROFILES[profile]
     return r.choices(list(dist.keys()), weights=list(dist.values()), k=1)[0]
+
+
+_DURATION_QUALIFIERS = [
+    "for the past 2 days", "since last night", "for about a week",
+    "intermittently", "worsening over the last few days",
+    "mild and manageable", "gradually improving", "on and off for a few days",
+]
+
+
+def vary_symptoms(base: str, rng: random.Random | None = None) -> str:
+    """
+    Lightly perturb a disease's canonical symptom description so patients
+    sharing a diagnosis don't all carry byte-identical symptoms text — real
+    intake notes vary in which symptoms are mentioned, their order, and
+    phrasing, even for the same underlying condition.
+    """
+    r = rng or random
+    clauses = [c.strip() for c in base.split(",") if c.strip()]
+    if len(clauses) >= 3 and r.random() < 0.35:
+        drop_idx = r.randrange(len(clauses))
+        clauses = clauses[:drop_idx] + clauses[drop_idx + 1:]
+    if len(clauses) >= 2 and r.random() < 0.4:
+        r.shuffle(clauses)
+    text = ", ".join(clauses)
+    if r.random() < 0.45:
+        text = f"{text} ({r.choice(_DURATION_QUALIFIERS)})"
+    return text

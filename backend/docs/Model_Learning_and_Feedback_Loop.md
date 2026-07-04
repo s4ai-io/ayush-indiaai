@@ -50,7 +50,7 @@ The learning workflow is divided into three key steps: patient categorization, r
 ### 3.1 Step 1: Contextual Categorization (Clustering)
 Instead of learning a separate rule for every individual patient (which leads to data sparsity) or treating all patients identically, the system groups patients into **Clinical Clusters**.
 
-*   **Implementation:** [clustering_service.py](file:///Volumes/z21techssd/Python/ayush-indiaai/backend/services/clustering_service.py)
+*   **Implementation:** [patient_clustering_service.py](file:///Volumes/z21techssd/Python/ayush-indiaai/backend/services/patient_clustering_service.py)
 *   **Algorithm:** K-Means Clustering ($k=10$).
 *   **Features Used:**
     *   *Numeric:* Age, Severity (1–10).
@@ -141,7 +141,7 @@ If the RL agent recommends a learned herb or yoga practice that is not already i
 | File Name | Class / API | Responsibility |
 | :--- | :--- | :--- |
 | [models.py](file:///Volumes/z21techssd/Python/ayush-indiaai/backend/models.py) | `TreatmentFeedback`, `ClinicalOutcomeScore` | PostgreSQL tables for storing clinician ratings and vitals outcomes. |
-| [clustering_service.py](file:///Volumes/z21techssd/Python/ayush-indiaai/backend/services/clustering_service.py) | `PatientClusteringService` | Trains K-Means clustering; groups similar patients into 10 distinct cohorts. |
+| [patient_clustering_service.py](file:///Volumes/z21techssd/Python/ayush-indiaai/backend/services/patient_clustering_service.py) | `PatientClusteringService` | Trains K-Means clustering; groups similar patients into 10 distinct cohorts. |
 | [rl_service.py](file:///Volumes/z21techssd/Python/ayush-indiaai/backend/services/rl_service.py) | `RLRecommendationService` | Implements the Epsilon-Greedy Contextual Bandits Q-table, saving state-action weights, and updates values from rewards. |
 | [hybrid_service.py](file:///Volumes/z21techssd/Python/ayush-indiaai/backend/services/hybrid_service.py) | `HybridRecommendationEngine` | Integrates base retrieval with RL overlays to generate a final customized plan. |
 | [main.py](file:///Volumes/z21techssd/Python/ayush-indiaai/backend/main.py) | `/api/feedback`, `/api/ml/retrain` | FastAPI routes that record clinician feedback and trigger model training runs in the background. |
