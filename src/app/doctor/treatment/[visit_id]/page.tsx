@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
     Brain, Activity, Leaf, Coffee, Moon, Sun, CheckCircle, AlertTriangle,
     Shield, Heart, Stethoscope, FileText, ClipboardList, Sparkles, TrendingUp,
-    Clock, Target, Plus, Trash2, X, RefreshCw, ThumbsUp, ThumbsDown, Save, Phone,
+    Clock, Target, Plus, Trash2, X, ThumbsUp, ThumbsDown, Save, Phone,
 } from 'lucide-react';
 import { DiseaseSearchDropdown } from '@/components/ui/DiseaseSearchDropdown';
 import { useRouter } from "next/navigation";
@@ -77,9 +77,6 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
     const [newDietItem, setNewDietItem] = useState('');
     const [addingLifestyle, setAddingLifestyle] = useState(false);
     const [newLifestyleItem, setNewLifestyleItem] = useState('');
-    const [suggestedDiseases, setSuggestedDiseases] = useState<string[]>([]);
-    const [selectedSuggestion, setSelectedSuggestion] = useState<string | null>(null);
-
     // Ayurvedic dietary plan from CSV
     const [ayurvedicDietPlan, setAyurvedicDietPlan] = useState<{ plan: string; disease: string } | null>(null);
 
@@ -141,64 +138,89 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
         fetchVisit();
     }, [visitId]);
 
-    // Merges newly-extracted fields into proposedData — called from the
-    // Gemma-4 assistant panel's onExtracted callback.
-    const applyProposedClinicalAssessment = (args: any) => {
-        setProposedData((prev: any) => {
-            const mergeObj = (existing: any, incoming: any) => {
-                if (!incoming) return existing || undefined;
-                const merged = { ...(existing || {}) };
-                for (const key in incoming) {
-                    if (incoming[key] !== null && incoming[key] !== undefined && incoming[key] !== '') {
-                        merged[key] = incoming[key];
-                    }
-                }
-                return merged;
-            };
-            return mergeObj(prev, args);
+    const splitExtractedItems = (value: unknown): string[] => {
+        if (Array.isArray(value)) {
+            return value.map((item) => String(item).trim()).filter(Boolean);
+        }
+        if (typeof value !== 'string') return [];
+        return value
+            .split(/[,;\n]+/)
+            .map((item) => item.trim())
+            .filter(Boolean);
+    };
+
+    const mergeUnique = (existing: string[], incoming: string[]) => {
+        const seen = new Set(existing.map((item) => item.toLowerCase()));
+        return [
+            ...existing,
+            ...incoming.filter((item) => {
+                const key = item.toLowerCase();
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            }),
+        ];
+    };
+
+    const mergeDoctorItemsIntoPlan = (updates: { herbs?: string[]; yoga?: string[]; diet?: string[]; lifestyle?: string[] }) => {
+        setTreatmentPlan((prev) => {
+            if (!prev || prev.no_match_found) return prev;
+            const next = { ...prev };
+
+            if (updates.herbs?.length) {
+                const existingNames = new Set((next.herbs || []).map((h: any) => String(h.name || '').toLowerCase()));
+                const newHerbs = updates.herbs
+                    .filter((herb) => !existingNames.has(herb.toLowerCase()))
+                    .map((herb) => ({ name: herb, dosage: 'As prescribed', benefits: 'Added by doctor' }));
+                next.herbs = [...newHerbs, ...(next.herbs || [])];
+            }
+
+            if (updates.yoga?.length) {
+                const existingNames = new Set((next.yoga || []).map((y: any) => String(y.practice || '').toLowerCase()));
+                const newYoga = updates.yoga
+                    .filter((yoga) => !existingNames.has(yoga.toLowerCase()))
+                    .map((yoga) => ({ practice: yoga, duration: 'As prescribed', benefits: 'Added by doctor' }));
+                next.yoga = [...newYoga, ...(next.yoga || [])];
+            }
+
+            if (updates.diet?.length) {
+                next.diet = mergeUnique(next.diet || [], updates.diet);
+            }
+
+            if (updates.lifestyle?.length) {
+                next.lifestyle = mergeUnique(next.lifestyle || [], updates.lifestyle);
+            }
+
+            return next;
         });
     };
 
-    const handleAcceptProposed = () => {
-        if (!proposedData) return;
-        if (proposedData.disease) setDisease(proposedData.disease);
-        if (proposedData.symptoms) setSymptoms(proposedData.symptoms);
-        if (proposedData.comorbidities) setMedicalHistory(proposedData.comorbidities);
-        if (proposedData.vikriti) setVikriti(proposedData.vikriti);
-        if (proposedData.prakriti) setPrakriti(proposedData.prakriti);
+    const applyExtractedClinicalAssessment = (args: any) => {
+        if (!args || typeof args !== 'object') return;
 
-        if (proposedData.herbs) setDoctorHerbs(proposedData.herbs.split(',').map((h: string) => h.trim()).filter(Boolean));
-        if (proposedData.yoga) setDoctorYoga(proposedData.yoga.split(',').map((y: string) => y.trim()).filter(Boolean));
-        if (proposedData.diet) setDoctorDiet(proposedData.diet.split(',').map((d: string) => d.trim()).filter(Boolean));
-        if (proposedData.lifestyle) setDoctorLifestyle(proposedData.lifestyle.split(',').map((l: string) => l.trim()).filter(Boolean));
+        if (typeof args.disease === 'string' && args.disease.trim()) setDisease(args.disease.trim());
+        if (typeof args.symptoms === 'string' && args.symptoms.trim()) setSymptoms(args.symptoms.trim());
+        if (typeof args.comorbidities === 'string' && args.comorbidities.trim()) setMedicalHistory(args.comorbidities.trim());
+        if (typeof args.vikriti === 'string' && args.vikriti.trim()) setVikriti(args.vikriti.trim());
+        if (typeof args.prakriti === 'string' && args.prakriti.trim()) setPrakriti(args.prakriti.trim());
 
-        setProposedData(null);
+        const extractedHerbs = splitExtractedItems(args.herbs);
+        const extractedYoga = splitExtractedItems(args.yoga);
+        const extractedDiet = splitExtractedItems(args.diet);
+        const extractedLifestyle = splitExtractedItems(args.lifestyle);
+
+        if (extractedHerbs.length) setDoctorHerbs((prev) => mergeUnique(prev, extractedHerbs));
+        if (extractedYoga.length) setDoctorYoga((prev) => mergeUnique(prev, extractedYoga));
+        if (extractedDiet.length) setDoctorDiet((prev) => mergeUnique(prev, extractedDiet));
+        if (extractedLifestyle.length) setDoctorLifestyle((prev) => mergeUnique(prev, extractedLifestyle));
+
+        mergeDoctorItemsIntoPlan({
+            herbs: extractedHerbs,
+            yoga: extractedYoga,
+            diet: extractedDiet,
+            lifestyle: extractedLifestyle,
+        });
     };
-
-    const handleDiscardProposed = () => {
-        setProposedData(null);
-        setSuggestedDiseases([]);
-        setSelectedSuggestion(null);
-    };
-
-    useEffect(() => {
-        const fetchSuggestions = async () => {
-            if (proposedData?.disease) {
-                try {
-                    const res = await fetch(`${API_BASE}/api/diseases/suggestions?q=${encodeURIComponent(proposedData.disease)}`);
-                    if (res.ok) {
-                        const data = await res.json();
-                        setSuggestedDiseases(data.suggestions || []);
-                    }
-                } catch (err) {
-                    console.error("Error fetching suggestions:", err);
-                }
-            } else {
-                setSuggestedDiseases([]);
-            }
-        };
-        fetchSuggestions();
-    }, [proposedData?.disease]);
 
     // Fetch Ayurvedic dietary plan from CSV whenever disease + prakriti change
     useEffect(() => {
@@ -222,26 +244,6 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
         };
         fetchDietaryPlan();
     }, [disease, prakriti]);
-
-    const handleProceedWithUpdated = () => {
-        if (!proposedData) return;
-        const finalDisease = selectedSuggestion || proposedData.disease;
-
-        setDisease(finalDisease);
-        if (proposedData.symptoms) setSymptoms(proposedData.symptoms);
-        if (proposedData.comorbidities) setMedicalHistory(proposedData.comorbidities);
-        if (proposedData.vikriti) setVikriti(proposedData.vikriti);
-        if (proposedData.prakriti) setPrakriti(proposedData.prakriti);
-
-        if (proposedData.herbs) setDoctorHerbs(proposedData.herbs.split(',').map((h: string) => h.trim()).filter(Boolean));
-        if (proposedData.yoga) setDoctorYoga(proposedData.yoga.split(',').map((y: string) => y.trim()).filter(Boolean));
-        if (proposedData.diet) setDoctorDiet(proposedData.diet.split(',').map((d: string) => d.trim()).filter(Boolean));
-        if (proposedData.lifestyle) setDoctorLifestyle(proposedData.lifestyle.split(',').map((l: string) => l.trim()).filter(Boolean));
-
-        setProposedData(null);
-        setSuggestedDiseases([]);
-        setSelectedSuggestion(null);
-    };
 
     // ── Add/delete helpers ─────────────────────────────────────────────────
     const addHerb = () => {
@@ -458,82 +460,6 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                         </div>
                     </div>
 
-                    {proposedData && (
-                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 shadow-sm mb-8 animate-in slide-in-from-top-4">
-                            <h3 className="text-lg font-semibold text-amber-800 mb-4 flex items-center">
-                                <CheckCircle className="w-5 h-5 mr-2" /> AI Extracted Data Available for Review
-                            </h3>
-                            <div className="text-sm text-slate-700 space-y-2 mb-6">
-                                <p>The AI listener has extracted the following details from your conversation:</p>
-                                <div className="bg-white p-4 rounded-lg border border-amber-100 max-h-64 overflow-y-auto w-full">
-                                    <ul className="list-disc list-inside space-y-1">
-                                        {proposedData.disease && <li><strong>Disease:</strong> {proposedData.disease}</li>}
-                                        {proposedData.symptoms && <li><strong>Symptoms:</strong> {proposedData.symptoms}</li>}
-                                        {proposedData.comorbidities && <li><strong>Comorbidities:</strong> {proposedData.comorbidities}</li>}
-                                        {proposedData.vikriti && <li><strong>Doshas:</strong> {proposedData.vikriti}</li>}
-                                        {proposedData.prakriti && <li><strong>Prakriti:</strong> {proposedData.prakriti}</li>}
-                                        {proposedData.herbs && <li><strong>Herbs:</strong> {proposedData.herbs}</li>}
-                                        {proposedData.yoga && <li><strong>Yoga:</strong> {proposedData.yoga}</li>}
-                                        {proposedData.diet && <li><strong>Diet:</strong> {proposedData.diet}</li>}
-                                        {proposedData.lifestyle && <li><strong>Lifestyle:</strong> {proposedData.lifestyle}</li>}
-                                    </ul>
-                                </div>
-                            </div>
-
-                            {suggestedDiseases.length > 0 && (
-                                <div className="mb-6 animate-in fade-in slide-in-from-left-4 duration-500">
-                                    <label className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-2 block flex items-center gap-1.5 font-sans">
-                                        <Sparkles className="w-3.5 h-3.5" /> Standardized Disease Matches (Select One)
-                                    </label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {suggestedDiseases.map((sug) => (
-                                            <button
-                                                key={sug}
-                                                onClick={() => setSelectedSuggestion(sug === selectedSuggestion ? null : sug)}
-                                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all border-2 ${selectedSuggestion === sug
-                                                    ? "bg-amber-600 border-amber-700 text-white shadow-md scale-105"
-                                                    : "bg-white border-amber-200 text-amber-700 hover:border-amber-400 hover:bg-amber-50"
-                                                    }`}
-                                            >
-                                                {sug}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="flex gap-4">
-                                <Button
-                                    type="button"
-                                    variant="default"
-                                    onClick={handleAcceptProposed}
-                                    className="bg-amber-600 hover:bg-amber-700 text-white shadow-sm font-semibold"
-                                >
-                                    <CheckCircle className="w-4 h-4 mr-2" />
-                                    Accept Raw Info
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    onClick={handleProceedWithUpdated}
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-md font-bold px-6 border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 transition-all"
-                                >
-                                    <RefreshCw className="w-4 h-4 mr-2" />
-                                    Proceed with Updated Disease
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={handleDiscardProposed}
-                                    className="border-amber-300 text-amber-700 hover:bg-amber-100"
-                                >
-                                    <X className="w-4 h-4 mr-2" />
-                                    Discard
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
                         {/* ── LEFT: Clinical Assessment ── */}
@@ -613,6 +539,32 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                             </SelectContent>
                                         </Select>
                                     </div>
+
+                                    {(doctorHerbs.length > 0 || doctorYoga.length > 0 || doctorDiet.length > 0 || doctorLifestyle.length > 0) && (
+                                        <div className="rounded-xl border border-primary/15 bg-primary/5 p-4 space-y-3">
+                                            <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
+                                                <Sparkles className="w-3.5 h-3.5" />
+                                                Doctor Provided Inputs
+                                            </div>
+                                            {[
+                                                { label: 'Herbs', items: doctorHerbs, color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+                                                { label: 'Yoga', items: doctorYoga, color: 'bg-amber-100 text-amber-800 border-amber-200' },
+                                                { label: 'Diet', items: doctorDiet, color: 'bg-rose-100 text-rose-800 border-rose-200' },
+                                                { label: 'Lifestyle', items: doctorLifestyle, color: 'bg-blue-100 text-blue-800 border-blue-200' },
+                                            ].filter(group => group.items.length > 0).map(group => (
+                                                <div key={group.label} className="space-y-1.5">
+                                                    <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{group.label}</p>
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {group.items.map(item => (
+                                                            <Badge key={`${group.label}-${item}`} variant="outline" className={`${group.color} rounded-full`}>
+                                                                {item}
+                                                            </Badge>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
 
                                     <Button
                                         className="w-full mt-4 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white shadow-lg h-12 rounded-xl text-base font-bold tracking-wide transition-all hover:scale-[1.02] active:scale-[0.98]"
@@ -1058,7 +1010,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                         </div>
                                     </div>
 
-                                    {/* Step 11: Follow-up Outcome section */}
+                                {/* Step 11: Follow-up Outcome section */}
                                     <div className="mt-6 border rounded-lg p-4 bg-white shadow-sm">
                                         <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                                             <TrendingUp className="w-5 h-5 text-blue-500" />
@@ -1128,7 +1080,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                     </div>
                 </div>
             </div>
-            <GemmaVoiceChatPanel flow="treatment" onExtracted={applyProposedClinicalAssessment} isOpen={isAssistantOpen} onOpenChange={setIsAssistantOpen} />
+            <GemmaVoiceChatPanel flow="treatment" onExtracted={applyExtractedClinicalAssessment} isOpen={isAssistantOpen} onOpenChange={setIsAssistantOpen} />
         </div>
     );
 }

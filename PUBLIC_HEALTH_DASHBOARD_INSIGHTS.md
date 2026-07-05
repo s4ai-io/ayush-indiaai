@@ -108,8 +108,7 @@ highest-volume diseases currently in the data.
 down, or flat, and to spot timing relationships between diseases (e.g. a
 Fever bump a few days before a Dengue bump).
 
-**How it works**: daily visit counts per disease, smoothed with a 7-day
-rolling average so day-to-day noise doesn't obscure the underlying trend.
+**How it works**: visit counts per disease, aggregated into 7-day calendar weeks over the last 90 days to highlight trends clearly and avoid daily noise.
 Raw visit volume — not deduped (a chart about "how busy has this disease kept
 the clinic" is a workload question, not an affected-people question).
 

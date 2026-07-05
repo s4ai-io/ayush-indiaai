@@ -63,9 +63,10 @@ class AnalyticsService:
     # ─── Disease Trends ───────────────────────────────────────────────────────
 
     def get_disease_trends(self, days: int = 30) -> list:
-        """Aggregate daily case counts per disease (7-day rolling average)."""
-        # Fetch data for `days + 7` to allow a smooth 7-day rolling window
-        start_date = (datetime.utcnow() - timedelta(days=days + 7)).date()
+        """Aggregate weekly case counts per disease."""
+        # Calculate how many 7-day weeks we need to cover the requested days
+        num_weeks = (days + 6) // 7
+        start_date = (datetime.utcnow() - timedelta(days=num_weeks * 7)).date()
 
         with SessionLocal() as db:
             rows = (
@@ -91,26 +92,25 @@ class AnalyticsService:
             raw_counts[d][diagnosis] += 1
             all_diseases.add(diagnosis)
 
-        # 2. Compute 7-day rolling average for the requested `days`
+        # 2. Build weekly segments going backward from today
         results = []
         today = datetime.utcnow().date()
 
-        # Output exactly `days` rows, from (today - days + 1) to today
-        for i in range(days - 1, -1, -1):
-            target_date = today - timedelta(days=i)
+        for w in range(num_weeks - 1, -1, -1):
+            # Each week is a 7-day window ending at today - w*7
+            week_end = today - timedelta(days=w * 7)
+            week_start = week_end - timedelta(days=6)
 
-            # calculate sum over [target_date - 6 days, target_date]
-            window_sum = defaultdict(int)
+            # Sum counts for each disease over this 7-day window
+            week_sum = defaultdict(int)
             for j in range(7):
-                w_date = target_date - timedelta(days=j)
+                w_date = week_start + timedelta(days=j)
                 for diag, count in raw_counts[w_date].items():
-                    window_sum[diag] += count
+                    week_sum[diag] += count
 
-            day_data = {"date": target_date.isoformat()}
+            day_data = {"date": week_end.isoformat()}
             for diag in all_diseases:
-                # 7-day average, rounded to 2 decimals
-                avg = window_sum[diag] / 7.0
-                day_data[diag] = round(avg, 2)
+                day_data[diag] = week_sum[diag]
 
             results.append(day_data)
 
@@ -476,8 +476,25 @@ class AnalyticsService:
                 if end_date:
                     query = query.filter(MedicalRecord.visit_date <= f"{end_date} 23:59:59")
 
-            total_count = query.count()
-            rows = query.order_by(MedicalRecord.visit_date.desc()).limit(limit).all()
+            rows = query.order_by(MedicalRecord.visit_date.desc()).all()
+
+        # Collapse a patient's repeat visits for this diagnosis into one episode
+        # before counting/limiting — otherwise the same person's follow-up visits
+        # (different dates, slightly reworded symptoms) show up as separate
+        # "cases" here even though get_hotspots()/get_disease_clusters() already
+        # count them as one. gap_days mirrors whichever aggregate triggered this
+        # drill-down: alerts/emerging-threats (start/end date) use the same
+        # 14-day tight-follow-up window as detect_anomalies(); hotspots/clusters
+        # (days or neither) collapse the whole matching window to one episode.
+        gap_days = 14 if (start_date or end_date) else None
+        flat_rows = [(p.id, m.diagnosis, m.visit_date, p, m) for p, m in rows]
+        deduped = dedupe_repeat_diagnoses(
+            flat_rows, patient_idx=0, diagnosis_idx=1, date_idx=2, gap_days=gap_days
+        )
+        deduped.sort(key=lambda r: r[2], reverse=True)
+
+        total_count = len(deduped)
+        limited = deduped[:limit]
 
         cases = [
             {
@@ -494,23 +511,26 @@ class AnalyticsService:
                 "vikriti":       m.vikriti,
                 "comorbidities": m.comorbidities,
             }
-            for p, m in rows
+            for _pid, _diag, _date, p, m in limited
         ]
         return cases, total_count
 
     # ─── Dashboard Summary ────────────────────────────────────────────────────
 
-    def get_dashboard_summary(self) -> dict:
-        """Overall analytics summary from real PostgreSQL data."""
+    def get_dashboard_summary(self, days: int = None) -> dict:
+        """Overall analytics summary from real PostgreSQL data, optionally scoped to the last `days` days."""
         with SessionLocal() as db:
+            cutoff = datetime.utcnow() - timedelta(days=days) if days else None
+
             total_patients = db.query(Patient).count()
             total_records  = db.query(MedicalRecord).count()
 
-            disease_rows = (
-                db.query(MedicalRecord.diagnosis)
-                .filter(MedicalRecord.diagnosis != None, MedicalRecord.diagnosis != "")
-                .all()
+            disease_query = db.query(MedicalRecord.diagnosis).filter(
+                MedicalRecord.diagnosis != None, MedicalRecord.diagnosis != ""
             )
+            if cutoff:
+                disease_query = disease_query.filter(MedicalRecord.visit_date >= cutoff)
+            disease_rows = disease_query.all()
             disease_counts: dict = defaultdict(int)
             for (diag,) in disease_rows:
                 if diag and diag.strip():
@@ -518,7 +538,12 @@ class AnalyticsService:
 
             top_diseases = sorted(disease_counts.items(), key=lambda x: x[1], reverse=True)[:10]
 
-            city_rows = db.query(Patient.city).filter(Patient.city != None, Patient.city != "").all()
+            city_query = db.query(Patient.city).filter(Patient.city != None, Patient.city != "")
+            if cutoff:
+                city_query = city_query.join(
+                    MedicalRecord, MedicalRecord.patient_id == Patient.id
+                ).filter(MedicalRecord.visit_date >= cutoff)
+            city_rows = city_query.all()
             city_counts: dict = defaultdict(int)
             for (city,) in city_rows:
                 if city and city.strip():

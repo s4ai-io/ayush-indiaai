@@ -55,6 +55,13 @@ The doctor's message has already been transcribed into English — respond only 
 
 Update the form with ANY available information immediately — do not wait for all fields.
 
+You must choose the disease value from the approved disease list below whenever the doctor's
+message describes a disease that matches one of these names. If no approved disease is a close
+clinical/name match, return "disease": null instead of inventing or returning an off-list disease.
+
+Approved disease list:
+__APPROVED_DISEASE_LIST__
+
 DOSHA INFERENCE: if the doctor doesn't explicitly mention doshas, infer from the disease/symptoms:
 - Vata conditions: joint pain, anxiety, insomnia, dry skin, constipation
 - Pitta conditions: inflammation, acidity, skin rashes, fever, liver issues
@@ -67,7 +74,7 @@ Respond in two parts, in this exact order:
 
 The JSON block must use this exact flat shape (all fields optional, omit unknown ones):
 {
-  "disease": string,
+  "disease": string | null,
   "symptoms": string,
   "comorbidities": string,
   "vikriti": "Vata" | "Pitta" | "Kapha",
@@ -88,5 +95,10 @@ FLOW_PROMPTS = {
 }
 
 
-def get_system_prompt(flow: str | None) -> str:
-    return FLOW_PROMPTS.get(flow or "registration", REGISTRATION_SYSTEM_PROMPT)
+def get_system_prompt(flow: str | None, disease_list: list[str] | None = None) -> str:
+    prompt = FLOW_PROMPTS.get(flow or "registration", REGISTRATION_SYSTEM_PROMPT)
+    if flow == "treatment":
+        diseases = disease_list or []
+        disease_text = "\n".join(f"- {name}" for name in diseases) or "- No approved diseases available"
+        return prompt.replace("__APPROVED_DISEASE_LIST__", disease_text)
+    return prompt

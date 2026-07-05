@@ -112,6 +112,13 @@ CRITICAL RULE: ALL data you extract MUST BE IN ENGLISH, regardless of the langua
 
 Update the form with ANY available information immediately — do not wait for all fields.
 
+You must choose the disease value from the approved disease list below whenever the doctor's
+message describes a disease that matches one of these names. If no approved disease is a close
+clinical/name match, return "disease": null instead of inventing or returning an off-list disease.
+
+Approved disease list:
+__APPROVED_DISEASE_LIST__
+
 DOSHA INFERENCE: if the doctor doesn't explicitly mention doshas, infer from the disease/symptoms:
 - Vata conditions: joint pain, anxiety, insomnia, dry skin, constipation
 - Pitta conditions: inflammation, acidity, skin rashes, fever, liver issues
@@ -124,7 +131,7 @@ Respond in two parts, in this exact order:
 
 The JSON block must use this exact flat shape (all fields optional, omit unknown ones):
 {
-  "disease": string,
+  "disease": string | null,
   "symptoms": string,
   "comorbidities": string,
   "vikriti": "Vata" | "Pitta" | "Kapha",
@@ -159,8 +166,12 @@ FLOW_PROMPTS = {
 }
 
 
-def get_system_prompt(flow: Optional[str]) -> str:
-    return FLOW_PROMPTS.get(flow or "registration", REGISTRATION_SYSTEM_PROMPT)
+def get_system_prompt(flow: Optional[str], disease_list: Optional[str] = None) -> str:
+    prompt = FLOW_PROMPTS.get(flow or "registration", REGISTRATION_SYSTEM_PROMPT)
+    if flow == "treatment":
+        disease_text = disease_list or "- No approved diseases available"
+        return prompt.replace("__APPROVED_DISEASE_LIST__", disease_text)
+    return prompt
 
 
 def preprocess_audio(audio_bytes: bytes, target_sr: int = SAMPLE_RATE):
@@ -332,6 +343,7 @@ class Gemma12BVoiceService:
         self,
         audio_bytes: Optional[bytes] = None,
         flow: Optional[str] = None,
+        disease_list: Optional[str] = None,
         conversation_history: Optional[List[Dict[str, str]]] = None,
         user_text_prompt: Optional[str] = None,
         max_new_tokens: int = 512,
@@ -342,7 +354,7 @@ class Gemma12BVoiceService:
         Gemma-4's ~30s per-clip cap) or, if no audio was supplied, a plain
         text turn — mirrors ChatEngine.generate()'s text-only path on that
         same branch, so the chat panel can support typed messages too."""
-        system_prompt = get_system_prompt(flow)
+        system_prompt = get_system_prompt(flow, disease_list=disease_list)
         history = conversation_history or []
 
         if not audio_bytes:
@@ -408,6 +420,7 @@ class Gemma12BVoiceService:
         async def upload_audio(
             file: Optional[UploadFile] = File(None),
             flow: Optional[str] = Form("registration"),
+            disease_list: Optional[str] = Form(None),
             conversation_history: Optional[str] = Form(None),
             user_text_prompt: Optional[str] = Form(None),
             max_new_tokens: int = Form(512),
@@ -424,6 +437,7 @@ class Gemma12BVoiceService:
                 result = self.process_turn(
                     audio_bytes=audio_bytes,
                     flow=flow,
+                    disease_list=disease_list,
                     conversation_history=history,
                     user_text_prompt=user_text_prompt,
                     max_new_tokens=max_new_tokens,

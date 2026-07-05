@@ -33,8 +33,14 @@ interface RegistrationData {
         idType: string;
         idNumber: string;
     };
-    [key: string]: any;
 }
+
+type RegistrationSection = keyof Pick<RegistrationData, "contactInfo" | "basicInfo" | "otherInfo">;
+type PartialRegistrationData = {
+    contactInfo?: Partial<RegistrationData["contactInfo"]>;
+    basicInfo?: Partial<RegistrationData["basicInfo"]>;
+    otherInfo?: Partial<RegistrationData["otherInfo"]>;
+};
 
 const INITIAL_DATA: RegistrationData = {
     contactInfo: { mobileNumber: "", address: "", city: "", state: "", pincode: "" },
@@ -45,58 +51,18 @@ const INITIAL_DATA: RegistrationData = {
 type StatusType = "info" | "error" | "success" | "loading";
 
 export default function RegistrationPage() {
-    const [proposedData, setProposedData] = useState<any>(null);
     const [isAssistantOpen, setIsAssistantOpen] = useState(true);
-
-    // Merges newly-extracted fields from the Gemma-4 assistant into
-    // proposedData for the user to review before accepting into the form.
-    const applyProposedRegistrationData = (args: any) => {
-        setProposedData((prev: any) => {
-            const mergeObj = (existing: any, incoming: any) => {
-                if (!incoming) return existing || undefined;
-                const merged = { ...(existing || {}) };
-                for (const key in incoming) {
-                    if (incoming[key] !== null && incoming[key] !== undefined && incoming[key] !== '') {
-                        merged[key] = incoming[key];
-                    }
-                }
-                return merged;
-            };
-
-            // Format mobile number before merging. The model can return this as
-            // a number even though the schema declares it a string.
-            const incomingContact = { ...args.contactInfo };
-            if (incomingContact.mobileNumber !== undefined && incomingContact.mobileNumber !== null) {
-                let mobile = String(incomingContact.mobileNumber).replace(/\D/g, '');
-                if (mobile.length > 10) mobile = mobile.substring(mobile.length - 10);
-                incomingContact.mobileNumber = mobile;
-            }
-
-            // Format age
-            const incomingBasic = { ...args.basicInfo };
-            if (incomingBasic.age) {
-                incomingBasic.age = String(Number(incomingBasic.age) || 0);
-            }
-
-            return {
-                basicInfo: mergeObj(prev?.basicInfo, incomingBasic),
-                contactInfo: mergeObj(prev?.contactInfo, incomingContact),
-                otherInfo: mergeObj(prev?.otherInfo, args.otherInfo),
-            };
-        });
-    };
 
     return (
         <div className={`min-h-screen w-full transition-all duration-300 ${isAssistantOpen ? "md:pr-96" : "md:pr-0"} bg-gradient-to-br from-background via-muted/10 to-background`}>
             <div className="max-w-4xl mx-auto px-4 py-6 md:px-8 md:py-10">
-                <RegistrationForm proposedData={proposedData} setProposedData={setProposedData} />
+                <RegistrationForm isAssistantOpen={isAssistantOpen} onAssistantOpenChange={setIsAssistantOpen} />
             </div>
-            <GemmaVoiceChatPanel flow="registration" onExtracted={applyProposedRegistrationData} isOpen={isAssistantOpen} onOpenChange={setIsAssistantOpen} />
         </div>
     );
 }
 
-function RegistrationForm({ proposedData, setProposedData }: { proposedData: any; setProposedData: (v: any) => void }) {
+function RegistrationForm({ isAssistantOpen, onAssistantOpenChange }: { isAssistantOpen: boolean; onAssistantOpenChange: (open: boolean) => void }) {
     const [formData, setFormData] = useState<RegistrationData>(INITIAL_DATA);
     const [status, setStatus] = useState<string | null>(null);
     const [statusType, setStatusType] = useState<StatusType>("info");
@@ -106,36 +72,51 @@ function RegistrationForm({ proposedData, setProposedData }: { proposedData: any
     const [isOtherInfoExpanded, setIsOtherInfoExpanded] = useState(true);
     const router = useRouter();
 
-    const handleAcceptProposed = () => {
-        if (!proposedData) return;
+    const mergeExtractedSection = <T extends Record<string, string>>(existing: T, incoming?: Partial<T>): T => {
+        if (!incoming) return existing;
+        const merged = { ...existing };
+        for (const [key, value] of Object.entries(incoming)) {
+            if (value !== null && value !== undefined && value !== '') {
+                merged[key as keyof T] = String(value) as T[keyof T];
+            }
+        }
+        return merged;
+    };
+
+    const handleExtractedRegistrationData = (args: PartialRegistrationData) => {
+        const incomingContact = { ...(args.contactInfo || {}) };
+        if (incomingContact.mobileNumber !== undefined && incomingContact.mobileNumber !== null) {
+            let mobile = String(incomingContact.mobileNumber).replace(/\D/g, '');
+            if (mobile.length > 10) mobile = mobile.substring(mobile.length - 10);
+            incomingContact.mobileNumber = mobile;
+        }
+
+        const incomingBasic = { ...(args.basicInfo || {}) };
+        if (incomingBasic.age) {
+            incomingBasic.age = String(Number(incomingBasic.age) || 0);
+        }
 
         setFormData(prev => ({
             ...prev,
-            basicInfo: { ...prev.basicInfo, ...proposedData.basicInfo },
-            contactInfo: { ...prev.contactInfo, ...proposedData.contactInfo },
-            otherInfo: { ...prev.otherInfo, ...proposedData.otherInfo }
+            basicInfo: mergeExtractedSection(prev.basicInfo, incomingBasic),
+            contactInfo: mergeExtractedSection(prev.contactInfo, incomingContact),
+            otherInfo: mergeExtractedSection(prev.otherInfo, args.otherInfo)
         }));
 
-        if (proposedData.basicInfo) setIsBasicInfoExpanded(true);
-        if (proposedData.contactInfo) setIsContactExpanded(true);
-        if (proposedData.otherInfo) setIsOtherInfoExpanded(true);
-
-        setProposedData(null);
+        if (args.basicInfo) setIsBasicInfoExpanded(true);
+        if (args.contactInfo) setIsContactExpanded(true);
+        if (args.otherInfo) setIsOtherInfoExpanded(true);
     };
 
-    const handleDiscardProposed = () => {
-        setProposedData(null);
-    };
-
-    const handleChange = (section: keyof RegistrationData, field: string, value: any) => {
+    const handleChange = (section: RegistrationSection, field: string, value: string) => {
         setFormData((prev) => {
             const newData = { ...prev };
-            (newData[section] as any)[field] = value;
+            newData[section] = { ...newData[section], [field]: value };
             // Changing state invalidates a previously-picked city that no longer belongs to it.
             if (section === "contactInfo" && field === "state") {
                 const validCities = INDIAN_STATE_CITY_MAP[value] || [];
-                if (!validCities.includes((newData.contactInfo as any).city)) {
-                    (newData.contactInfo as any).city = "";
+                if (!validCities.includes(newData.contactInfo.city)) {
+                    newData.contactInfo.city = "";
                 }
             }
             return newData;
@@ -228,6 +209,7 @@ function RegistrationForm({ proposedData, setProposedData }: { proposedData: any
     };
 
     return (
+        <>
         <form onSubmit={handleSubmit} className="space-y-5 pb-6">
 
             {/* ── Page Header ── */}
@@ -256,54 +238,6 @@ function RegistrationForm({ proposedData, setProposedData }: { proposedData: any
                     ))}
                 </div>
             </div>
-
-            {proposedData && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 shadow-sm mb-8 animate-in slide-in-from-top-4">
-                    <h3 className="text-lg font-semibold text-amber-800 mb-4 flex items-center">
-                        <CheckCircle2 className="w-5 h-5 mr-2" /> AI Extracted Data Available for Review
-                    </h3>
-                    <div className="text-sm text-slate-700 space-y-2 mb-6">
-                        <p>The AI listener has extracted the following details from the conversation:</p>
-                        <div className="bg-white p-4 rounded-lg border border-amber-100 max-h-64 overflow-y-auto w-full">
-                            <ul className="list-disc list-inside space-y-1">
-                                {proposedData.basicInfo?.firstName && <li><strong>Name:</strong> {proposedData.basicInfo.firstName} {proposedData.basicInfo.lastName || ''}</li>}
-                                {proposedData.basicInfo?.age && <li><strong>Age:</strong> {proposedData.basicInfo.age}</li>}
-                                {proposedData.basicInfo?.gender && <li><strong>Gender:</strong> {proposedData.basicInfo.gender}</li>}
-                                {proposedData.basicInfo?.maritalStatus && <li><strong>Marital Status:</strong> {proposedData.basicInfo.maritalStatus}</li>}
-
-                                {proposedData.contactInfo?.mobileNumber && <li><strong>Mobile:</strong> {proposedData.contactInfo.mobileNumber}</li>}
-                                {proposedData.contactInfo?.address && <li><strong>Address:</strong> {proposedData.contactInfo.address}</li>}
-                                {proposedData.contactInfo?.city && <li><strong>City:</strong> {proposedData.contactInfo.city}</li>}
-                                {proposedData.contactInfo?.state && <li><strong>State:</strong> {proposedData.contactInfo.state}</li>}
-                                {proposedData.contactInfo?.pincode && <li><strong>Pincode:</strong> {proposedData.contactInfo.pincode}</li>}
-
-                                {proposedData.otherInfo?.occupation && <li><strong>Occupation:</strong> {proposedData.otherInfo.occupation}</li>}
-                                {proposedData.otherInfo?.bloodGroup && <li><strong>Blood Group:</strong> {proposedData.otherInfo.bloodGroup}</li>}
-                                {proposedData.otherInfo?.idType && <li><strong>ID Type:</strong> {proposedData.otherInfo.idType} ({proposedData.otherInfo.idNumber})</li>}
-                            </ul>
-                        </div>
-                    </div>
-                    <div className="flex gap-4">
-                        <button
-                            type="button"
-                            onClick={handleAcceptProposed}
-                            className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                        >
-                            <CheckCircle2 className="w-4 h-4" />
-                            Accept & Fill Form
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleDiscardProposed}
-                            className="flex items-center gap-2 border border-amber-300 text-amber-700 hover:bg-amber-100 px-4 py-2 rounded-lg font-medium transition-colors"
-                        >
-                            <AlertCircle className="w-4 h-4" />
-                            Discard
-                        </button>
-                    </div>
-                </div>
-            )
-            }
 
             {/* ── Basic Info ── */}
             <Section
@@ -530,6 +464,8 @@ function RegistrationForm({ proposedData, setProposedData }: { proposedData: any
                 </div>
             </div>
         </form>
+        <GemmaVoiceChatPanel flow="registration" onExtracted={handleExtractedRegistrationData} isOpen={isAssistantOpen} onOpenChange={onAssistantOpenChange} />
+        </>
     );
 }
 

@@ -121,6 +121,10 @@ class ForecastDataPoint(BaseModel):
     predicted_cases: float
     confidence_lower: Optional[float] = None
     confidence_upper: Optional[float] = None
+    month_name: Optional[str] = None
+    disease: Optional[str] = None
+    season: Optional[str] = None
+    ritu_sandhi: Optional[bool] = None
 
 
 class ForecastResponse(BaseModel):
@@ -128,6 +132,7 @@ class ForecastResponse(BaseModel):
     disease: str
     forecast_months: int
     forecast_data: List[ForecastDataPoint]
+    by_disease: Optional[dict] = None
     trend: str  # "increasing", "decreasing", "stable"
     risk_level: str  # "low", "moderate", "high"
 

@@ -344,6 +344,12 @@ class DiseaseForecaster:
                     row["avg_severity"],
                 ]])
 
+                # Calculate confidence intervals via estimator predictions spread
+                tree_preds = np.array([tree.predict(features)[0] for tree in self.forecast_model.estimators_])
+                tree_preds = np.clip(tree_preds, 0, None)
+                conf_lower = float(np.percentile(tree_preds, 10))
+                conf_upper = float(np.percentile(tree_preds, 90))
+
                 predicted = max(0, self.forecast_model.predict(features)[0])
                 forecasts.append({
                     "disease":         disease,
@@ -354,6 +360,8 @@ class DiseaseForecaster:
                     "season":          future_season,
                     "ritu_sandhi":     ritu_sandhi,
                     "predicted_cases": predicted,
+                    "confidence_lower": conf_lower,
+                    "confidence_upper": conf_upper,
                 })
 
         return pd.DataFrame(forecasts)

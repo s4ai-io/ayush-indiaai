@@ -3,8 +3,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
     LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-    Tooltip, Legend, ResponsiveContainer, RadarChart, Radar,
-    PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+    Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import {
     AlertTriangle, Activity, MapPin, TrendingUp, TrendingDown,
@@ -38,8 +37,8 @@ interface SpreadPrediction {
 }
 interface ForecastData {
     disease: string;
-    forecast_data: { month: string; month_name?: string; disease?: string; predicted_cases: number; season: string; ritu_sandhi?: boolean }[];
-    by_disease?: Record<string, { month_name: string; predicted_cases: number; season: string; ritu_sandhi?: boolean }[]>;
+    forecast_data: { month: string; month_name?: string; disease?: string; predicted_cases: number; season: string; ritu_sandhi?: boolean; confidence_lower?: number; confidence_upper?: number; }[];
+    by_disease?: Record<string, { month_name: string; predicted_cases: number; season: string; ritu_sandhi?: boolean; confidence_lower?: number; confidence_upper?: number; }[]>;
     trend: string; risk_level: string;
 }
 interface EmergingTrend {
@@ -51,7 +50,7 @@ interface ClusterData {
     cluster_id: number; disease: string; is_noise: boolean;
     cities: string[]; city_cases: Record<string, number>; total_cases: number;
     centroid_lat: number; centroid_lon: number; spread_km: number; period_days: number;
-    devanagari?: string; iast?: string;
+    devanagari?: string; iast?: string; hindi?: string;
 }
 type NameMap = Record<string, { devanagari: string; iast: string; hindi: string; english: string }>;
 
@@ -70,8 +69,16 @@ interface CaseQuery {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const DISEASE_COLORS = [
-    '#ef4444', '#3b82f6', '#22c55e', '#f59e0b', '#6366f1',
-    '#ec4899', '#14b8a6', '#f97316', '#8b5cf6', '#84cc16'
+    '#ef4444', // Red
+    '#3b82f6', // Blue
+    '#22c55e', // Green
+    '#f59e0b', // Orange
+    '#a855f7', // Purple
+    '#ec4899', // Pink
+    '#06b6d4', // Cyan
+    '#eab308', // Yellow
+    '#14b8a6', // Teal
+    '#64748b'  // Slate
 ];
 
 /**
@@ -117,9 +124,9 @@ function StatCard({
     );
 }
 
-function SectionHeader({ icon, title, subtitle, info }: {
+function SectionHeader({ icon, title, subtitle, info, right }: {
     icon: React.ReactNode; title: string; subtitle?: string;
-    info?: string;
+    info?: string; right?: React.ReactNode;
 }) {
     const [show, setShow] = React.useState(false);
     return (
@@ -145,7 +152,24 @@ function SectionHeader({ icon, title, subtitle, info }: {
                 </div>
                 {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
             </div>
+            {right && <div className="shrink-0">{right}</div>}
         </div>
+    );
+}
+
+/** Compact predefined date-range dropdown used by panels that support server-side range filtering. */
+function DateRangeSelect({ value, onChange }: { value: string; onChange: (v: '7' | '30' | '365' | 'all') => void }) {
+    return (
+        <select
+            value={value}
+            onChange={(e) => onChange(e.target.value as '7' | '30' | '365' | 'all')}
+            className="text-xs font-medium text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+        >
+            <option value="7">Last week</option>
+            <option value="30">Last month</option>
+            <option value="365">Last year</option>
+            <option value="all">All time</option>
+        </select>
     );
 }
 
@@ -169,7 +193,7 @@ function ViewCasesButton({ onClick, className = '' }: { onClick: () => void; cla
 function CaseDetailsModal({ query, onClose }: { query: CaseQuery | null; onClose: () => void }) {
     const [cases, setCases] = useState<CaseDetail[]>([]);
     const [totalCount, setTotalCount] = useState(0);
-    const [nameInfo, setNameInfo] = useState<{ devanagari?: string; iast?: string }>({});
+    const [nameInfo, setNameInfo] = useState<{ hindi?: string; english?: string; devanagari?: string }>({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -188,7 +212,7 @@ function CaseDetailsModal({ query, onClose }: { query: CaseQuery | null; onClose
             .then(data => {
                 setCases(Array.isArray(data.cases) ? data.cases : []);
                 setTotalCount(data.total_count ?? 0);
-                setNameInfo({ devanagari: data.devanagari, iast: data.iast });
+                setNameInfo({ hindi: data.hindi, english: data.english, devanagari: data.devanagari });
             })
             .catch(() => setError('Failed to load case details.'))
             .finally(() => setLoading(false));
@@ -206,9 +230,9 @@ function CaseDetailsModal({ query, onClose }: { query: CaseQuery | null; onClose
                     <div>
                         <p className="text-xs text-slate-400">{query.title}</p>
                         <h3 className="text-lg font-bold text-slate-800" style={{ fontFamily: 'serif' }}>
-                            {nameInfo.devanagari || query.disease}
+                            {nameInfo.hindi || nameInfo.english || query.disease}
                         </h3>
-                        <p className="text-xs text-slate-400 italic">{nameInfo.iast}</p>
+                        <p className="text-xs text-slate-400 italic" style={{ fontFamily: 'serif' }}>{nameInfo.devanagari}</p>
                     </div>
                     <button
                         onClick={onClose}
@@ -285,20 +309,30 @@ export default function PublicHealthDashboard() {
     const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
     const [mounted, setMounted] = useState(false);
     const [selectedDisease, setSelectedDisease] = useState('');
-    const [alertTab, setAlertTab] = useState<'monthly' | 'weekly'>('monthly');
+    const [alertTab, setAlertTab] = useState<'monthly' | 'weekly'>('weekly');
     const [caseQuery, setCaseQuery] = useState<CaseQuery | null>(null);
+    const [diseaseRange, setDiseaseRange] = useState<'7' | '30' | '365' | 'all'>('all');
+    const [cityRange, setCityRange] = useState<'7' | '30' | '365' | 'all'>('all');
+    const [diseaseData, setDiseaseData] = useState<{ disease: string; count: number }[]>([]);
+    const [cityData, setCityData] = useState<{ city: string; count: number }[]>([]);
+
+    /** Builds the primary display name as "Hindi / English" for a disease string.
+     *  Falls back to whichever of the two is available, then the raw diagnosis string. */
+    const hName = useCallback((raw: string, inlineHindi?: string): string => {
+        const entry = nameMap[raw];
+        const hindi = inlineHindi || entry?.hindi || '';
+        const english = entry?.english || '';
+        if (hindi && english && hindi !== english) return `${hindi} / ${english}`;
+        return hindi || english || raw;
+    }, [nameMap]);
 
     /** Resolves the best Devanagari label for a disease string.
+     *  Shown as the secondary/subtitle name, underneath the Hindi/English primary name.
      *  Priority: inline field  >  nameMap  >  ayurvedicName() fallback. */
     const dName = useCallback((raw: string, inlineDevanagari?: string): string => {
         if (inlineDevanagari) return inlineDevanagari;
         if (nameMap[raw]?.devanagari) return nameMap[raw].devanagari;
         return ayurvedicName(raw);
-    }, [nameMap]);
-
-    const dNameIast = useCallback((raw: string, inlineIast?: string): string => {
-        if (inlineIast) return inlineIast;
-        return nameMap[raw]?.iast ?? '';
     }, [nameMap]);
 
     const loadData = useCallback(async () => {
@@ -347,6 +381,34 @@ export default function PublicHealthDashboard() {
 
     useEffect(() => { setMounted(true); loadData(); }, [loadData]);
 
+    // Seed the two range-scoped panels from the initial all-time summary
+    useEffect(() => {
+        if (summary) {
+            setDiseaseData(summary.top_diseases ?? []);
+            setCityData(summary.top_cities ?? []);
+        }
+    }, [summary]);
+
+    // Re-fetch just the disease distribution when its date range changes
+    useEffect(() => {
+        if (!mounted) return;
+        const qs = diseaseRange === 'all' ? '' : `?days=${diseaseRange}`;
+        fetch(`${API_BASE}/api/analytics/dashboard${qs}`)
+            .then(r => r.json())
+            .then((d: DashboardSummary) => setDiseaseData(d.top_diseases ?? []))
+            .catch(err => console.error('Failed to refresh disease distribution:', err));
+    }, [diseaseRange, mounted]);
+
+    // Re-fetch just the top cities when its date range changes
+    useEffect(() => {
+        if (!mounted) return;
+        const qs = cityRange === 'all' ? '' : `?days=${cityRange}`;
+        fetch(`${API_BASE}/api/analytics/dashboard${qs}`)
+            .then(r => r.json())
+            .then((d: DashboardSummary) => setCityData(d.top_cities ?? []))
+            .catch(err => console.error('Failed to refresh top cities:', err));
+    }, [cityRange, mounted]);
+
     // ── Client-side by_disease grouping from forecast_data ─────────────────────
     // Groups flat forecast_data into { diseaseName: [{month_name, predicted_cases, season}] }
     // Works even if the backend's by_disease field is missing.
@@ -369,7 +431,7 @@ export default function PublicHealthDashboard() {
         // Build an extended disease name list: summary top_diseases (all of them)
         const topDiseases = summary?.top_diseases ?? [];
 
-        type MonthEntry = { month_name: string; predicted_cases: number; season: string; ritu_sandhi: boolean };
+        type MonthEntry = { month_name: string; predicted_cases: number; season: string; ritu_sandhi: boolean; confidence_lower?: number; confidence_upper?: number; };
         const grouped: Record<string, MonthEntry[]> = {};
         let diseaseIndex = 0;
         let groupKey = '';
@@ -393,6 +455,8 @@ export default function PublicHealthDashboard() {
                 predicted_cases: entry.predicted_cases,
                 season: entry.season ?? '',
                 ritu_sandhi: (entry as any).ritu_sandhi ?? false,
+                confidence_lower: entry.confidence_lower,
+                confidence_upper: entry.confidence_upper,
             });
         }
         return grouped;
@@ -421,11 +485,11 @@ export default function PublicHealthDashboard() {
 
     const uniqueDiseaseList = [...new Set(hotspots.map(h => h.diagnosis))].sort();
 
-    // Radar data from top diseases — use Devanagari labels from nameMap
-    const radarData = summary?.top_diseases.slice(0, 6).map(d => ({
-        disease: dName(d.disease, nameMap[d.disease]?.devanagari).substring(0, 24),
+    // Disease load bars — use Hindi/English labels from nameMap
+    const radarData = diseaseData.slice(0, 6).map(d => ({
+        disease: hName(d.disease, nameMap[d.disease]?.hindi).substring(0, 24),
         count: d.count,
-    })) ?? [];
+    }));
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 space-y-6">
@@ -508,19 +572,82 @@ export default function PublicHealthDashboard() {
                                 </h3>
                                 <div className="flex rounded-lg overflow-hidden border border-red-200 text-xs">
                                     <button
-                                        onClick={() => setAlertTab('monthly')}
-                                        className={`px-3 py-1 font-semibold transition-colors ${alertTab === 'monthly' ? 'bg-red-600 text-white' : 'bg-white text-red-600 hover:bg-red-50'}`}
-                                    >
-                                        📅 Monthly ({alerts.length})
-                                    </button>
-                                    <button
                                         onClick={() => setAlertTab('weekly')}
                                         className={`px-3 py-1 font-semibold transition-colors ${alertTab === 'weekly' ? 'bg-amber-500 text-white' : 'bg-white text-amber-600 hover:bg-amber-50'}`}
                                     >
                                         ⚡ Weekly Early ({weeklyAlerts.length})
                                     </button>
+                                    <button
+                                        onClick={() => setAlertTab('monthly')}
+                                        className={`px-3 py-1 font-semibold transition-colors ${alertTab === 'monthly' ? 'bg-red-600 text-white' : 'bg-white text-red-600 hover:bg-red-50'}`}
+                                    >
+                                        📅 Monthly ({alerts.length})
+                                    </button>
                                 </div>
                             </div>
+
+                            {alertTab === 'weekly' && (
+                                <>
+                                    <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-1.5 mb-3 border border-amber-200">
+                                        ⚡ <strong>Early warning</strong> — bi-weekly rolling Z-score detects surges <strong>3–6 weeks earlier</strong> than the monthly detector.
+                                        Uses last 6-week window vs 20-week baseline. Threshold: Z ≥ 1.6.
+                                    </p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                        {weeklyAlerts.map((a, i) => (
+                                            <div key={i} className="bg-white rounded-xl p-3 border border-amber-100">
+                                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0 ${SEVERITY_STYLES[a.severity] ?? 'bg-slate-200 text-slate-700'}`}>
+                                                        {a.severity}
+                                                    </span>
+                                                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">EARLY SIGNAL</span>
+                                                </div>
+                                                <p className="text-base font-bold text-slate-900" style={{ fontFamily: 'serif' }}>
+                                                    {hName(a.disease, a.hindi)}
+                                                </p>
+                                                <p className="text-[10px] text-slate-400 italic mb-1" style={{ fontFamily: 'serif' }}>{dName(a.disease, a.devanagari)}</p>
+                                                <div className="flex items-center gap-3 flex-wrap">
+                                                    {a.week && (
+                                                        <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg">🗓 {a.week}</span>
+                                                    )}
+                                                    {a.z_score !== undefined && (
+                                                        <span className="relative group cursor-help">
+                                                            <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                                                                Z = {a.z_score.toFixed(1)}
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                    <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
+                                                                </svg>
+                                                            </span>
+                                                            <div className="absolute bottom-full left-0 mb-2 z-50 hidden group-hover:block w-72 bg-slate-900 text-white text-xs rounded-xl p-3 shadow-2xl leading-relaxed pointer-events-none">
+                                                                <p className="font-bold text-amber-400 mb-1">⚡ Weekly Z-Score</p>
+                                                                <p className="mb-2">Bi-weekly rolling Z-score using the last <strong>6 weeks</strong> vs a <strong>20-week baseline</strong>.</p>
+                                                                <p className="font-mono bg-slate-800 rounded p-1 mb-2 text-green-300">Z = (6wk avg − baseline μ) / σ</p>
+                                                                {a.recent_cases !== undefined && a.baseline_avg !== undefined && (
+                                                                    <p className="mb-2 text-slate-300">
+                                                                        Recent {a.recent_weeks}wk: <strong>{a.recent_cases} cases</strong> · Baseline: <strong>{a.baseline_avg.toFixed(2)}/bi-wk</strong>
+                                                                    </p>
+                                                                )}
+                                                                <p className="text-slate-400">This signal: Z = {a.z_score.toFixed(2)} — {a.z_score >= 5 ? 'Extreme 🔴' : a.z_score >= 3 ? 'Strong 🟠' : 'Early 🟡'}</p>
+                                                            </div>
+                                                        </span>
+                                                    )}
+                                                    {a.pct_increase !== undefined && (
+                                                        <span className="text-xs font-bold text-orange-600">{a.pct_increase > 0 ? '+' : ''}{a.pct_increase}% vs baseline</span>
+                                                    )}
+                                                </div>
+                                                <ViewCasesButton
+                                                    className="mt-2"
+                                                    onClick={() => setCaseQuery({
+                                                        title: `Weekly early signal · ${a.week ?? ''}`,
+                                                        disease: a.disease,
+                                                        startDate: a.window_start,
+                                                        endDate: a.window_end,
+                                                    })}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
 
                             {alertTab === 'monthly' && (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -532,9 +659,9 @@ export default function PublicHealthDashboard() {
                                                 </span>
                                             </div>
                                             <p className="text-base font-bold text-slate-900" style={{ fontFamily: 'serif' }}>
-                                                {dName(a.disease, a.devanagari)}
+                                                {hName(a.disease, a.hindi)}
                                             </p>
-                                            {a.iast && <p className="text-[10px] text-slate-400 italic mb-1">{a.iast}</p>}
+                                            <p className="text-[10px] text-slate-400 italic mb-1" style={{ fontFamily: 'serif' }}>{dName(a.disease, a.devanagari)}</p>
                                             <div className="flex items-center gap-3 flex-wrap">
                                                 {a.surge_month && (
                                                     <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg">📅 {a.surge_month}</span>
@@ -585,69 +712,6 @@ export default function PublicHealthDashboard() {
                                     ))}
                                 </div>
                             )}
-
-                            {alertTab === 'weekly' && (
-                                <>
-                                    <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-1.5 mb-3 border border-amber-200">
-                                        ⚡ <strong>Early warning</strong> — bi-weekly rolling Z-score detects surges <strong>3–6 weeks earlier</strong> than the monthly detector.
-                                        Uses last 6-week window vs 20-week baseline. Threshold: Z ≥ 1.6.
-                                    </p>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                        {weeklyAlerts.map((a, i) => (
-                                            <div key={i} className="bg-white rounded-xl p-3 border border-amber-100">
-                                                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0 ${SEVERITY_STYLES[a.severity] ?? 'bg-slate-200 text-slate-700'}`}>
-                                                        {a.severity}
-                                                    </span>
-                                                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">EARLY SIGNAL</span>
-                                                </div>
-                                                <p className="text-base font-bold text-slate-900" style={{ fontFamily: 'serif' }}>
-                                                    {dName(a.disease, a.devanagari)}
-                                                </p>
-                                                {a.iast && <p className="text-[10px] text-slate-400 italic mb-1">{a.iast}</p>}
-                                                <div className="flex items-center gap-3 flex-wrap">
-                                                    {a.week && (
-                                                        <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg">🗓 {a.week}</span>
-                                                    )}
-                                                    {a.z_score !== undefined && (
-                                                        <span className="relative group cursor-help">
-                                                            <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-lg flex items-center gap-1">
-                                                                Z = {a.z_score.toFixed(1)}
-                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                    <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
-                                                                </svg>
-                                                            </span>
-                                                            <div className="absolute bottom-full left-0 mb-2 z-50 hidden group-hover:block w-72 bg-slate-900 text-white text-xs rounded-xl p-3 shadow-2xl leading-relaxed pointer-events-none">
-                                                                <p className="font-bold text-amber-400 mb-1">⚡ Weekly Z-Score</p>
-                                                                <p className="mb-2">Bi-weekly rolling Z-score using the last <strong>6 weeks</strong> vs a <strong>20-week baseline</strong>.</p>
-                                                                <p className="font-mono bg-slate-800 rounded p-1 mb-2 text-green-300">Z = (6wk avg − baseline μ) / σ</p>
-                                                                {a.recent_cases !== undefined && a.baseline_avg !== undefined && (
-                                                                    <p className="mb-2 text-slate-300">
-                                                                        Recent {a.recent_weeks}wk: <strong>{a.recent_cases} cases</strong> · Baseline: <strong>{a.baseline_avg.toFixed(2)}/bi-wk</strong>
-                                                                    </p>
-                                                                )}
-                                                                <p className="text-slate-400">This signal: Z = {a.z_score.toFixed(2)} — {a.z_score >= 5 ? 'Extreme 🔴' : a.z_score >= 3 ? 'Strong 🟠' : 'Early 🟡'}</p>
-                                                            </div>
-                                                        </span>
-                                                    )}
-                                                    {a.pct_increase !== undefined && (
-                                                        <span className="text-xs font-bold text-orange-600">{a.pct_increase > 0 ? '+' : ''}{a.pct_increase}% vs baseline</span>
-                                                    )}
-                                                </div>
-                                                <ViewCasesButton
-                                                    className="mt-2"
-                                                    onClick={() => setCaseQuery({
-                                                        title: `Weekly early signal · ${a.week ?? ''}`,
-                                                        disease: a.disease,
-                                                        startDate: a.window_start,
-                                                        endDate: a.window_end,
-                                                    })}
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -692,9 +756,9 @@ export default function PublicHealthDashboard() {
                                     <span className="text-xs font-bold text-slate-600">{cluster.total_cases} cases</span>
                                 </div>
                                 <p className="text-sm font-bold text-slate-800 mb-0.5" style={{ fontFamily: 'serif' }}>
-                                    {dName(cluster.disease, cluster.devanagari)}
+                                    {hName(cluster.disease, cluster.hindi)}
                                 </p>
-                                {cluster.iast && <p className="text-[10px] text-slate-400 italic mb-2">{cluster.iast}</p>}
+                                <p className="text-[10px] text-slate-400 italic mb-2" style={{ fontFamily: 'serif' }}>{dName(cluster.disease, cluster.devanagari)}</p>
                                 <div className="space-y-1">
                                     {cluster.cities.slice(0, 4).map((city: string, ci: number) => (
                                         <div key={ci} className="flex items-center justify-between">
@@ -735,8 +799,8 @@ export default function PublicHealthDashboard() {
                     <SectionHeader
                         icon={<Activity className="h-5 w-5" />}
                         title="Disease Trends (90 Days)"
-                        subtitle="7-day rolling average of daily cases"
-                        info="Aggregates patient visit records from the last 90+7 days. Displays a 7-day smoothed rolling average to highlight underlying surge trends rather than daily noise. Missing days are filled with zeros automatically."
+                        subtitle="Weekly case counts (summed over 7-day windows)"
+                        info="Aggregates patient visit records into 7-day calendar weeks over the last 90 days. Displays weekly totals to highlight trends clearly and avoid daily noise. Missing days/weeks are filled with zeros automatically."
                     />
                     {trends.length > 0 ? (
                         <ResponsiveContainer width="100%" height={300}>
@@ -761,7 +825,7 @@ export default function PublicHealthDashboard() {
                                         strokeWidth={2}
                                         dot={false}
                                         activeDot={{ r: 5 }}
-                                        name={dName(d)}
+                                        name={hName(d)}
                                     />
                                 ))}
                             </LineChart>
@@ -786,9 +850,9 @@ export default function PublicHealthDashboard() {
                             <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-bold text-slate-700 truncate" style={{ fontFamily: 'serif' }}>
-                                        {dName(t.disease)}
+                                        {hName(t.disease)}
                                     </p>
-                                    <p className="text-[10px] text-slate-400 italic">{dNameIast(t.disease)}</p>
+                                    <p className="text-[10px] text-slate-400 italic" style={{ fontFamily: 'serif' }}>{dName(t.disease)}</p>
                                     <p className="text-xs text-slate-400">{t.current_cases} recent cases</p>
                                     <ViewCasesButton
                                         onClick={() => setCaseQuery({
@@ -839,7 +903,7 @@ export default function PublicHealthDashboard() {
                         >
                             <option value="">All Diseases</option>
                             {uniqueDiseaseList.map(d => (
-                                <option key={d} value={d}>{dName(d)}</option>
+                                <option key={d} value={d}>{hName(d)}</option>
                             ))}
                         </select>
                     </div>
@@ -852,9 +916,9 @@ export default function PublicHealthDashboard() {
                                     </div>
                                     <div>
                                         <p className="text-sm font-bold text-slate-800" style={{ fontFamily: 'serif' }}>
-                                            {dName(h.diagnosis, h.devanagari)}
+                                            {hName(h.diagnosis, h.hindi)}
                                         </p>
-                                        <p className="text-[10px] text-slate-400 italic mb-1">{h.iast || dNameIast(h.diagnosis)}</p>
+                                        <p className="text-[10px] text-slate-400 italic mb-1" style={{ fontFamily: 'serif' }}>{dName(h.diagnosis, h.devanagari)}</p>
                                         <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded w-fit">
                                             <MapPin className="h-3 w-3 text-slate-400" />
                                             <span className="capitalize">{h.city}</span>
@@ -975,27 +1039,22 @@ export default function PublicHealthDashboard() {
                                                     <tr key={di} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
                                                         <td className="py-2.5 pr-3 font-medium text-slate-700">
                                                             <p className="font-bold text-slate-800" style={{ fontFamily: 'serif' }}>
-                                                                {dName(dis, nameMap[dis]?.devanagari)}
+                                                                {hName(dis, nameMap[dis]?.hindi)}
                                                             </p>
-                                                            <p className="text-[10px] text-slate-400 italic">{nameMap[dis]?.iast ?? ''}</p>
+                                                            <p className="text-[10px] text-slate-400 italic" style={{ fontFamily: 'serif' }}>{dName(dis, nameMap[dis]?.devanagari)}</p>
                                                         </td>
                                                         {months_data.map((m_entry, mi) => (
                                                             <td key={mi} className="text-center py-2.5 px-2">
                                                                 <p className="text-base font-bold text-purple-700">{m_entry.predicted_cases}</p>
-                                                                <p className="text-[10px] text-slate-400">
-                                                                    {RITU_EMOJI[m_entry.season] ?? '🌿'} {m_entry.season || '—'}
-                                                                    {m_entry.ritu_sandhi ? ' 🌿' : ''}
-                                                                </p>
                                                             </td>
                                                         ))}
                                                     </tr>
                                                 ))}
                                             </tbody>
                                         </table>
-                                        <p className="text-[10px] text-slate-400 mt-3 italic">
-                                            Values = predicted cases. 🌿 Ritu Sandhi = seasonal transition (high-risk window).
-                                            Model: RandomForest trained on Jan 2025 – Feb 2026 Ayurvedic clinical data.
-                                        </p>
+                                         <p className="text-[10px] text-slate-400 mt-3 italic">
+                                             Values = predicted cases. Model: RandomForest trained on Ayurvedic clinical surveillance data (Jan 2024 – Jul 2026).
+                                         </p>
                                     </div>
                                 );
                             })()}
@@ -1021,25 +1080,36 @@ export default function PublicHealthDashboard() {
 
             </div>
 
-            {/* Disease Radar + Top Cities */}
+            {/* Disease Load + Top Cities */}
             <div className="space-y-6">
-                {/* Top Diseases Radar */}
+                {/* Top Diseases */}
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                     <SectionHeader
                         icon={<BarChart2 className="h-5 w-5" />}
                         title="Disease Load Distribution"
                         subtitle="Top 6 diseases by case volume"
-                        info="Radar chart of the top 6 diseases by total case count across all time. Each axis represents a disease. The larger the polygon area, the higher the overall burden relative to others. Data source: analytics/dashboard top_diseases summary."
+                        info="Top 6 diseases by total case count for the selected date range. Bar width shows relative proportion compared to the highest-volume disease. Data source: analytics/dashboard top_diseases summary."
+                        right={<DateRangeSelect value={diseaseRange} onChange={setDiseaseRange} />}
                     />
                     {radarData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={160}>
-                            <RadarChart data={radarData}>
-                                <PolarGrid stroke="#f1f5f9" />
-                                <PolarAngleAxis dataKey="disease" tick={{ fontSize: 10, fill: '#94a3b8' }} />
-                                <PolarRadiusAxis tick={{ fontSize: 8 }} />
-                                <Radar name="Cases" dataKey="count" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.2} />
-                            </RadarChart>
-                        </ResponsiveContainer>
+                        <div className="space-y-2">
+                            {radarData.map((d, i) => {
+                                const max = radarData[0]?.count ?? 1;
+                                const pct = Math.round((d.count / max) * 100);
+                                return (
+                                    <div key={i} className="flex items-center gap-3">
+                                        <span className="text-xs font-medium text-slate-500 w-28 truncate" title={d.disease}>{d.disease}</span>
+                                        <div className="flex-1 bg-slate-100 rounded-full h-2">
+                                            <div
+                                                className="h-2 rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all"
+                                                style={{ width: `${pct}%` }}
+                                            />
+                                        </div>
+                                        <span className="text-xs font-bold text-slate-700 w-8 text-right">{d.count}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     ) : (
                         <div className="h-[160px] flex items-center justify-center text-slate-400 text-sm">
                             {loading ? 'Loading...' : 'No summary data'}
@@ -1052,11 +1122,12 @@ export default function PublicHealthDashboard() {
                     <SectionHeader
                         icon={<MapPin className="h-5 w-5" />}
                         title="Top Cities by Patient Load"
-                        info="Ranks cities by total patient visits across all time. Bar width shows relative proportion compared to the highest-volume city. Source: patients table city field."
+                        info="Ranks cities by total patient visits for the selected date range. Bar width shows relative proportion compared to the highest-volume city. Source: patients table city field."
+                        right={<DateRangeSelect value={cityRange} onChange={setCityRange} />}
                     />
                     <div className="space-y-2">
-                        {summary?.top_cities.slice(0, 4).map((c, i) => {
-                            const max = summary.top_cities[0]?.count ?? 1;
+                        {cityData.slice(0, 4).map((c, i) => {
+                            const max = cityData[0]?.count ?? 1;
                             const pct = Math.round((c.count / max) * 100);
                             return (
                                 <div key={i} className="flex items-center gap-3">

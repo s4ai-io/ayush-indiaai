@@ -82,8 +82,8 @@ class ForecastService:
                 "predicted_cases":   round(float(row["predicted_cases"]), 1),
                 "season":            str(row["season"]) if "season" in row.index else "",
                 "ritu_sandhi":       bool(row["ritu_sandhi"]) if "ritu_sandhi" in row.index else False,
-                "confidence_lower":  None,
-                "confidence_upper":  None,
+                "confidence_lower":  round(float(row["confidence_lower"]), 1) if "confidence_lower" in row.index else None,
+                "confidence_upper":  round(float(row["confidence_upper"]), 1) if "confidence_upper" in row.index else None,
             })
 
         # Trend direction
@@ -111,6 +111,8 @@ class ForecastService:
                 "predicted_cases": entry["predicted_cases"],
                 "season":          entry["season"],
                 "ritu_sandhi":     entry["ritu_sandhi"],
+                "confidence_lower": entry["confidence_lower"],
+                "confidence_upper": entry["confidence_upper"],
             })
 
         return {

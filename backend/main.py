@@ -377,6 +377,8 @@ async def get_forecast(disease: str = None, months: int = 3):
                     "predicted_cases": entry["predicted_cases"],
                     "season":          entry.get("season", ""),
                     "ritu_sandhi":     entry.get("ritu_sandhi", False),
+                    "confidence_lower": entry.get("confidence_lower"),
+                    "confidence_upper": entry.get("confidence_upper"),
                 })
             forecast["by_disease"] = by_disease
 
@@ -489,6 +491,8 @@ async def get_case_details(
             "disease": disease,
             "devanagari": entry["devanagari"],
             "iast": entry["iast"],
+            "hindi": entry["hindi"],
+            "english": entry["english"],
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -508,10 +512,10 @@ async def get_public_health_alerts():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/analytics/dashboard", response_model=DashboardSummaryResponse, tags=["Public Health Analytics"])
-async def get_dashboard_summary():
-    """Get overall analytics dashboard summary"""
+async def get_dashboard_summary(days: Optional[int] = None):
+    """Get overall analytics dashboard summary, optionally scoped to the last `days` days"""
     try:
-        summary = analytics_service.get_dashboard_summary()
+        summary = analytics_service.get_dashboard_summary(days=days)
         return summary
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -551,6 +555,7 @@ async def get_disease_clusters(days: int = 90):
             entry = get_full_name(cluster.get("disease", ""))
             cluster["devanagari"] = entry["devanagari"]
             cluster["iast"]       = entry["iast"]
+            cluster["hindi"]      = entry["hindi"]
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -1057,6 +1062,8 @@ async def gemma4_turn(
     try:
         async with httpx.AsyncClient(timeout=GEMMA_REQUEST_TIMEOUT) as client:
             form_data = {"flow": flow}
+            if flow == "treatment":
+                form_data["disease_list"] = _approved_disease_prompt_list()
             if conversation_history:
                 form_data["conversation_history"] = conversation_history
             if user_text_prompt:
@@ -1070,7 +1077,9 @@ async def gemma4_turn(
         if resp.status_code != 200:
             raise HTTPException(status_code=resp.status_code, detail=f"Modal Gemma-4 error: {resp.text[:300]}")
 
-        return resp.json()
+        data = resp.json()
+        data["extracted"] = _normalize_extracted_treatment_disease(flow, data.get("extracted"))
+        return data
 
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="Modal Gemma-4 request timed out")
@@ -1095,6 +1104,36 @@ def _parse_structured_reply(full_text: str):
         return (reply, parsed) if isinstance(parsed, dict) else (reply, None)
     except json.JSONDecodeError:
         return reply, None
+
+
+def _approved_disease_prompt_list() -> str:
+    diseases = ISHAAyush_service.get_disease_list()
+    return "\n".join(f"- {name}" for name in diseases)
+
+
+def _normalize_extracted_treatment_disease(flow: str | None, extracted):
+    if flow != "treatment" or not isinstance(extracted, dict) or "disease" not in extracted:
+        return extracted
+
+    raw_disease = extracted.get("disease")
+    if raw_disease is None:
+        return extracted
+
+    raw_text = str(raw_disease).strip()
+    if not raw_text:
+        extracted["disease"] = None
+        return extracted
+
+    approved = ISHAAyush_service.get_disease_list()
+    exact_by_lower = {name.lower(): name for name in approved}
+    exact = exact_by_lower.get(raw_text.lower())
+    if exact:
+        extracted["disease"] = exact
+        return extracted
+
+    suggestions = ISHAAyush_service.get_suggestions(raw_text, limit=1)
+    extracted["disease"] = suggestions[0] if suggestions else None
+    return extracted
 
 
 @app.post("/api/phi4-turn", tags=["Voice Pipeline"])
@@ -1122,7 +1161,8 @@ async def phi4_turn(
         except json.JSONDecodeError:
             history = []
 
-    system_prompt = phi4_prompts.get_system_prompt(flow)
+    disease_list = ISHAAyush_service.get_disease_list() if flow == "treatment" else None
+    system_prompt = phi4_prompts.get_system_prompt(flow, disease_list=disease_list)
     messages = [ChatMessage(role=MessageRole.SYSTEM, content=system_prompt)]
     for turn in history:
         role = MessageRole.ASSISTANT if turn.get("role") == "assistant" else MessageRole.USER
@@ -1139,6 +1179,7 @@ async def phi4_turn(
         raise HTTPException(status_code=500, detail=f"Phi-4 turn failed: {exc}")
 
     reply, extracted = _parse_structured_reply(full_text)
+    extracted = _normalize_extracted_treatment_disease(flow, extracted)
     return {
         "reply": reply,
         "extracted": extracted,
