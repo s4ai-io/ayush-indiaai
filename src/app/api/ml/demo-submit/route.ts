@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { authHeaders } from '@/lib/server/backend';
 
 const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || 'http://localhost:8000';
 
@@ -7,7 +8,7 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const response = await fetch(`${PYTHON_BACKEND_URL}/api/ml/demo-submit`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
             body: JSON.stringify(body),
         });
         const data = await response.json();

@@ -44,7 +44,28 @@ export function ApiLoadingProvider({ children }: { children: ReactNode }) {
       pendingRef.current += 1;
       setPending(pendingRef.current);
       try {
-        return await originalFetch(...args);
+        const response = await originalFetch(...args);
+
+        // Session expired mid-use: any authenticated API call returning 401
+        // sends the user back to login. /api/auth/* is excluded so the login
+        // page's own failed attempts and me-probes don't loop.
+        const url =
+          typeof args[0] === "string"
+            ? args[0]
+            : args[0] instanceof Request
+              ? args[0].url
+              : args[0].toString();
+        const path = url.startsWith("/") ? url : new URL(url, window.location.origin).pathname;
+        if (
+          response.status === 401 &&
+          path.startsWith("/api/") &&
+          !path.startsWith("/api/auth/") &&
+          window.location.pathname !== "/login"
+        ) {
+          window.location.href = "/login";
+        }
+
+        return response;
       } finally {
         pendingRef.current = Math.max(0, pendingRef.current - 1);
         setPending(pendingRef.current);

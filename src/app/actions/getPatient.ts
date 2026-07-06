@@ -1,10 +1,12 @@
 'use server';
 
+import { BACKEND_URL, authHeaders } from '@/lib/server/backend';
+
 export async function getPatient(id: string) {
     try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-        const response = await fetch(`${API_URL}/api/patients/${id}`, {
-            cache: 'no-store'
+        const response = await fetch(`${BACKEND_URL}/api/patients/${id}`, {
+            cache: 'no-store',
+            headers: await authHeaders(),
         });
         if (!response.ok) {
             return null;

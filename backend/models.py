@@ -83,6 +83,17 @@ class TreatmentFeedback(Base):
     removed_herbs = Column(Text, nullable=True)
     demo_session = Column(Boolean, default=False)
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(String, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True, nullable=False)
+    full_name = Column(String, default="")
+    password_hash = Column(String, nullable=False)
+    role = Column(String, nullable=False)  # 'receptionist' | 'doctor' | 'admin'
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 class ClinicalOutcomeScore(Base):
     __tablename__ = "clinical_outcome_scores"
     

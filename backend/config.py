@@ -32,3 +32,8 @@ MODAL_SCALEDOWN_WINDOW = 1800  # 30 minutes — keep warm after last request
 
 # ── CORS Defaults ──────────────────────────────────────────────────────────────
 DEFAULT_ALLOWED_ORIGINS = "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000"
+
+# ── Auth ───────────────────────────────────────────────────────────────────────
+# JWT signing key (SECRET_KEY) lives in .env; these are the non-secret defaults.
+AUTH_COOKIE_NAME = "ayush_token"
+DEFAULT_ACCESS_TOKEN_EXPIRE_HOURS = 12  # one clinic shift

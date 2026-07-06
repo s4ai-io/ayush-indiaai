@@ -53,7 +53,10 @@ export interface TreatmentRecommendation {
 // API Configuration
 // ============================================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+import { API_BASE } from '@/lib/config';
+
+// Same-origin by default so the auth cookie flows through the rewrite proxy.
+const API_BASE_URL = API_BASE;
 
 // ============================================================================
 // Error Handling

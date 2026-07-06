@@ -6,18 +6,25 @@ import Link from 'next/link';
 import { API_BASE } from '@/lib/config';
 import {
     Search, UserPlus, Stethoscope, ChevronRight,
-    Calendar, Phone, Activity, FileText, X, Loader2
+    Calendar, Phone, Activity, FileText, X, Loader2,
+    ClipboardPlus, Lock, CheckCircle2
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import type { PatientDirectoryItem } from '@/types';
+import { useAuth } from '@/components/layout/AuthProvider';
 
 
 export default function PatientsDirectoryPage() {
     const router = useRouter();
+    const { user } = useAuth();
+    // Clinical visit history is doctor/admin only; receptionists see
+    // demographics and can queue the patient for a consultation.
+    const canViewHistory = user?.role === 'doctor' || user?.role === 'admin';
     const [patients, setPatients] = useState<PatientDirectoryItem[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
     const [startingConsultationId, setStartingConsultationId] = useState<string | null>(null);
+    const [queuedPatientId, setQueuedPatientId] = useState<string | null>(null);
 
     const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
     const [patientHistory, setPatientHistory] = useState<any[]>([]);
@@ -55,6 +62,13 @@ export default function PatientsDirectoryPage() {
 
     const fetchPatientHistory = async (patientId: string) => {
         setSelectedPatientId(patientId);
+        setQueuedPatientId(null);
+        if (!canViewHistory) {
+            // Backend would 403 this fetch anyway — receptionists only get the
+            // demographics panel.
+            setPatientHistory([]);
+            return;
+        }
         setHistoryLoading(true);
         try {
             const response = await fetch(`${API_BASE}/api/patients/${patientId}/history`);
@@ -110,7 +124,13 @@ export default function PatientsDirectoryPage() {
             });
             if (!res.ok) throw new Error('Failed to create visit');
             const data = await res.json();
-            router.push(`/doctor/treatment/${data.visitId}`);
+            if (canViewHistory) {
+                router.push(`/doctor/treatment/${data.visitId}`);
+            } else {
+                // Receptionist: the visit is created (patient joins the doctor's
+                // pending queue) but the treatment workspace stays doctor-only.
+                setQueuedPatientId(patientId);
+            }
         } catch (err) {
             console.error('Failed to start consultation:', err);
             alert('Could not start consultation. Please try again.');
@@ -135,7 +155,11 @@ export default function PatientsDirectoryPage() {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-800">Patient Directory</h1>
-                        <p className="text-slate-500 text-sm">Manage all registered patients and view complete visit history.</p>
+                        <p className="text-slate-500 text-sm">
+                            {canViewHistory
+                                ? 'Manage all registered patients and view complete visit history.'
+                                : 'Search registered patients and queue them for consultation.'}
+                        </p>
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -197,7 +221,11 @@ export default function PatientsDirectoryPage() {
                         {!selectedPatientId ? (
                             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 h-[600px] flex flex-col items-center justify-center text-slate-400">
                                 <FileText className="w-12 h-12 mb-4 text-slate-200" />
-                                <p>Select a patient from the directory to view their complete history.</p>
+                                <p>
+                                    {canViewHistory
+                                        ? 'Select a patient from the directory to view their complete history.'
+                                        : 'Select a patient from the directory to view their details.'}
+                                </p>
                             </div>
                         ) : (
                             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 h-[600px] flex flex-col overflow-hidden">
@@ -218,21 +246,37 @@ export default function PatientsDirectoryPage() {
                                                         </div>
                                                     </div>
 
-                                                    {/* Directly jump to start a consultation for THIS patient */}
-                                                    <Button
-                                                        onClick={() => handleStartConsultation(patientDetail.id)}
-                                                        disabled={startingConsultationId === patientDetail.id}
-                                                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                                                    >
-                                                        {startingConsultationId === patientDetail.id
-                                                            ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Starting...</>
-                                                            : <><Stethoscope className="w-4 h-4 mr-2" /> Start Consultation</>
-                                                        }
-                                                    </Button>
+                                                    {/* Doctor/admin jump straight into the treatment workspace;
+                                                        receptionists add the patient to the doctor's pending queue. */}
+                                                    {queuedPatientId === patientDetail.id ? (
+                                                        <span className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-sm font-medium">
+                                                            <CheckCircle2 className="w-4 h-4" /> Added to queue
+                                                        </span>
+                                                    ) : (
+                                                        <Button
+                                                            onClick={() => handleStartConsultation(patientDetail.id)}
+                                                            disabled={startingConsultationId === patientDetail.id}
+                                                            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                                        >
+                                                            {startingConsultationId === patientDetail.id
+                                                                ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {canViewHistory ? 'Starting...' : 'Queueing...'}</>
+                                                                : canViewHistory
+                                                                    ? <><Stethoscope className="w-4 h-4 mr-2" /> Start Consultation</>
+                                                                    : <><ClipboardPlus className="w-4 h-4 mr-2" /> Add to Queue</>
+                                                            }
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </div>
 
-                                            {/* History Stream */}
+                                            {/* History Stream — clinical data, doctor/admin only */}
+                                            {!canViewHistory ? (
+                                                <div className="flex-1 flex flex-col items-center justify-center p-6 bg-slate-50/30 text-slate-400">
+                                                    <Lock className="w-8 h-8 mb-3 text-slate-300" />
+                                                    <p className="text-sm font-medium text-slate-500">Clinical visit history is restricted</p>
+                                                    <p className="text-xs mt-1">Only doctors and administrators can view diagnoses and treatments.</p>
+                                                </div>
+                                            ) : (
                                             <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30">
                                                 <h3 className="font-semibold text-slate-800 mb-4 flex items-center">
                                                     <Activity className="w-4 h-4 mr-2 text-indigo-500" /> Visit History
@@ -275,6 +319,7 @@ export default function PatientsDirectoryPage() {
                                                     </div>
                                                 )}
                                             </div>
+                                            )}
                                         </>
                                     );
                                 })()}

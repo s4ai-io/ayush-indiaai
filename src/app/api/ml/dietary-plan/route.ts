@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { authHeaders } from '@/lib/server/backend';
 
 const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || 'http://localhost:8000';
 
@@ -13,7 +14,8 @@ export async function GET(request: NextRequest) {
         }
 
         const response = await fetch(
-            `${PYTHON_BACKEND_URL}/api/dietary-plan?disease=${encodeURIComponent(disease)}&prakriti=${encodeURIComponent(prakriti)}`
+            `${PYTHON_BACKEND_URL}/api/dietary-plan?disease=${encodeURIComponent(disease)}&prakriti=${encodeURIComponent(prakriti)}`,
+            { headers: await authHeaders() }
         );
 
         if (!response.ok) {

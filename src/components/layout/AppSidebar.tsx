@@ -9,51 +9,67 @@ import { Button } from "@/components/ui/button";
 import {
     LayoutDashboard, UserPlus, Stethoscope, Menu, X, Users, ShieldAlert,
     ChevronLeft, ChevronRight, type LucideIcon, BarChart2, BrainCircuit,
+    UserCog, LogOut,
 } from "lucide-react";
+import { useAuth } from "@/components/layout/AuthProvider";
+import { ALL_ROLES, type Role } from "@/lib/auth/roles";
 
 interface NavItem {
     href: string;
     label: string;
     icon: LucideIcon;
     isActive: (pathname: string) => boolean;
+    roles: Role[];
 }
 
 const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
     {
         label: "Overview",
         items: [
-            { href: "/", label: "Dashboard", icon: LayoutDashboard, isActive: (p) => p === "/" },
-            { href: "/public-health/dashboard", label: "Analytics", icon: BarChart2, isActive: (p) => p.includes("/public-health") },
+            { href: "/", label: "Dashboard", icon: LayoutDashboard, isActive: (p) => p === "/", roles: ALL_ROLES },
+            { href: "/public-health/dashboard", label: "Analytics", icon: BarChart2, isActive: (p) => p.includes("/public-health"), roles: ["admin"] },
         ],
     },
     {
         label: "Reception",
         items: [
-            { href: "/registration", label: "New Registration", icon: UserPlus, isActive: (p) => p === "/registration" },
-            { href: "/patients", label: "Patient Directory", icon: Users, isActive: (p) => p === "/patients" },
+            { href: "/registration", label: "New Registration", icon: UserPlus, isActive: (p) => p === "/registration", roles: ["receptionist", "admin"] },
+            { href: "/patients", label: "Patient Directory", icon: Users, isActive: (p) => p === "/patients", roles: ALL_ROLES },
         ],
     },
     {
         label: "Clinical",
         items: [
-            { href: "/doctor", label: "Doctor Dashboard", icon: Stethoscope, isActive: (p) => p === "/doctor" },
+            { href: "/doctor", label: "Doctor Dashboard", icon: Stethoscope, isActive: (p) => p === "/doctor", roles: ["doctor", "admin"] },
         ],
     },
     {
         label: "Admin",
         items: [
-            { href: "/admin/accuracy", label: "Accuracy Evaluator", icon: ShieldAlert, isActive: (p) => p === "/admin/accuracy" },
-            { href: "/admin/model-dashboard", label: "Model Intelligence", icon: BrainCircuit, isActive: (p) => p === "/admin/model-dashboard" },
+            { href: "/admin/staff", label: "Staff Management", icon: UserCog, isActive: (p) => p === "/admin/staff", roles: ["admin"] },
+            { href: "/admin/accuracy", label: "Accuracy Evaluator", icon: ShieldAlert, isActive: (p) => p === "/admin/accuracy", roles: ["admin"] },
+            { href: "/admin/model-dashboard", label: "Model Intelligence", icon: BrainCircuit, isActive: (p) => p === "/admin/model-dashboard", roles: ["admin"] },
         ],
     },
 ];
 
 export function AppSidebar() {
     const pathname = usePathname();
+    const { user, logout } = useAuth();
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
 
     const toggleCollapsed = () => setIsCollapsed((prev) => !prev);
+
+    // No session (or still loading) → no sidebar. This also hides it on /login.
+    if (!user) return null;
+
+    const visibleSections = NAV_SECTIONS
+        .map((section) => ({
+            ...section,
+            items: section.items.filter((item) => item.roles.includes(user.role)),
+        }))
+        .filter((section) => section.items.length > 0);
 
     return (
         <>
@@ -145,7 +161,7 @@ export function AppSidebar() {
 
                 {/* Navigation Links */}
                 <nav className="flex-1 space-y-8 overflow-y-auto overflow-x-hidden px-4 pb-8">
-                    {NAV_SECTIONS.map((section) => (
+                    {visibleSections.map((section) => (
                         <div key={section.label} className="space-y-2">
                             <h2 className={cn(
                                 "px-4 text-xs font-semibold text-white/50 uppercase tracking-wider mb-2 transition-opacity duration-150",
@@ -173,11 +189,34 @@ export function AppSidebar() {
                     ))}
                 </nav>
 
-                {/* Footer */}
-                <div className={cn("p-6 mt-auto", isCollapsed && "md:px-3")}>
-                    <div className={cn("bg-white/10 rounded-xl text-center", isCollapsed ? "md:p-2" : "p-4")}>
-                        <p className={cn("text-xs text-white/70 font-medium", isCollapsed && "md:hidden")}>© 2026 Ministry of AYUSH POC</p>
-                        {isCollapsed && <p className="hidden md:block text-[10px] text-white/70 font-semibold">©26</p>}
+                {/* Footer — signed-in user + logout */}
+                <div className={cn("p-6 mt-auto space-y-3", isCollapsed && "md:px-3")}>
+                    <div className={cn(
+                        "bg-white/10 rounded-xl flex items-center gap-3",
+                        isCollapsed ? "md:p-2 md:justify-center p-3" : "p-3"
+                    )}>
+                        <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold shrink-0 uppercase">
+                            {user.name.charAt(0)}
+                        </div>
+                        <div className={cn("min-w-0 flex-1", isCollapsed && "md:hidden")}>
+                            <p className="text-sm font-medium text-white truncate">{user.name}</p>
+                            <p className="text-[11px] text-white/60 capitalize truncate">{user.role}</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={logout}
+                            title="Sign out"
+                            className={cn(
+                                "text-white/60 hover:text-white hover:bg-white/10 rounded-lg p-1.5 transition-colors shrink-0",
+                                isCollapsed && "md:hidden"
+                            )}
+                        >
+                            <LogOut className="h-4 w-4" />
+                            <span className="sr-only">Sign out</span>
+                        </button>
+                    </div>
+                    <div className={cn("text-center", isCollapsed && "md:hidden")}>
+                        <p className="text-[10px] text-white/50 font-medium">© 2026 Ministry of AYUSH POC</p>
                     </div>
                 </div>
             </div>

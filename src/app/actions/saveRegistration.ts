@@ -2,8 +2,7 @@
 
 
 import type { PatientRegistrationData } from '@/types/clinical';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+import { BACKEND_URL, authHeaders } from '@/lib/server/backend';
 
 
 
@@ -11,12 +10,13 @@ export async function saveRegistration(data: PatientRegistrationData) {
     try {
 
 
-        console.log("Saving registration to backend:", `${API_URL}/api/patients`);
+        console.log("Saving registration to backend:", `${BACKEND_URL}/api/patients`);
 
-        const response = await fetch(`${API_URL}/api/patients`, {
+        const response = await fetch(`${BACKEND_URL}/api/patients`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                ...(await authHeaders()),
             },
             body: JSON.stringify(data),
         });

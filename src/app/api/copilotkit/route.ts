@@ -11,22 +11,31 @@ import {
 import { LlamaIndexAgent } from "@ag-ui/llamaindex";
 import { NextRequest } from "next/server";
 
-const BACKEND = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const BACKEND = process.env.PYTHON_BACKEND_URL || 'http://localhost:8000';
 
 export async function POST(request: NextRequest) {
+    // Forward the caller's auth cookie so the backend RBAC middleware can
+    // authorize the agent runs (registration → receptionist, treatment → doctor).
+    const cookie = request.headers.get('cookie') ?? '';
+    const authHeaders = cookie ? { Cookie: cookie } : undefined;
+
     const runtime = new CopilotRuntime({
         agents: {
             consultation_agent: new LlamaIndexAgent({
                 url: `${BACKEND}/api/copilot/consultation/run`,
+                headers: authHeaders,
             }) as any,
             registration_agent: new LlamaIndexAgent({
                 url: `${BACKEND}/api/copilot/registration/run`,
+                headers: authHeaders,
             }) as any,
             doctor_agent: new LlamaIndexAgent({
                 url: `${BACKEND}/api/copilot/doctor/run`,
+                headers: authHeaders,
             }) as any,
             treatment_agent: new LlamaIndexAgent({
                 url: `${BACKEND}/api/copilot/treatment/run`,
+                headers: authHeaders,
             }) as any,
         },
     });

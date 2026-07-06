@@ -99,11 +99,18 @@ _allowed_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_allowed_origins + ["*"],  # Keep wildcard for local network testing
+    # No wildcard: browsers reject `*` with credentials, and cookie auth
+    # requires allow_credentials=True. Extra origins go in ALLOWED_ORIGINS.
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Added after CORS so CORS wraps it (Starlette applies middleware in reverse
+# add-order) and 401/403 responses still carry CORS headers.
+from security import RBACMiddleware
+app.add_middleware(RBACMiddleware)
 
 
 @app.get("/", tags=["Root"])
@@ -591,10 +598,14 @@ async def get_disease_spread_prediction(disease: str = None):
 from services.registration_agent import registration_agent_router
 from services.treatment_agent import treatment_agent_router
 from services.admin_router import admin_router
+from services.auth_router import auth_router
+from services.staff_router import staff_router
 
 app.include_router(registration_agent_router, prefix="/api/copilot/registration", tags=["Copilot Agent"])
 app.include_router(treatment_agent_router, prefix="/api/copilot/treatment", tags=["Copilot Agent"])
 app.include_router(admin_router, prefix="/api/admin", tags=["Admin"])
+app.include_router(auth_router, prefix="/api/auth", tags=["Auth"])
+app.include_router(staff_router, prefix="/api/staff", tags=["Staff"])
 
 from utils.validators import RegistrationData, ConsultationData
 

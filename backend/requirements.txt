@@ -20,3 +20,7 @@ python-dotenv>=1.0.0
 psycopg2-binary>=2.9.9
 pyarrow
 sentence-transformers>=2.7.0
+
+# Auth (RBAC)
+pyjwt>=2.9.0
+bcrypt>=4.2.0

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { authHeaders } from '@/lib/server/backend';
 
 const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || 'http://localhost:8000';
 
@@ -12,6 +13,7 @@ export async function POST(request: NextRequest) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                ...(await authHeaders()),
             },
             body: JSON.stringify(body),
         });

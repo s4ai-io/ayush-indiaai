@@ -1,14 +1,15 @@
 'use server';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+import { BACKEND_URL, authHeaders } from '@/lib/server/backend';
 
 export async function getRegistrations(status?: 'pending' | 'completed') {
     try {
         const url = status
-            ? `${API_URL}/api/patients?status=${status}`
-            : `${API_URL}/api/patients`;
+            ? `${BACKEND_URL}/api/patients?status=${status}`
+            : `${BACKEND_URL}/api/patients`;
         const response = await fetch(url, {
-            cache: 'no-store'
+            cache: 'no-store',
+            headers: await authHeaders(),
         });
         if (!response.ok) {
             throw new Error(`Failed to fetch patients: ${response.statusText}`);
