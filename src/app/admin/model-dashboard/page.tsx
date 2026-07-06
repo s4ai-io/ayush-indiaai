@@ -107,11 +107,12 @@ function StatePicker({
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
-type Tab = "demo" | "history" | "compare" | "cohort" | "outcomes"
+type Tab = "demo" | "history" | "compare" | "cohort" | "outcomes" | "coverage"
 
 export default function ModelDashboardPage() {
     const [activeTab, setActiveTab] = useState<Tab>("demo")
     const [demoMode, setDemoMode] = useState(true)
+    const [selectedDisease, setSelectedDisease] = useState("")
 
     return (
         <div className="min-h-screen bg-slate-50 p-6">
@@ -139,7 +140,7 @@ export default function ModelDashboardPage() {
 
                 {/* ── Tabs ── */}
                 <div className="flex gap-1 border-b border-slate-200">
-                    {(["demo", "history", "compare", "cohort", "outcomes"] as Tab[]).map(tab => (
+                    {(["demo", "history", "compare", "cohort", "outcomes", "coverage"] as Tab[]).map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -152,17 +153,30 @@ export default function ModelDashboardPage() {
                                 tab === "history" ? "State History" :
                                     tab === "compare" ? "Compare States" :
                                         tab === "cohort" ? "Cohort Analytics" :
-                                            "Outcomes"}
+                                            tab === "coverage" ? "Learning Coverage" :
+                                                "Outcomes"}
                         </button>
                     ))}
                 </div>
 
                 {/* ── Tab Content ── */}
-                {activeTab === "demo" && <LiveDemoTab demoMode={demoMode} />}
+                {activeTab === "demo" && (
+                    <LiveDemoTab
+                        demoMode={demoMode}
+                        selectedDisease={selectedDisease}
+                        setSelectedDisease={setSelectedDisease}
+                    />
+                )}
                 {activeTab === "history" && <StateHistoryTab />}
                 {activeTab === "compare" && <CompareStatesTab />}
                 {activeTab === "cohort" && <CohortTab />}
                 {activeTab === "outcomes" && <OutcomesTab />}
+                {activeTab === "coverage" && (
+                    <LearningCoverageTab
+                        setSelectedDisease={setSelectedDisease}
+                        setActiveTab={setActiveTab}
+                    />
+                )}
             </div>
         </div>
     )
@@ -194,8 +208,16 @@ function ResetDemoButton() {
 
 // ── Live Demo Tab ─────────────────────────────────────────────────────────────
 
-function LiveDemoTab({ demoMode }: { demoMode: boolean }) {
-    const [disease, setDisease] = useState("Madhumeha")
+function LiveDemoTab({
+    demoMode,
+    selectedDisease,
+    setSelectedDisease,
+}: {
+    demoMode: boolean
+    selectedDisease: string
+    setSelectedDisease: (v: string) => void
+}) {
+    const [disease, setDisease] = useState(selectedDisease || "")
     const [prakriti, setPrakriti] = useState("Vata")
     const [vikriti, setVikriti] = useState("Pitta")
 
@@ -203,6 +225,8 @@ function LiveDemoTab({ demoMode }: { demoMode: boolean }) {
     const [currentPlan, setCurrentPlan] = useState<any>(null)
     const [addedHerb, setAddedHerb] = useState("")
     const [addedYoga, setAddedYoga] = useState("")
+    const [addedDiet, setAddedDiet] = useState("")
+    const [addedLifestyle, setAddedLifestyle] = useState("")
     const [selectedRating, setSelectedRating] = useState<"Accurate" | "Needs Changes" | null>(null)
     const [submitting, setSubmitting] = useState(false)
     const [submitted, setSubmitted] = useState(false)
@@ -210,11 +234,21 @@ function LiveDemoTab({ demoMode }: { demoMode: boolean }) {
     const [loadingNext, setLoadingNext] = useState(false)
     const [loadingRec, setLoadingRec] = useState(false)
 
-    // Fetch recommendation on load (Q-table is fetched inline after namc_code resolves)
+    // Sync from parent selectedDisease changes
     useEffect(() => {
-        fetchRecommendation()
+        setDisease(selectedDisease || "")
+    }, [selectedDisease])
+
+    // Trigger recommendation whenever disease changes
+    useEffect(() => {
+        if (disease.trim()) {
+            fetchRecommendation()
+        } else {
+            setCurrentPlan(null)
+            setQtable(null)
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [disease])
 
     const fetchQTable = useCallback(async (namc_code?: string) => {
         try {
@@ -233,6 +267,7 @@ function LiveDemoTab({ demoMode }: { demoMode: boolean }) {
     }, [prakriti, vikriti, demoMode, currentPlan?.namc_code])
 
     const fetchRecommendation = useCallback(async () => {
+        if (!disease.trim()) return
         setLoadingRec(true)
         try {
             const res = await fetch("/api/ml/recommend", {
@@ -277,6 +312,12 @@ function LiveDemoTab({ demoMode }: { demoMode: boolean }) {
                         ...(currentPlan.yoga || []),
                     ]
                     : (currentPlan.yoga || []),
+                diet: addedDiet.trim()
+                    ? [addedDiet.trim(), ...(currentPlan.diet || [])]
+                    : (currentPlan.diet || []),
+                lifestyle: addedLifestyle.trim()
+                    ? [addedLifestyle.trim(), ...(currentPlan.lifestyle || [])]
+                    : (currentPlan.lifestyle || []),
             }
 
             // 1. Save feedback row via demo-submit (no real patient needed)
@@ -342,6 +383,8 @@ function LiveDemoTab({ demoMode }: { demoMode: boolean }) {
         setSubmitted(false)
         setAddedHerb("")
         setAddedYoga("")
+        setAddedDiet("")
+        setAddedLifestyle("")
         setSelectedRating(null)
         try {
             await fetchRecommendation() // also fetches Q-table inline after resolving namc_code
@@ -371,7 +414,10 @@ function LiveDemoTab({ demoMode }: { demoMode: boolean }) {
                     <label className="text-xs font-semibold text-slate-500 uppercase">Disease</label>
                     <DiseaseSearchDropdown
                         value={disease}
-                        onChange={setDisease}
+                        onChange={(val) => {
+                            setDisease(val)
+                            setSelectedDisease(val)
+                        }}
                         placeholder="Search disease..."
                     />
                 </div>
@@ -406,87 +452,151 @@ function LiveDemoTab({ demoMode }: { demoMode: boolean }) {
                     {loadingRec ? "Fetching…" : "Get AI Recommendation"}
                 </button>
 
-                {/* Herb list */}
-                {currentPlan?.herbs && (
-                    <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-500 uppercase">AI Recommended Herbs</label>
-                        <ul className="space-y-1">
-                            {currentPlan.herbs.map((h: any, i: number) => (
-                                <li key={i} className="flex items-center gap-2 text-sm text-slate-700 bg-slate-50 px-3 py-1.5 rounded-lg">
-                                    <span className="text-emerald-500">•</span> {h.name}
-                                    {(h.ai_learned || (h.source && h.source.includes("RL"))) && (
-                                        <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
-                                            ✦ AI-learned
-                                        </span>
-                                    )}
-                                </li>
-                            ))}
-                        </ul>
+                {!disease.trim() ? (
+                    <div className="bg-slate-50 border border-slate-200 border-dashed rounded-xl p-8 text-center text-slate-500 space-y-2">
+                        <div className="text-3xl">🌿</div>
+                        <p className="font-semibold text-sm">No Disease Selected</p>
+                        <p className="text-xs text-slate-400">Search for a disease above, or select one from the <span className="font-semibold text-teal-600">Learning Coverage</span> tab to load recommendations.</p>
                     </div>
-                )}
+                ) : (
+                    <>
+                        {/* Herb list */}
+                        {currentPlan?.herbs && (
+                            <div className="space-y-1">
+                                <label className="text-xs font-semibold text-slate-500 uppercase">AI Recommended Herbs</label>
+                                <ul className="space-y-1">
+                                    {currentPlan.herbs.map((h: any, i: number) => (
+                                        <li key={i} className="flex items-center gap-2 text-sm text-slate-700 bg-slate-50 px-3 py-1.5 rounded-lg">
+                                            <span className="text-emerald-500">•</span> {h.name}
+                                            {(h.ai_learned || (h.source && h.source.includes("RL"))) && (
+                                                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+                                                    ✦ AI-learned
+                                                </span>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
 
-                {/* Yoga list */}
-                {currentPlan?.yoga?.length > 0 && (
-                    <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-500 uppercase">AI Recommended Yoga</label>
-                        <ul className="space-y-1">
-                            {currentPlan.yoga.map((y: any, i: number) => (
-                                <li key={i} className="flex items-center gap-2 text-sm text-slate-700 bg-blue-50 px-3 py-1.5 rounded-lg">
-                                    <span className="text-blue-500">◦</span> {y.practice || y}
-                                    {y.ai_learned && (
-                                        <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
-                                            ✦ AI-learned
-                                        </span>
-                                    )}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
+                        {/* Yoga list */}
+                        {currentPlan?.yoga?.length > 0 && (
+                            <div className="space-y-1">
+                                <label className="text-xs font-semibold text-slate-500 uppercase">AI Recommended Yoga</label>
+                                <ul className="space-y-1">
+                                    {currentPlan.yoga.map((y: any, i: number) => (
+                                        <li key={i} className="flex items-center gap-2 text-sm text-slate-700 bg-blue-50 px-3 py-1.5 rounded-lg">
+                                            <span className="text-blue-500">◦</span> {y.practice || y}
+                                            {y.ai_learned && (
+                                                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+                                                    ✦ AI-learned
+                                                </span>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
 
-                {/* Add herb + yoga */}
-                <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-500 uppercase">+ Add Herb</label>
-                        <input
-                            className="border rounded-lg px-3 py-2 text-sm w-full"
-                            placeholder="e.g. Guchi Powder"
-                            value={addedHerb}
-                            onChange={e => setAddedHerb(e.target.value)}
-                        />
-                    </div>
-                    <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-500 uppercase">+ Add Yoga</label>
-                        <input
-                            className="border rounded-lg px-3 py-2 text-sm w-full"
-                            placeholder="e.g. Surya Namaskar"
-                            value={addedYoga}
-                            onChange={e => setAddedYoga(e.target.value)}
-                        />
-                    </div>
-                </div>
+                        {/* Diet list */}
+                        {currentPlan?.diet?.length > 0 && (
+                            <div className="space-y-1">
+                                <label className="text-xs font-semibold text-slate-500 uppercase">AI Recommended Dietary Guidelines</label>
+                                <ul className="space-y-1">
+                                    {currentPlan.diet.map((d: string, i: number) => (
+                                        <li key={i} className="flex items-center gap-2 text-sm text-slate-700 bg-amber-50 px-3 py-1.5 rounded-lg">
+                                            <span className="text-amber-500">•</span> {d}
+                                            {(currentPlan.ai_learned_diet || []).some((x: string) => x.toLowerCase() === d.toLowerCase()) && (
+                                                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+                                                    ✦ AI-learned
+                                                </span>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
 
-                {/* Rating */}
-                <div className="flex gap-3">
-                    <button
-                        onClick={() => setSelectedRating(r => r === "Accurate" ? null : "Accurate")}
-                        className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${selectedRating === "Accurate"
-                            ? "bg-emerald-500 border-emerald-600 text-white"
-                            : "bg-white border-slate-200 text-slate-700 hover:bg-emerald-50"
-                            }`}
-                    >
-                        Accurate
-                    </button>
-                    <button
-                        onClick={() => setSelectedRating(r => r === "Needs Changes" ? null : "Needs Changes")}
-                        className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${selectedRating === "Needs Changes"
-                            ? "bg-red-500 border-red-600 text-white"
-                            : "bg-white border-slate-200 text-slate-700 hover:bg-red-50"
-                            }`}
-                    >
-                        Needs Changes
-                    </button>
-                </div>
+                        {/* Lifestyle list */}
+                        {currentPlan?.lifestyle?.length > 0 && (
+                            <div className="space-y-1">
+                                <label className="text-xs font-semibold text-slate-500 uppercase">AI Recommended Lifestyle Changes</label>
+                                <ul className="space-y-1">
+                                    {currentPlan.lifestyle.map((l: string, i: number) => (
+                                        <li key={i} className="flex items-center gap-2 text-sm text-slate-700 bg-violet-50 px-3 py-1.5 rounded-lg">
+                                            <span className="text-violet-500">•</span> {l}
+                                            {(currentPlan.ai_learned_lifestyle || []).some((x: string) => x.toLowerCase() === l.toLowerCase()) && (
+                                                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+                                                    ✦ AI-learned
+                                                </span>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        {/* Add herb / yoga / diet / lifestyle */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                                <label className="text-xs font-semibold text-slate-500 uppercase">+ Add Herb</label>
+                                <input
+                                    className="border rounded-lg px-3 py-2 text-sm w-full"
+                                    placeholder="e.g. Guchi Powder"
+                                    value={addedHerb}
+                                    onChange={e => setAddedHerb(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-semibold text-slate-500 uppercase">+ Add Yoga</label>
+                                <input
+                                    className="border rounded-lg px-3 py-2 text-sm w-full"
+                                    placeholder="e.g. Surya Namaskar"
+                                    value={addedYoga}
+                                    onChange={e => setAddedYoga(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-semibold text-slate-500 uppercase">+ Add Diet</label>
+                                <input
+                                    className="border rounded-lg px-3 py-2 text-sm w-full"
+                                    placeholder="e.g. Avoid refined sugar"
+                                    value={addedDiet}
+                                    onChange={e => setAddedDiet(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-semibold text-slate-500 uppercase">+ Add Lifestyle</label>
+                                <input
+                                    className="border rounded-lg px-3 py-2 text-sm w-full"
+                                    placeholder="e.g. Morning walk 30 mins"
+                                    value={addedLifestyle}
+                                    onChange={e => setAddedLifestyle(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Rating */}
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setSelectedRating(r => r === "Accurate" ? null : "Accurate")}
+                                className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${selectedRating === "Accurate"
+                                    ? "bg-emerald-500 border-emerald-600 text-white"
+                                    : "bg-white border-slate-200 text-slate-700 hover:bg-emerald-50"
+                                    }`}
+                            >
+                                Accurate
+                            </button>
+                            <button
+                                onClick={() => setSelectedRating(r => r === "Needs Changes" ? null : "Needs Changes")}
+                                className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${selectedRating === "Needs Changes"
+                                    ? "bg-red-500 border-red-600 text-white"
+                                    : "bg-white border-slate-200 text-slate-700 hover:bg-red-50"
+                                    }`}
+                            >
+                                Needs Changes
+                            </button>
+                        </div>
 
                 <button
                     onClick={handleSubmit}
@@ -511,73 +621,85 @@ function LiveDemoTab({ demoMode }: { demoMode: boolean }) {
                         {notification}
                     </div>
                 )}
+                    </>
+                )}
             </div>
 
             {/* ── Right: Live Q-table ── */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h2 className="text-lg font-bold text-slate-800">Live Q-Table</h2>
-                        {qtable && (
-                            <p className="text-xs text-slate-500 mt-0.5">
-                                State: <span className="font-mono font-semibold">{qtable.state_key}</span>
-                            </p>
-                        )}
+                {!disease.trim() ? (
+                    <div className="h-[480px] flex flex-col items-center justify-center text-center text-slate-400 space-y-2">
+                        <div className="text-3xl text-slate-300">📊</div>
+                        <p className="font-semibold text-sm text-slate-500">Q-Table Visualizer</p>
+                        <p className="text-xs text-slate-400 max-w-xs">Select a disease on the left to view active reinforcement learning Q-values for each treatment.</p>
                     </div>
-                    {qtable && (
-                        <span className="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-medium">
-                            {qtable.total_prescriptions} prescription{qtable.total_prescriptions !== 1 ? "s" : ""} in memory
-                        </span>
-                    )}
-                </div>
-
-                {/* Legend */}
-                <div className="flex flex-wrap gap-3 text-xs text-slate-500">
-                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-[#22c55e] inline-block"/><span>Herb</span></span>
-                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-[#3b82f6] inline-block"/>Yoga</span>
-                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-[#f59e0b] inline-block"/>Diet</span>
-                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-[#8b5cf6] inline-block"/>Lifestyle</span>
-                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-[#ef4444] inline-block"/>Negative</span>
-                </div>
-
-                {chartData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 64 }}>
-                            <XAxis
-                                dataKey="name"
-                                tick={{ fontSize: 11 }}
-                                angle={-40}
-                                textAnchor="end"
-                                interval={0}
-                            />
-                            <YAxis tick={{ fontSize: 11 }} />
-                            <Tooltip
-                                formatter={(value: number | undefined) => [(value ?? 0).toFixed(4), "Q-value"]}
-                                labelFormatter={(_, payload) => payload?.[0]?.payload?.fullName || ""}
-                            />
-                            <Bar
-                                dataKey="q_value"
-                                isAnimationActive={true}
-                                animationDuration={800}
-                                label={false as unknown as undefined}
-                            >
-                                {chartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={barColor(entry.q_value, entry.fullName)} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
                 ) : (
-                    <div className="h-64 flex items-center justify-center text-slate-400 text-sm">
-                        Loading Q-table data...
-                    </div>
-                )}
+                    <>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="text-lg font-bold text-slate-800">Live Q-Table</h2>
+                                {qtable && (
+                                    <p className="text-xs text-slate-500 mt-0.5">
+                                        State: <span className="font-mono font-semibold">{qtable.state_key}</span>
+                                    </p>
+                                )}
+                            </div>
+                            {qtable && (
+                                <span className="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-medium">
+                                    {qtable.total_prescriptions} prescription{qtable.total_prescriptions !== 1 ? "s" : ""} in memory
+                                </span>
+                            )}
+                        </div>
 
-                <div className="flex gap-4 text-xs text-slate-500">
-                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-green-500 inline-block" /> Q &gt; 0 (positive)</span>
-                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-red-400 inline-block" /> Q &lt; 0 (negative)</span>
-                    <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-gray-300 inline-block" /> Q = 0 (neutral)</span>
-                </div>
+                        {/* Legend */}
+                        <div className="flex flex-wrap gap-3 text-xs text-slate-500">
+                            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-[#22c55e] inline-block"/><span>Herb</span></span>
+                            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-[#3b82f6] inline-block"/>Yoga</span>
+                            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-[#f59e0b] inline-block"/>Diet</span>
+                            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-[#8b5cf6] inline-block"/>Lifestyle</span>
+                            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-[#ef4444] inline-block"/>Negative</span>
+                        </div>
+
+                        {chartData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 64 }}>
+                                    <XAxis
+                                        dataKey="name"
+                                        tick={{ fontSize: 11 }}
+                                        angle={-40}
+                                        textAnchor="end"
+                                        interval={0}
+                                    />
+                                    <YAxis tick={{ fontSize: 11 }} />
+                                    <Tooltip
+                                        formatter={(value: number | undefined) => [(value ?? 0).toFixed(4), "Q-value"]}
+                                        labelFormatter={(_, payload) => payload?.[0]?.payload?.fullName || ""}
+                                    />
+                                    <Bar
+                                        dataKey="q_value"
+                                        isAnimationActive={true}
+                                        animationDuration={800}
+                                        label={false as unknown as undefined}
+                                    >
+                                        {chartData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={barColor(entry.q_value, entry.fullName)} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="h-64 flex items-center justify-center text-slate-400 text-sm">
+                                Loading Q-table data...
+                            </div>
+                        )}
+
+                        <div className="flex gap-4 text-xs text-slate-500">
+                            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-green-500 inline-block" /> Q &gt; 0 (positive)</span>
+                            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-red-400 inline-block" /> Q &lt; 0 (negative)</span>
+                            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-gray-300 inline-block" /> Q = 0 (neutral)</span>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     )
@@ -641,8 +763,8 @@ function StateHistoryTab() {
                                     <tr>
                                         <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Visit #</th>
                                         <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Date</th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Added Herbs</th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Removed Herbs</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Added Items</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Removed Items</th>
                                         <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Rating</th>
                                         <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Q Updates</th>
                                     </tr>
@@ -654,12 +776,12 @@ function StateHistoryTab() {
                                             <td className="px-4 py-3 text-slate-500">{ev.date}</td>
                                             <td className="px-4 py-3">
                                                 {(ev.added_herbs || []).map((h, j) => (
-                                                    <span key={j} className="inline-block bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full mr-1">{h}</span>
+                                                    <span key={j} className="inline-block bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full mr-1">{actionLabel(h)}</span>
                                                 ))}
                                             </td>
                                             <td className="px-4 py-3">
                                                 {(ev.removed_herbs || []).map((h, j) => (
-                                                    <span key={j} className="inline-block bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full mr-1">{h}</span>
+                                                    <span key={j} className="inline-block bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full mr-1">{actionLabel(h)}</span>
                                                 ))}
                                             </td>
                                             <td className="px-4 py-3 text-slate-600">{ev.doctor_rating}</td>
@@ -940,6 +1062,364 @@ function OutcomesTab() {
                     </div>
                 )}
             </div>
+        </div>
+    )
+}
+
+// ── Learning Coverage Tab ─────────────────────────────────────────────────────
+
+interface CoverageDisease {
+    namc_code: string
+    name: string
+    n_states: number
+    n_actions: number
+    n_learned: number
+    herbs_learned: number
+    yoga_learned: number
+    diet_learned: number
+    lifestyle_learned: number
+    max_q: number
+    status: "learned" | "learning"
+    top_learned: { name: string; q_value: number }[]
+}
+
+interface CoverageSummary {
+    total_catalog: number
+    diseases_with_data: number
+    learned: number
+    learning: number
+    total_learned_actions: number
+    total_states: number
+    legacy_states: number
+}
+
+type CoverageFilter = "all" | "learned" | "learning"
+
+function LearningCoverageTab({
+    setSelectedDisease,
+    setActiveTab,
+}: {
+    setSelectedDisease: (v: string) => void
+    setActiveTab: (t: Tab) => void
+}) {
+    const [data, setData] = useState<{ summary: CoverageSummary; diseases: CoverageDisease[] } | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState("")
+    const [filter, setFilter] = useState<CoverageFilter>("all")
+    const [search, setSearch] = useState("")
+    const [inspectDisease, setInspectDisease] = useState<CoverageDisease | null>(null)
+
+    useEffect(() => {
+        (async () => {
+            try {
+                setLoading(true)
+                const res = await fetch("/api/model/learning-coverage")
+                if (!res.ok) throw new Error("Failed to load coverage data")
+                setData(await res.json())
+            } catch (e) {
+                setError(e instanceof Error ? e.message : "Unknown error")
+            } finally {
+                setLoading(false)
+            }
+        })()
+    }, [])
+
+    if (loading) return (
+        <div className="flex items-center justify-center py-24">
+            <div className="animate-spin h-8 w-8 border-4 border-teal-500 border-t-transparent rounded-full" />
+        </div>
+    )
+    if (error || !data) return (
+        <div className="bg-white rounded-2xl border border-red-200 p-8 text-center text-red-600">
+            {error || "No data available"}
+        </div>
+    )
+
+    const { summary, diseases } = data
+    const q = search.toLowerCase()
+    const filtered = diseases
+        .filter(d => filter === "all" || d.status === filter)
+        .filter(d => !q || d.name.toLowerCase().includes(q) || d.namc_code.toLowerCase().includes(q))
+
+    const tiles: { label: string; value: number; color: string; sub?: string }[] = [
+        { label: "Total Diseases", value: summary.total_catalog, color: "bg-slate-100 text-slate-700", sub: "in catalog" },
+        { label: "With Learning Data", value: summary.diseases_with_data, color: "bg-blue-50 text-blue-700", sub: `of ${summary.total_catalog}` },
+        { label: "Learned", value: summary.learned, color: "bg-green-50 text-green-700", sub: "≥1 AI-learned action" },
+        { label: "Learning", value: summary.learning, color: "bg-amber-50 text-amber-700", sub: "data but no positive Q yet" },
+    ]
+
+    return (
+        <div className="space-y-6">
+            {/* ── Stat Tiles ── */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {tiles.map(t => (
+                    <div key={t.label} className={`rounded-2xl p-5 ${t.color} border border-transparent`}>
+                        <p className="text-xs font-semibold uppercase tracking-wide opacity-60">{t.label}</p>
+                        <p className="text-3xl font-extrabold mt-1">{t.value.toLocaleString()}</p>
+                        {t.sub && <p className="text-xs mt-1 opacity-50">{t.sub}</p>}
+                    </div>
+                ))}
+            </div>
+
+            {/* ── Filters + Search ── */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                <div className="flex flex-wrap items-center gap-3">
+                    {(["all", "learned", "learning"] as CoverageFilter[]).map(f => (
+                        <button
+                            key={f}
+                            onClick={() => setFilter(f)}
+                            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${filter === f
+                                ? f === "learned" ? "bg-green-600 text-white"
+                                    : f === "learning" ? "bg-amber-500 text-white"
+                                        : "bg-teal-600 text-white"
+                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                }`}
+                        >
+                            {f === "all" ? `All (${diseases.length})` :
+                                f === "learned" ? `Learned (${summary.learned})` :
+                                    `Learning (${summary.learning})`}
+                        </button>
+                    ))}
+                    <div className="flex-1 min-w-[200px]">
+                        <input
+                            type="text"
+                            placeholder="Search by name or NAMC code…"
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            className="w-full px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Disease Table ── */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead className="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Disease</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Status</th>
+                                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase">States</th>
+                                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase">Learned</th>
+                                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase">Breakdown</th>
+                                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase">Max Q</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Top Learned Items</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {filtered.length === 0 ? (
+                                <tr>
+                                    <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
+                                        No diseases match the current filter
+                                    </td>
+                                </tr>
+                            ) : filtered.map(d => (
+                                <tr
+                                    key={d.namc_code}
+                                    className="hover:bg-slate-50/80 cursor-pointer transition-colors"
+                                    onClick={() => setInspectDisease(d)}
+                                >
+                                    <td className="px-4 py-3">
+                                        <p className="font-semibold text-slate-800 hover:text-teal-700">{d.name || d.namc_code}</p>
+                                        <p className="text-xs text-slate-400 font-mono">{d.namc_code}</p>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                                            d.status === "learned"
+                                                ? "bg-green-100 text-green-800"
+                                                : "bg-amber-100 text-amber-800"
+                                        }`}>
+                                            {d.status === "learned" ? "✓ Learned" : "◌ Learning"}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-center font-medium">{d.n_states}</td>
+                                    <td className="px-4 py-3 text-center font-medium">{d.n_learned}</td>
+                                    <td className="px-4 py-3">
+                                        <div className="flex items-center justify-center gap-2 text-xs">
+                                            {d.herbs_learned > 0 && <span className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded">🌿 {d.herbs_learned}</span>}
+                                            {d.yoga_learned > 0 && <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">🧘 {d.yoga_learned}</span>}
+                                            {d.diet_learned > 0 && <span className="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">🥗 {d.diet_learned}</span>}
+                                            {d.lifestyle_learned > 0 && <span className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">🌿 {d.lifestyle_learned}</span>}
+                                            {d.n_learned === 0 && <span className="text-slate-300">—</span>}
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                        <span className={`font-mono text-xs ${d.max_q > 0 ? "text-green-600" : "text-slate-400"}`}>
+                                            {d.max_q > 0 ? d.max_q.toFixed(4) : "—"}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <div className="flex flex-wrap gap-1">
+                                            {d.top_learned.map((item, j) => (
+                                                <span key={j} className="inline-block bg-teal-50 text-teal-700 text-xs px-2 py-0.5 rounded-full">
+                                                    {actionLabel(item.name)}
+                                                </span>
+                                            ))}
+                                            {d.top_learned.length === 0 && <span className="text-slate-300 text-xs">—</span>}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                {summary.legacy_states > 0 && (
+                    <div className="px-4 py-2 bg-amber-50 border-t border-amber-200 text-xs text-amber-700">
+                        ⚠ {summary.legacy_states} legacy Q-table states found (old key format — run migration to convert)
+                    </div>
+                )}
+            </div>
+
+            {/* ── Inspection Modal ── */}
+            {inspectDisease && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fade-in">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-scale-up">
+                        {/* Header */}
+                        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-800">{inspectDisease.name || inspectDisease.namc_code}</h3>
+                                <p className="text-xs text-slate-400 font-mono mt-0.5">{inspectDisease.namc_code}</p>
+                            </div>
+                            <button
+                                onClick={() => setInspectDisease(null)}
+                                className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        {/* Body */}
+                        <div className="p-6 overflow-y-auto flex-1">
+                            <InspectDiseaseModalContent namcCode={inspectDisease.namc_code} />
+                        </div>
+                        {/* Footer */}
+                        <div className="px-6 py-3.5 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+                            <button
+                                onClick={() => setInspectDisease(null)}
+                                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    )
+}
+
+function InspectDiseaseModalContent({ namcCode }: { namcCode: string }) {
+    const [qData, setQData] = useState<{ states: any[] } | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [activeStateIdx, setActiveStateIdx] = useState(0)
+
+    useEffect(() => {
+        (async () => {
+            try {
+                setLoading(true)
+                const res = await fetch(`/api/model/q-table-state?namc_code=${encodeURIComponent(namcCode)}`)
+                if (res.ok) {
+                    setQData(await res.json())
+                }
+            } catch (e) {
+                console.error(e)
+            } finally {
+                setLoading(false)
+            }
+        })()
+    }, [namcCode])
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <div className="animate-spin h-7 w-7 border-3 border-teal-500 border-t-transparent rounded-full" />
+            </div>
+        )
+    }
+
+    if (!qData || !qData.states || qData.states.length === 0) {
+        return (
+            <div className="text-center py-16 text-slate-400 text-sm">
+                No active learning state data found for this disease.
+            </div>
+        )
+    }
+
+    const currentState = qData.states[activeStateIdx]
+    const actions = currentState?.actions || []
+
+    return (
+        <div className="space-y-5">
+            {/* State selector tabs */}
+            {qData.states.length > 1 && (
+                <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Select Learning State</label>
+                    <div className="flex flex-wrap gap-1.5">
+                        {qData.states.map((st, idx) => (
+                            <button
+                                key={st.state_key}
+                                onClick={() => {
+                                    setActiveStateIdx(idx)
+                                }}
+                                className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
+                                    activeStateIdx === idx
+                                        ? "bg-teal-50 text-teal-700 border-teal-200 shadow-sm"
+                                        : "bg-slate-50 text-slate-500 hover:bg-slate-100 border-slate-200/60"
+                                }`}
+                            >
+                                {st.prakriti} → {st.vikriti}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Current State Info */}
+            <div className="bg-slate-50 rounded-xl px-4 py-3 border border-slate-200/60 flex items-center justify-between text-xs text-slate-500">
+                <span>
+                    Dosha State: <strong className="text-slate-700">{currentState.prakriti}</strong> (Prakriti) &amp; <strong className="text-slate-700">{currentState.vikriti}</strong> (Vikriti)
+                </span>
+                <span className="font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200/40">{actions.length} entry{actions.length !== 1 ? "s" : ""}</span>
+            </div>
+
+            {/* Actions list */}
+            {actions.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 text-xs">
+                    No treatment Q-values recorded for this state.
+                </div>
+            ) : (
+                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                    <table className="w-full text-xs text-left">
+                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
+                            <tr>
+                                <th className="px-4 py-3">Treatment Item</th>
+                                <th className="px-4 py-3 text-center w-28">Q-Value</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-150">
+                            {actions.map((act: any) => {
+                                const qVal = act.q_value
+                                return (
+                                    <tr key={act.name} className="hover:bg-slate-50/50 transition-colors">
+                                        <td className="px-4 py-2.5 font-medium text-slate-700">
+                                            {actionLabel(act.name)}
+                                        </td>
+                                        <td className="px-4 py-2.5 text-center">
+                                            <span className={`inline-block px-2.5 py-0.5 rounded-full font-mono font-bold text-[10px] ${
+                                                qVal > 0 ? "bg-green-50 text-green-700 border border-green-200" :
+                                                qVal < 0 ? "bg-red-50 text-red-700 border border-red-250/50" :
+                                                "bg-slate-50 text-slate-500 border border-slate-200"
+                                            }`}>
+                                                {qVal > 0 ? `+${qVal.toFixed(4)}` : qVal.toFixed(4)}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                )
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>
     )
 }

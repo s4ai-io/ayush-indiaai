@@ -98,6 +98,72 @@ class RLRecommendationService:
         actions.sort(key=lambda x: x["q_value"], reverse=True)
         return actions
 
+    def get_learned_prefixed_actions(self, namc_code: str, prakriti: str, vikriti: str,
+                                     prefix: str, demo_mode: bool = False) -> list:
+        """
+        All positive-Q actions for one prefixed category ("yoga:", "diet:", "lifestyle:"),
+        returned as (name_without_prefix, q_value) tuples sorted by Q-value descending.
+        """
+        state = self._get_state_key(namc_code, prakriti, vikriti)
+        q_table = self._load_demo_q_table() if demo_mode else self.q_table
+        state_q = q_table.get(state, {})
+        return sorted(
+            [(k[len(prefix):], v) for k, v in state_q.items() if k.startswith(prefix) and v > 0],
+            key=lambda x: -x[1],
+        )
+
+    # Plan categories: (plan_key, item_field_for_dicts, q_table_key_prefix)
+    # Herbs are stored unprefixed (backward compatible with existing Q-tables and
+    # historical added_herbs/removed_herbs rows); other categories are prefixed
+    # and lowercased, matching their Q-table key format.
+    PLAN_CATEGORIES = [
+        ("herbs", "name", ""),
+        ("yoga", "practice", "yoga:"),
+        ("diet", None, "diet:"),
+        ("lifestyle", None, "lifestyle:"),
+    ]
+
+    @classmethod
+    def _plan_item_names(cls, plan: dict, plan_key: str, item_field: str) -> list:
+        names = []
+        for it in (plan or {}).get(plan_key, []) or []:
+            name = it.get(item_field, "") if isinstance(it, dict) else str(it)
+            name = (name or "").strip()
+            if name:
+                names.append(name)
+        return names
+
+    @staticmethod
+    def _canonical_key(name: str, prefix: str) -> str:
+        return f"{prefix}{name.strip().lower()}" if prefix else name.strip()
+
+    @classmethod
+    def compute_plan_diff(cls, original_plan: dict, final_plan: dict) -> tuple:
+        """
+        Diff every plan category between the original AI plan and the doctor's final plan.
+        Returns (added, removed) as canonical Q-table action keys, so the category of
+        each entry survives storage in the flat added_herbs/removed_herbs columns.
+        """
+        added, removed = [], []
+        for plan_key, item_field, prefix in cls.PLAN_CATEGORIES:
+            orig = [cls._canonical_key(n, prefix)
+                    for n in cls._plan_item_names(original_plan, plan_key, item_field or "name")]
+            fin = [cls._canonical_key(n, prefix)
+                   for n in cls._plan_item_names(final_plan, plan_key, item_field or "name")]
+            added += [n for n in fin if n not in orig]
+            removed += [n for n in orig if n not in fin]
+        return added, removed
+
+    @classmethod
+    def _plan_action_keys(cls, final_plan: dict, removed_actions: list) -> list:
+        """Canonical action keys for every item in the final plan, plus removed actions."""
+        keys = []
+        for plan_key, item_field, prefix in cls.PLAN_CATEGORIES:
+            for name in cls._plan_item_names(final_plan, plan_key, item_field or "name"):
+                keys.append(cls._canonical_key(name, prefix))
+        keys += [k for k in (removed_actions or []) if k]
+        return list(dict.fromkeys(filter(None, keys)))
+
     @staticmethod
     def _compute_herb_reward(herb_name: str, added_herbs: list, removed_herbs: list, doctor_rating: str) -> float:
         is_added   = herb_name in (added_herbs or [])
@@ -159,36 +225,14 @@ class RLRecommendationService:
                     if state not in self.q_table:
                         self.q_table[state] = {}
 
-                    # Update Q-values for herbs in final plan
-                    herbs = final_plan.get("herbs", [])
-                    herb_names = [h.get("name", "") if isinstance(h, dict) else str(h) for h in herbs]
-                    herb_names = [h for h in herb_names if h]
-
-                    for herb in herb_names:
-                        reward  = self._compute_herb_reward(herb, added_herbs, removed_herbs, doctor_rating)
-                        old_q   = self.q_table[state].get(herb, 0.0)
-                        new_q   = old_q + self.learning_rate * (reward - old_q)
-                        self.q_table[state][herb] = new_q
-
-                    # Also update Q for removed herbs (not in final plan)
-                    for herb in removed_herbs:
-                        if herb not in herb_names:
-                            reward  = self._compute_herb_reward(herb, added_herbs, removed_herbs, doctor_rating)
-                            old_q   = self.q_table[state].get(herb, 0.0)
-                            new_q   = old_q + self.learning_rate * (reward - old_q)
-                            self.q_table[state][herb] = new_q
-
-                    # Update Yoga actions as well
-                    yoga = final_plan.get("yoga", [])
-                    yoga_actions = [y.get("practice", "") if isinstance(y, dict) else str(y) for y in yoga]
-                    yoga_actions = [a for a in yoga_actions if a]
-
-                    for action in yoga_actions:
-                        action_key = f"yoga:{action.strip().lower()}"
-                        reward  = self._compute_herb_reward(action, added_herbs, removed_herbs, doctor_rating)
-                        old_q   = self.q_table[state].get(action_key, 0.0)
-                        new_q   = old_q + self.learning_rate * (reward - old_q)
-                        self.q_table[state][action_key] = new_q
+                    # Diff-aware update for every plan category (herbs, yoga, diet,
+                    # lifestyle) plus removed actions absent from the final plan.
+                    # added/removed lists hold canonical keys, so membership checks
+                    # and Q-table keys line up per category.
+                    for key in self._plan_action_keys(final_plan, removed_herbs):
+                        reward = self._compute_herb_reward(key, added_herbs, removed_herbs, doctor_rating)
+                        old_q  = self.q_table[state].get(key, 0.0)
+                        self.q_table[state][key] = old_q + self.learning_rate * (reward - old_q)
 
                     fb.is_retrained = True
                     processed_count += 1
@@ -294,41 +338,13 @@ class RLRecommendationService:
 
         updated = {}
 
-        # --- Herbs ---
-        all_herbs = [h.get("name", "") if isinstance(h, dict) else str(h)
-                     for h in final_plan.get("herbs", [])] + removed_herbs
-        all_herbs = list(set(filter(None, all_herbs)))
-
-        for herb in all_herbs:
-            reward = self._compute_herb_reward(herb, added_herbs, removed_herbs, doctor_rating)
-            old_q = self.q_table[state].get(herb, 0.0)
-            new_q = old_q + self.learning_rate * (reward - old_q)
-            self.q_table[state][herb] = new_q
-            updated[herb] = round(new_q, 4)
-
-        # --- Yoga (key prefix: "yoga:") ---
-        yoga_items = [y.get("practice", "") if isinstance(y, dict) else str(y)
-                      for y in final_plan.get("yoga", [])]
-        for practice in filter(None, yoga_items):
-            key = f"yoga:{practice.strip().lower()}"
-            reward = self.learning_rate * 0.3  # implicit positive for being in final plan
+        # Diff-aware update for every plan category (herbs, yoga, diet, lifestyle)
+        # plus removed actions absent from the final plan — same reward table as
+        # the batch retrain, so instant and standard modes stay consistent.
+        for key in self._plan_action_keys(final_plan, removed_herbs):
+            reward = self._compute_herb_reward(key, added_herbs, removed_herbs, doctor_rating)
             old_q = self.q_table[state].get(key, 0.0)
             new_q = old_q + self.learning_rate * (reward - old_q)
-            self.q_table[state][key] = new_q
-            updated[key] = round(new_q, 4)
-
-        # --- Diet & Lifestyle (key prefix: "diet:" / "lifestyle:") ---
-        for item in filter(None, final_plan.get("diet", [])):
-            key = f"diet:{str(item).strip().lower()}"
-            old_q = self.q_table[state].get(key, 0.0)
-            new_q = old_q + self.learning_rate * (0.3 - old_q)
-            self.q_table[state][key] = new_q
-            updated[key] = round(new_q, 4)
-
-        for item in filter(None, final_plan.get("lifestyle", [])):
-            key = f"lifestyle:{str(item).strip().lower()}"
-            old_q = self.q_table[state].get(key, 0.0)
-            new_q = old_q + self.learning_rate * (0.3 - old_q)
             self.q_table[state][key] = new_q
             updated[key] = round(new_q, 4)
 

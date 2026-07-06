@@ -1224,17 +1224,13 @@ async def demo_submit(
     import uuid, json as _json
     from models import SessionLocal, TreatmentFeedback as TFModel
 
-    # Compute herb diffs
-    original_herb_names = [
-        h.get("name", "") if isinstance(h, dict) else str(h)
-        for h in original_plan.get("herbs", [])
-    ]
-    final_herb_names = [
-        h.get("name", "") if isinstance(h, dict) else str(h)
-        for h in final_plan.get("herbs", [])
-    ]
-    added_herbs   = [h for h in final_herb_names if h not in original_herb_names]
-    removed_herbs = [h for h in original_herb_names if h not in final_herb_names]
+    # Diff every plan category (herbs, yoga, diet, lifestyle) as canonical action keys
+    added_herbs, removed_herbs = rl_service.compute_plan_diff(original_plan, final_plan)
+
+    # Normalize UI rating labels to the stored positive/negative convention
+    # used by the reward table (matches the doctor prescribe flow)
+    rating_map = {"accurate": "positive", "needs changes": "negative"}
+    rating = rating_map.get((rating or "").strip().lower(), rating)
 
     feedback_id = str(uuid.uuid4())
     with SessionLocal() as db:
@@ -1316,6 +1312,27 @@ async def get_q_table_state(
             ],
             "total_prescriptions": len(actions),
         }
+    elif namc_code:
+        # Return all states and actions matching this namc_code prefix
+        states_list = []
+        for sk, actions in q_table.items():
+            if sk.startswith(f"{namc_code}_"):
+                parts = sk.rsplit("_", 2)
+                p = parts[1] if len(parts) > 1 else ""
+                v = parts[2] if len(parts) > 2 else ""
+                states_list.append({
+                    "state_key": sk,
+                    "prakriti": p,
+                    "vikriti": v,
+                    "actions": [
+                        {"name": k, "q_value": round(val, 4), "is_learned": val > 0}
+                        for k, val in sorted(actions.items(), key=lambda x: -x[1])
+                    ]
+                })
+        return {
+            "namc_code": namc_code,
+            "states": sorted(states_list, key=lambda x: x["state_key"])
+        }
     else:
         return {
             "states": [
@@ -1325,6 +1342,114 @@ async def get_q_table_state(
             "total_states": len(q_table),
         }
 
+
+_DOSHA_RE = re.compile(r"^(vata|pitta|kapha)(-(vata|pitta|kapha))?$", re.IGNORECASE)
+
+# Lazily built NAMC_CODE → display name lookup from the codified CSV
+_namc_name_cache: dict | None = None
+
+def _get_namc_names() -> dict:
+    global _namc_name_cache
+    if _namc_name_cache is not None:
+        return _namc_name_cache
+    _namc_name_cache = {}
+    if ISHAAyush_service.df is not None:
+        for _, row in ISHAAyush_service.df.iterrows():
+            code = str(row.get("NAMC_CODE", "")).strip()
+            if code:
+                name = str(row.get("Name English", "") or row.get("NAMC_term", "")).strip()
+                if code not in _namc_name_cache:
+                    _namc_name_cache[code] = name or code
+    return _namc_name_cache
+
+
+@app.get("/api/model/learning-coverage", tags=["Model"])
+async def get_learning_coverage():
+    """
+    Report which diseases have RL learning data (Q-table entries),
+    with per-category breakdowns (herbs, yoga, diet, lifestyle).
+    """
+    q_table = rl_service.q_table
+    namc_names = _get_namc_names()
+
+    # Count unique NAMC codes in the catalog
+    total_catalog = len(namc_names) if namc_names else 0
+
+    # Group Q-table entries by NAMC code
+    disease_map: dict = {}   # namc_code → aggregated info
+    legacy_states = 0
+
+    for state_key, actions in q_table.items():
+        parts = state_key.rsplit("_", 2)
+        if len(parts) != 3 or not _DOSHA_RE.match(parts[1]) or not _DOSHA_RE.match(parts[2]):
+            legacy_states += 1
+            continue
+
+        namc_code = parts[0]
+        entry = disease_map.setdefault(namc_code, {
+            "namc_code": namc_code,
+            "name": namc_names.get(namc_code, namc_code),
+            "n_states": 0,
+            "n_actions": 0,
+            "n_learned": 0,
+            "herbs_learned": 0,
+            "yoga_learned": 0,
+            "diet_learned": 0,
+            "lifestyle_learned": 0,
+            "max_q": 0.0,
+            "top_learned": [],
+        })
+        entry["n_states"] += 1
+        entry["n_actions"] += len(actions)
+
+        for name, q_val in actions.items():
+            if q_val > 0:
+                entry["n_learned"] += 1
+                if q_val > entry["max_q"]:
+                    entry["max_q"] = q_val
+                # Categorise
+                if name.startswith("yoga:"):
+                    entry["yoga_learned"] += 1
+                elif name.startswith("diet:"):
+                    entry["diet_learned"] += 1
+                elif name.startswith("lifestyle:"):
+                    entry["lifestyle_learned"] += 1
+                else:
+                    entry["herbs_learned"] += 1
+                entry["top_learned"].append({"name": name, "q_value": round(q_val, 4)})
+
+    # Finalise per-disease entries
+    diseases = []
+    learned_count = learning_count = 0
+    total_learned_actions = 0
+
+    for entry in disease_map.values():
+        entry["max_q"] = round(entry["max_q"], 4)
+        entry["status"] = "learned" if entry["n_learned"] > 0 else "learning"
+        # Keep top 5 by Q-value
+        entry["top_learned"] = sorted(entry["top_learned"], key=lambda x: -x["q_value"])[:5]
+        if entry["status"] == "learned":
+            learned_count += 1
+        else:
+            learning_count += 1
+        total_learned_actions += entry["n_learned"]
+        diseases.append(entry)
+
+    # Sort: learned first (by n_learned desc), then learning (by n_states desc)
+    diseases.sort(key=lambda d: (-1 if d["status"] == "learned" else 0, -d["n_learned"], -d["n_states"]))
+
+    return {
+        "summary": {
+            "total_catalog": total_catalog,
+            "diseases_with_data": len(diseases),
+            "learned": learned_count,
+            "learning": learning_count,
+            "total_learned_actions": total_learned_actions,
+            "total_states": len(q_table),
+            "legacy_states": legacy_states,
+        },
+        "diseases": diseases,
+    }
 
 @app.get("/api/model/state-history/{state_key}", tags=["Model"])
 async def get_state_history(state_key: str):

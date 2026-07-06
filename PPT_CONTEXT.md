@@ -182,51 +182,91 @@ sequenceDiagram
 ```
 Verified against `services/ISHAAyush_service.py` (direct substring search on `data/Codified_Ayurvedic_disease.csv`, NAMC codes), `services/patient_clustering_service.py` (sklearn Pipeline: StandardScaler + OneHotEncoder → KMeans, n_clusters=10, persisted as `data/models/patient_cluster_model.pkl`), `services/rl_service.py` (epsilon-greedy contextual bandit, Q-table keyed `"{cluster_id}_{disease}"`, persisted as `data/models/rl_q_table.pkl`, updated via `Q(s,a) += learning_rate * (reward - Q(s,a))` with `learning_rate=0.1, epsilon=0.2`), and `services/hybrid_service.py` (the merge orchestrator). Closed loop confirmed via `main.py`: `/api/prescribe` → `background_tasks.add_task(trigger_retraining)` → calls `clustering_service.retrain_clusters()` + `rl_service.retrain_from_feedback()` + `rl_service.retrain_from_outcomes()`. This is the strongest "continuously learns from clinician feedback" evidence in the whole codebase — worth emphasizing verbally in the demo.
 
-### Slide 5 — System Architecture (component diagram) — ✅ FINALIZED (2026-07-04)
-User provided a reference image (styled after the existing `README.md` architecture diagram — 4 colored subgraph boxes: Presentation Layer / Core Processing / Data Persistence / Cloud GPU Services) and asked for a diagram in that visual style, built with the same verification rigor as the Slide 4 sequence diagrams (i.e., checked against current code, not copied from the stale README diagram, which still says "ARIMA + GNN" and omits Gemma-4-12B).
+### Slide 5 — System Architecture (component diagram) — ✅ FINALIZED (2026-07-06), minimal IDP-image style
+**Supersedes the 2026-07-04 four-layer flowchart** (Presentation / Core Processing / Data Persistence / Cloud GPU Services) — that version is preserved in git history if needed. User provided the S4AI IDP deck's system-architecture image (three colored zones: Client Side / Server Side–CPU / On-Prem GPU Infrastructure, with labeled arrows like "REST API", "Orchestrates", "Inference Request", "Results") and asked for a minimal diagram in that exact style, **Gemma-4 pipeline only**: CopilotKit/AG-UI boxes removed, AI4Bharat ASR + IndicTrans2 + Phi-4 fallback path excluded, treatment/outbreak engines not shown.
+
+Mapping vs. the IDP image: Preprocessing (DeSkew/Watermark/OCR Router) → Audio Pre-processing (decode → mono → resample 16kHz → normalize → chunk); Tesseract/RT-DETR box → dropped (no CPU-side model in the Gemma-4 path); "Secure" cylinder → Secure EHR Store (PostgreSQL); JSON-XLS Results → Structured EHR Fields Extracts (JSON).
+
+User's final tweaks vs. the first draft (2026-07-06): layout `flowchart TB` (stacked zones) instead of LR; GPU zone labeled **"On-Prem GPU Infrastructure"** (matches the IDP image verbatim — consistent with the 2026-07-04 decision that on-prem refers to production deployment capability, demo runs on Modal); the results-flow terminus changed from "Evaluation Pipeline (Accuracy Benchmarking)" to **"Live Form Update With audio"** — i.e., the diagram ends at the live EHR-form auto-fill UX rather than the offline accuracy evaluator.
 ```mermaid
-flowchart TD
-    subgraph PRESENTATION["Presentation Layer (Next.js)"]
-        WEBUI["Web Interfaces<br/>(Registration / Doctor / Public Health Dashboard)"]
-        CHATUI["CopilotKit Voice Chat Interface<br/>(GemmaVoiceChatPanel)"]
-        EVAL["Evaluation<br/>(Voice & Recommendation Accuracy — /admin/accuracy)"]
-    end
+flowchart TB
+ subgraph CLIENT["Client Side"]
+    direction LR
+        USER(("User"))
+        FE["Frontend App<br>(Next.js)"]
+  end
+ subgraph SERVER["Server Side / CPU"]
+    direction TB
+        API["Backend API<br>(FastAPI)"]
+        PRE["Audio Pre-processing<br>(Decode → Mono → Resample 16kHz →<br>Normalize → Chunk)"]
+        DB[("Secure EHR Store<br>(PostgreSQL)")]
+        JSON["Structured EHR Fields Extracts<br>(JSON)"]
+        EVAL["Live Form Update With audio"]
+  end
+ subgraph GPU["On-Prem GPU Infrastructure"]
+        GEMMA["Gemma-4-12B Multimodal<br>(Audio-native, A100)"]
+  end
+    USER -- Interacts --> FE
+    FE <-- REST API --> API
+    API -- Orchestrates --> PRE
+    API <-- Save EHR --> DB
+    PRE -- Inference Request (Audio + Prompt) --> GEMMA
+    GEMMA -- Results --> JSON
+    JSON --> EVAL
 
-    subgraph CORE["Core Processing (FastAPI)"]
-        ORCH["Orchestration<br/>(main.py — REST + AG-UI routes)"]
-        AGENTS["LlamaIndex / CopilotKit Agents<br/>(Registration & Treatment, AG-UI protocol)"]
-        RECOMMEND["ISHAAyush Hybrid ML<br/>(Rule Engine + K-Means + RL Bandit)"]
-        OUTBREAK["Outbreak Forecasting<br/>(Z-score + DBSCAN + Graph Diffusion + Random Forest)"]
-    end
-
-    subgraph DATA["Data Persistence"]
-        PG["PostgreSQL<br/>(Patient, MedicalRecord, Treatment, Feedback)"]
-        CSV["Curated CSV Knowledge Base<br/>(NAMASTE + AyurGenixAI merged data)"]
-    end
-
-    subgraph CLOUD["Cloud GPU Services (Modal.run)"]
-        GEMMA["Gemma-4-12B Multimodal<br/>(A100 — primary voice pipeline)"]
-        ASR["AI4Bharat ASR & IndicTrans2<br/>(fallback voice pipeline)"]
-        PHI4["Microsoft Phi-4-14B via vLLM<br/>(2x L40S — fallback reasoning)"]
-    end
-
-    PRESENTATION <--> CORE
-    CORE <--> DATA
-    CORE <--> CLOUD
-
-    classDef presentationStyle fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    classDef coreStyle fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-    classDef dataStyle fill:#eceff1,stroke:#37474f,stroke-width:2px
-    classDef cloudStyle fill:#fff8e1,stroke:#f9a825,stroke-width:2px
-
-    class PRESENTATION presentationStyle
-    class CORE coreStyle
-    class DATA dataStyle
-    class CLOUD cloudStyle
+    classDef clientStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef serverStyle fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    classDef gpuStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    class CLIENT clientStyle
+    class SERVER serverStyle
+    class GPU gpuStyle
 ```
-Verified placement of "Evaluation" via git history: `src/app/admin/accuracy/page.tsx` + `backend/services/admin_router.py` (commits `a29dd6e`, `1ebefb9`) — a real admin accuracy-evaluation page, not aspirational. Corrections vs. the reference's underlying (stale) architecture: replaced "ARIMA & Deterministic graph diffusion" with the actual verified methods (Z-score + DBSCAN + Graph Diffusion + Random Forest — no ARIMA anywhere in code); added Gemma-4-12B as its own Cloud GPU Services box since it's the primary voice model, not a footnote; labeled the ML box "ISHAAyush Hybrid ML" to reflect the full rule+cluster+RL engine, not just the base rule engine.
 
-### Slide 6 — Datasets & Methodology — ✅ FINALIZED (2026-07-04)
+### Slide 6 — Key Features — ✅ FINALIZED (2026-07-04)
+```
+Key Features
+
+• Multilingual Audio understanding — single-hop multimodal LLM (Gemma-4)
+• Zero-hallucination recommendations — retrieval-based; every herb/yoga/
+  diet suggestion traceable to an official NAMASTE NAMC code
+• The model keeps improving on its own, learning from real clinician
+  input and patient results.
+• Multi-signal outbreak detection — anomaly detection + geospatial
+  clustering + spread propagation + ensemble forecasting
+• Built-in accuracy evaluation — admin dashboard benchmarks voice &
+  recommendation accuracy
+```
+**Final content, set by user (2026-07-04)** — trimmed from the earlier 8-point draft to these 5. Dropped: role-based access (now solely on Slide 7, avoids duplication), open-source/extensible LLM claim and sovereign on-prem deployment (both already covered on Slide 2, avoids duplication). Point 3 rewritten in plain language rather than bullet-fragment style — user's own phrasing. All 5 points re-checked against Ground Truth section, no accuracy issues: Gemma-4 single-hop multimodal (Slide 4/5), NAMC traceability (Slide 8), closed RL/clustering retraining loop (Slide 4 Path B), outbreak engine methods (Slide 3/5), `/admin/accuracy` evaluator (Slide 5, commits `a29dd6e`/`1ebefb9`).
+
+### Slide 7 — RBAC (Role-Based Access Control) — ✅ FINALIZED (2026-07-06)
+```
+Role Based Access Control
+
+• Three roles, one secure login — Receptionist, Doctor, Admin, via JWT
+  session cookie
+• Enforced at the API layer — one rules table gates all backend routes,
+  not just hidden UI buttons
+• Each person only sees the tools relevant to their job — receptionists
+  handle intake, doctors handle diagnosis & prescriptions, admins oversee
+  staff and public health analytics
+• Unauthorized access is blocked cleanly — dedicated 403 page, not a
+  broken screen
+• Admins manage staff accounts directly — no database access needed
+
+| Area                                | Receptionist | Doctor | Admin |
+|--------------------------------------|:---:|:---:|:---:|
+| Patient Registration & Intake        | ✅  | —   | ✅  |
+| Patient Directory (view)             | ✅  | ✅  | ✅  |
+| Consultation & Treatment Workflow    | —   | ✅  | ✅  |
+| Prescriptions & Clinical Feedback    | —   | ✅  | ✅  |
+| Public Health / Outbreak Dashboard   | —   | —   | ✅  |
+| Staff Management                     | —   | —   | ✅  |
+| Analytics, Forecasting & ML Admin    | —   | —   | ✅  |
+```
+Real feature verified via git log (commit `83325dd` "feat: add role-based access control (receptionist/doctor/admin)") and direct code read: `backend/security.py` (`RBAC_RULES` — single ordered rules table, first-match-wins, enforced by `RBACMiddleware` over all 40+ backend routes) and `src/lib/auth/roles.ts` (`ROUTE_ROLES` — page-level nav/redirect gating, kept in sync with the backend). Matrix rows are a direct transcription of those two rule tables, not inferred. Diagram choice: a permission matrix table instead of a flow/sequence diagram — RBAC is a "who can touch what" access question, which a matrix communicates faster than a node-and-arrow diagram, and it's buildable natively in PowerPoint/Slides without a Mermaid export step.
+
+### Slide 8 — Datasets & Methodology — ✅ FINALIZED (2026-07-04)
+Reactivated into the main deck (2026-07-04) — was briefly pulled out to a "Deferred" holding section, now placed back per user's final ordering decision.
 ```
 Datasets
 
@@ -269,13 +309,32 @@ Sources: user-provided links — NAMASTE portal (https://namaste.ayush.gov.in/ay
 
 Also confirmed stale vs. current code: `AyurGenixAI_Model_Report.md`/`OnePager.md` describe an **older engine version** (446-disease `ISHAAyushAI_Dataset.csv`, 4-tier TF-IDF symptom matching, `/api/ml/recommend` endpoint) that no longer exists in `backend/data/`. Current live `ISHAAyush_service.py` does direct substring search on the NAMASTE-merged CSV instead — the slide above describes the **current** method, not the stale docs' method. The TF-IDF piece that *is* still live is `get_suggestions()` — character n-gram (2-3) TF-IDF + cosine similarity, used only for disease-name autocomplete, not the recommendation match itself.
 
-### Slide — Live Demo flow/script — ⬜ NOT STARTED
-### Slide — Team/Contact (if following IDP deck template) — ⬜ NOT STARTED
+### Slide 9 — Live Demo flow/script — ⬜ NOT STARTED
+### Slide 10 — Reference — ⬜ NOT STARTED
+### Slide 11 — Contact — ⬜ NOT STARTED
+### Slide 12 — Challenges & Way Forward — ⬜ NOT STARTED
+
+## Deck order (2026-07-04, user's final call)
+1. Problem Statement
+2. Core Solution
+3. Solution Architecture: AI/ML Models & Methodology (table)
+4. Pipeline Data Flow (sequence diagrams)
+5. System Architecture (component diagram)
+6. Key Features
+7. RBAC (Role-Based Access Control)
+8. Datasets & Methodology
+9. Live Demo flow/script
+10. Reference
+11. Contact
+12. Challenges & Way Forward
 
 ## Open questions / things to confirm with user before finalizing later slides
 - Any real accuracy/evaluation numbers to cite (IDP deck cited CER, hallucination rate, throughput) — check `Voice_Pipeline_Accuracy_Evaluator` work (git log, commit a29dd6e) for numbers once we get to the Datasets/Methodology slide.
-- Team member names/roles/contact info for a closing slide (IDP deck had this) — not yet discussed.
 - Whether to visually diagram the dual voice-path (Gemma-4 primary / AI4Bharat+Phi-4 fallback) on the Pipeline Data Flow slide, or keep it simple and mention fallback only verbally in the demo.
+- Slide 6 (Key Features): which specific features to headline — candidates from Ground Truth section (closed-loop RL, NAMC traceability, dual voice-path, on-prem-capable) but need user's priority order.
+- Slide 10 (Reference): unclear what this should contain — academic/technical references (like the IDP deck's citation links), or dataset source references (NAMASTE/AyurGenixAI links already covered in Slide 8)? Ask before drafting.
+- Slide 11 (Contact): team member names/roles/phone/email — not yet provided (IDP deck had a dedicated contact slide with 2 names + phone + website + email).
+- Slide 12 (Challenges & Way Forward): candid limitations already surfaced in Ground Truth section are strong material — e.g. graph diffusion vs. trained GNN (Phase 2 roadmap), no live AHMIS/AYUSH Grid integration yet, dataset coverage gaps, no VAD/denoising yet. Frame as honest "current limitation → planned improvement" pairs, mirroring the IDP deck's tone.
 
 ## Working style notes
 - Do not invent capabilities not present in code. Always spot-check claims against `backend/services/*` before adding to a slide.

@@ -89,16 +89,15 @@ class HybridRecommendationEngine:
 
         learned_actions = []
         learned_yoga_actions = []
+        learned_diet_actions = []
+        learned_lifestyle_actions = []
 
         try:
             learned_actions = rl_service.get_best_actions_by_namc(namc_code, prakriti, vikriti)
-            # All positive-Q yoga actions sorted by Q-value
-            yoga_q_table = rl_service.q_table.get(state_key or "", {})
-            learned_yoga_actions = sorted(
-                [(k.replace("yoga:", ""), v) for k, v in yoga_q_table.items()
-                 if k.startswith("yoga:") and v > 0],
-                key=lambda x: -x[1]
-            )
+            # All positive-Q prefixed actions per category, sorted by Q-value
+            learned_yoga_actions = rl_service.get_learned_prefixed_actions(namc_code, prakriti, vikriti, "yoga:")
+            learned_diet_actions = rl_service.get_learned_prefixed_actions(namc_code, prakriti, vikriti, "diet:")
+            learned_lifestyle_actions = rl_service.get_learned_prefixed_actions(namc_code, prakriti, vikriti, "lifestyle:")
         except Exception as e:
             print(f"RL Pipeline error: {e}")
 
@@ -138,6 +137,32 @@ class HybridRecommendationEngine:
                 explainability.append(f"Recommended {practice.title()} based on positive clinician feedback.")
                 modified = True
 
+        # Diet & lifestyle are plain string lists — splice learned items in and
+        # expose them separately so the UI can badge them as AI-learned
+        ai_learned_diet = []
+        existing_diet = {str(d).strip().lower() for d in hybrid_rec.get("diet", [])}
+        for item, _ in learned_diet_actions:
+            if item.lower() not in existing_diet:
+                text = item[:1].upper() + item[1:]
+                hybrid_rec.setdefault("diet", []).append(text)
+                ai_learned_diet.append(text)
+                existing_diet.add(item.lower())
+                explainability.append(f"Added dietary guideline '{text}' based on positive clinician feedback.")
+                modified = True
+
+        ai_learned_lifestyle = []
+        existing_lifestyle = {str(l).strip().lower() for l in hybrid_rec.get("lifestyle", [])}
+        for item, _ in learned_lifestyle_actions:
+            if item.lower() not in existing_lifestyle:
+                text = item[:1].upper() + item[1:]
+                hybrid_rec.setdefault("lifestyle", []).append(text)
+                ai_learned_lifestyle.append(text)
+                existing_lifestyle.add(item.lower())
+                explainability.append(f"Added lifestyle change '{text}' based on positive clinician feedback.")
+                modified = True
+
+        hybrid_rec["ai_learned_diet"] = ai_learned_diet
+        hybrid_rec["ai_learned_lifestyle"] = ai_learned_lifestyle
         hybrid_rec["explainability"] = explainability
         hybrid_rec["is_hybrid_modified"] = modified
 

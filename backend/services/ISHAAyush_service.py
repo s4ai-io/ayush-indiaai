@@ -170,7 +170,7 @@ class ISHAAyushService:
         sem_results = self._semantic_search(disease_input)
         if sem_results:
             top_row, top_conf = sem_results[0]
-            if top_conf >= 0.5:
+            if top_conf >= 0.3:
                 matched_row = top_row
                 match_confidence = top_conf
                 match_requires_confirmation = top_conf < 0.85

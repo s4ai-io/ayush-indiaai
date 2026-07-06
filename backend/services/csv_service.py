@@ -147,15 +147,10 @@ class DBService:
         symptoms = data.get("symptoms", "")
         doctor_notes = data.get("doctorNotes", "")
 
-        # Compute herb diff between original AI plan and final (possibly doctor-edited) plan
-        def _herb_names(plan):
-            return [h.get("name", "") if isinstance(h, dict) else str(h)
-                    for h in plan.get("herbs", [])]
-
-        original_herb_names = _herb_names(original_ai_plan)
-        final_herb_names    = _herb_names(treatment_plan)
-        added_herbs   = [h for h in final_herb_names if h not in original_herb_names]
-        removed_herbs = [h for h in original_herb_names if h not in final_herb_names]
+        # Diff every plan category (herbs, yoga, diet, lifestyle) between the original
+        # AI plan and the final (possibly doctor-edited) plan, as canonical action keys
+        from services.rl_service import rl_service
+        added_herbs, removed_herbs = rl_service.compute_plan_diff(original_ai_plan, treatment_plan)
         
         treatment_id = str(uuid.uuid4())
         feedback_id = str(uuid.uuid4())
@@ -242,6 +237,7 @@ class DBService:
                 "severity": data.get("severity"),
                 "prakriti": data.get("prakriti"),
                 "vikriti": data.get("vikriti"),
+                "namc_code": treatment_plan.get("namc_code") or original_ai_plan.get("namc_code"),
                 "match_method": treatment_plan.get("match_method"),
                 "match_confidence": treatment_plan.get("match_confidence"),
                 "cluster_id": data.get("cluster_id") or treatment_plan.get("cluster_id")

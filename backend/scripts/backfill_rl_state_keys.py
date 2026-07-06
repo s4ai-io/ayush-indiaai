@@ -30,7 +30,9 @@ def run():
         offset = 0
 
         while True:
-            batch = db.query(TreatmentFeedback).offset(offset).limit(BATCH_SIZE).all()
+            # Stable order — without it, committed updates shuffle Postgres row
+            # order and offset pagination skips/revisits rows across batches
+            batch = db.query(TreatmentFeedback).order_by(TreatmentFeedback.id).offset(offset).limit(BATCH_SIZE).all()
             if not batch:
                 break
 
@@ -40,13 +42,23 @@ def run():
                 except Exception:
                     ctx = {}
 
-                if ctx.get("namc_code"):
-                    already_done += 1
-                    continue
-
                 disease  = ctx.get("disease", "")
                 prakriti = ctx.get("prakriti", "")
-                vikriti  = ctx.get("vikriti", "")
+                # Historical (pre-revamp) rows store the imbalance under "dosha"
+                vikriti  = ctx.get("vikriti") or ctx.get("dosha", "")
+
+                if ctx.get("namc_code"):
+                    if ctx.get("vikriti"):
+                        already_done += 1
+                        continue
+                    # Previous run resolved namc_code but missed vikriti (old
+                    # rows store it under "dosha") — repair the dosha state.
+                    ctx["vikriti"] = vikriti
+                    ctx["dosha_state"] = f"{prakriti}_{vikriti}"
+                    if not DRY_RUN:
+                        fb.ml_context = json.dumps(ctx)
+                    patched += 1
+                    continue
 
                 if not disease:
                     skipped += 1
@@ -94,6 +106,7 @@ def run():
                     continue
 
                 ctx["namc_code"]   = namc_code
+                ctx["vikriti"]     = vikriti
                 ctx["dosha_state"] = f"{prakriti}_{vikriti}"
 
                 if not DRY_RUN:
