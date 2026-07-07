@@ -25,6 +25,12 @@ PUBLIC_HEALTH_DASHBOARD.md and the data-realism plan for the full rationale):
     produces different (but still seasonally sensible) totals.
   - Missingness, weekday-skewed visit dates, and occasional duplicate/
     follow-up visits are injected, matching how real intake data looks.
+  - Vitals (bpm, sugar_level, spo2, temperature, systolic_bp, diastolic_bp,
+    services/vitals_pool.py) and parent_visit_id are populated on every
+    record, including a real chain (baseline → improved) on the 4%
+    short-interval follow-up visits — see FOLLOWUP_QUEUE_FIX.md and
+    backend/scripts/backfill_vitals_and_followups.py (the equivalent
+    backfill for data generated before this was added).
 
 Run from backend/:
     ./venv/bin/python3.11 generate_historical_data_v2.py --seed 42
@@ -53,6 +59,7 @@ from services.disease_pool import (
     sample_severity,
     vary_symptoms,
 )
+from services.vitals_pool import sample_baseline_vitals, sample_followup_vitals, VITAL_KEYS
 
 OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "synthetic_data_v2")
 
@@ -227,6 +234,7 @@ def generate(seed: int, years: list[int], n_patients: int, out_dir: str,
         patient_symptoms = vary_symptoms(symptoms, py_rng)
 
         record_id = str(uuid.uuid4())
+        baseline_vitals = sample_baseline_vitals(disease, severity_label, py_rng)
         records.append({
             "id": record_id,
             "patient_id": pid,
@@ -240,6 +248,8 @@ def generate(seed: int, years: list[int], n_patients: int, out_dir: str,
                 ["None", "Hypertension", "Diabetes", "Obesity", "Stress", ""]), 0.10),
             "notes": f"Patient presents with {severity_label.lower()} {disease}. Season: {season}. Dosha predominant: {dosha}.",
             "prescription": json.dumps({"herbs": herbs, "yoga": yoga}),
+            "parent_visit_id": "",
+            **baseline_vitals,
         })
         treatments.append({
             "id": str(uuid.uuid4()),
@@ -278,6 +288,8 @@ def generate(seed: int, years: list[int], n_patients: int, out_dir: str,
             follow_dt = visit_dt + timedelta(days=py_rng.randint(2, 6))
             if follow_dt.month == month and (end_date is None or follow_dt.date() <= end_date):
                 follow_id = str(uuid.uuid4())
+                followup_outcome = outcome  # this visit's own recorded outcome drives how far vitals recover
+                followup_vitals = sample_followup_vitals(disease, baseline_vitals, followup_outcome, py_rng)
                 records.append({
                     "id": follow_id,
                     "patient_id": pid,
@@ -290,6 +302,8 @@ def generate(seed: int, years: list[int], n_patients: int, out_dir: str,
                     "comorbidities": "",
                     "notes": f"Follow-up visit for {disease}. Season: {season}.",
                     "prescription": json.dumps({"herbs": herbs, "yoga": yoga}),
+                    "parent_visit_id": record_id,
+                    **followup_vitals,
                 })
 
     for year in years:
@@ -328,7 +342,7 @@ def generate(seed: int, years: list[int], n_patients: int, out_dir: str,
                 "id_number", "diagnosis_done", "created_at", "updated_at"])
     _write_csv(os.path.join(out_dir, "medical_records.csv"), records,
                ["id", "patient_id", "visit_date", "diagnosis", "symptoms", "prakriti", "vikriti",
-                "severity", "comorbidities", "notes", "prescription"])
+                "severity", "comorbidities", "notes", "prescription", "parent_visit_id", *VITAL_KEYS])
     _write_csv(os.path.join(out_dir, "ayush_treatments.csv"), treatments,
                ["id", "patient_id", "medical_record_id", "visit_date", "disease", "herbs_prescribed",
                 "yoga_prescribed", "diet_plan", "treatment_duration_weeks", "improvement_percentage", "outcome"])

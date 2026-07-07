@@ -102,13 +102,67 @@ comorbidities) into a new pending `medical_records` row linked via
 (each run adds another round of follow-ups) but safe to run — it never
 touches existing rows, only inserts new ones.
 
+## Retrofitting the old synthetic/historical dataset
+
+The bulk historical dataset (`generate_historical_data_v2.py` →
+`migrate_synthetic_v2_postgres.py`, ~16,000 `medical_records` rows) predates
+both the vitals columns and `parent_visit_id` — it was written before either
+existed, so every row had `bpm`/`sugar_level`/`spo2`/`temperature`/
+`systolic_bp`/`diastolic_bp` = `NULL` and no follow-up chains at all. Its own
+notion of "follow-up" (a ~4% chance of a same-day-ish duplicate visit) never
+set `parent_visit_id` and always shipped a full prescription, so those
+duplicate visits weren't distinguishable as follow-ups anywhere in the app.
+This also meant the ML-facing "learn from vitals + follow-up outcomes" data
+the vitals feature exists for had zero real coverage.
+
+**A migration (backfill) turned out to be possible and was run** — no need to
+regenerate from scratch:
+
+```bash
+cd backend
+./venv/bin/python scripts/backfill_vitals_and_followups.py
+```
+
+What it does, for every **already-completed** visit only (pending/queued
+visits are deliberately left untouched — filling in vitals for a visit no
+doctor has seen yet would be wrong):
+
+1. Groups each patient's completed visits by diagnosis and orders by date.
+2. The earliest visit in a group gets baseline vitals sampled from a
+   disease + severity-biased range (`services/vitals_pool.py` —
+   e.g. diabetes-named diagnoses skew `sugar_level` high, respiratory ones
+   skew `spo2` low, fevers skew `temperature` high).
+3. Every later visit in the same group is chained via `parent_visit_id` to
+   the one immediately before it, with vitals sampled as an *improvement*
+   over the parent — biased by that visit's recorded `AyushTreatment.outcome`
+   (a "Recovered" visit moves further toward normal than a "Stable" one).
+
+Run once against the live DB: **16,128 visits got vitals, 1,226 new
+follow-up chains were created** (on top of the 6 real/seeded pending ones
+from the section above, untouched). It's idempotent — only writes `bpm`
+if currently `NULL` and `parent_visit_id` if currently `NULL`, so re-running
+is a safe no-op.
+
+**The generator was also fixed** so a future regeneration doesn't lose this
+again: `generate_historical_data_v2.py` now calls the same
+`services/vitals_pool.py` helpers for every record (including linking its 4%
+follow-up branch via `parent_visit_id` with genuinely improved vitals), and
+`migrate_synthetic_v2_postgres.py` now loads the 7 new CSV columns. If you
+ever do regenerate from scratch, run the generator + migration as before —
+you do **not** need to run the backfill afterward, the new data already has
+everything.
+
 ## What changed, file by file
 
 | File | Change |
 |---|---|
 | `backend/services/csv_service.py` | `_visit_queue()` shared helper (prescription-based filter); `get_pending_visit_queue()` (pending visits + never-consulted patients); `get_completed_diagnoses_summary()` rewritten on the same filter; new `get_patient_conditions()`; removed the now-dead `get_patients_by_status()`. |
 | `backend/main.py` | `GET /api/patients?status=pending\|completed` now calls the visit-based queries; new `GET /api/patients/{id}/conditions`. |
-| `backend/scripts/generate_followup_visits.py` | New — seeds demo follow-up visits (see above). |
+| `backend/scripts/generate_followup_visits.py` | New — seeds demo *pending* follow-up visits (see above). |
+| `backend/services/vitals_pool.py` | New — shared disease/severity-biased vitals sampling, used by both the backfill and the generator. |
+| `backend/scripts/backfill_vitals_and_followups.py` | New — one-off backfill for the old dataset (see above). |
+| `backend/generate_historical_data_v2.py` | Now populates vitals + `parent_visit_id` on every generated record. |
+| `backend/migrate_synthetic_v2_postgres.py` | Now loads the 7 new columns from the CSV into Postgres. |
 | `src/types/clinical.ts` | New `PendingQueueEntry`, `PatientCondition` types; `CompletedDiagnosis` gained `parent_visit_id` / `is_followup`. |
 | `src/components/consultation/FollowupChoiceDialog.tsx` | Switched from `/diagnoses` (doctor/admin-only, heavy) to `/conditions` (all roles, minimal). |
 | `src/app/patients/page.tsx` | Follow-up dialog now available to every role (was doctor/admin-only), driven by the lightweight condition list. |

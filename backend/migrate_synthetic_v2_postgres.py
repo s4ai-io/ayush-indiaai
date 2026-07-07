@@ -93,7 +93,21 @@ def run_migration() -> None:
     if os.path.exists(MEDICAL_RECORDS_CSV):
         print("Migrating Medical Records...")
         df_m = pd.read_csv(MEDICAL_RECORDS_CSV)
+
+        def _int_or_none(v):
+            try:
+                return int(v) if not pd.isna(v) and str(v).strip() else None
+            except Exception:
+                return None
+
+        def _float_or_none(v):
+            try:
+                return float(v) if not pd.isna(v) and str(v).strip() else None
+            except Exception:
+                return None
+
         for _, row in df_m.iterrows():
+            parent_visit_id = row.get("parent_visit_id")
             m = MedicalRecord(
                 id=str(row.get("id")),
                 patient_id=str(row.get("patient_id")),
@@ -105,6 +119,13 @@ def run_migration() -> None:
                 comorbidities=str(row.get("comorbidities", "")) if not pd.isna(row.get("comorbidities")) else "",
                 notes=str(row.get("notes", "")),
                 prescription=str(row.get("prescription", "")),
+                parent_visit_id=str(parent_visit_id) if not pd.isna(parent_visit_id) and str(parent_visit_id).strip() else None,
+                bpm=_int_or_none(row.get("bpm")),
+                sugar_level=_float_or_none(row.get("sugar_level")),
+                spo2=_int_or_none(row.get("spo2")),
+                temperature=_float_or_none(row.get("temperature")),
+                systolic_bp=_int_or_none(row.get("systolic_bp")),
+                diastolic_bp=_int_or_none(row.get("diastolic_bp")),
             )
             if not pd.isna(row.get("visit_date")):
                 try:
