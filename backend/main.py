@@ -9,6 +9,7 @@ from typing import Optional
 import asyncio
 import uvicorn
 import os
+import time
 import re
 import json
 import csv
@@ -593,6 +594,183 @@ async def get_disease_spread_prediction(disease: str = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+
+@app.get("/api/analytics/model-info", tags=["Public Health Analytics"])
+async def get_analytics_model_info():
+    """
+    Returns metadata, parameters, and live stats for all 4 analytics models:
+    DBSCAN Spatial Clustering, Z-Score+CUSUM Anomaly Detection,
+    GNN Graph Diffusion, and Disease Forecaster (RandomForest).
+    """
+    result: dict = {}
+
+    # ── DBSCAN ────────────────────────────────────────────────────────────────
+    try:
+        cluster_summary = spatial_service.get_cluster_summary(days=90)
+        result["dbscan"] = {
+            "name": "DBSCAN Spatial Clustering",
+            "type": "Unsupervised Geospatial Clustering",
+            "algorithm": "Density-Based Spatial Clustering of Applications with Noise",
+            "params": {
+                "eps_km": cluster_summary.get("eps_km", 400),
+                "min_samples": cluster_summary.get("min_samples", 2),
+                "distance_metric": "Haversine (great-circle)",
+                "max_cities_per_cluster": 6,
+                "period_days": 90,
+            },
+            "stats": {
+                "total_clusters": cluster_summary.get("total_clusters", 0),
+                "total_hotspots": cluster_summary.get("total_hotspots", 0),
+                "diseases_tracked": cluster_summary.get("diseases_tracked", 0),
+            },
+            "clusters": cluster_summary.get("clusters", [])[:12],
+        }
+    except Exception as e:
+        result["dbscan"] = {"error": str(e), "name": "DBSCAN Spatial Clustering"}
+
+    # ── Anomaly Detection ─────────────────────────────────────────────────────
+    try:
+        alerts = analytics_service.detect_anomalies()
+        severity_counts = {"Critical": 0, "High": 0, "Medium": 0, "Low": 0}
+        for a in alerts:
+            s = a.get("severity", "Low")
+            if s in severity_counts:
+                severity_counts[s] += 1
+
+        disease_scores = [
+            {
+                "disease": a["disease"],
+                "z_score": a["z_score"],
+                "severity": a["severity"],
+                "cusum_value": a["cusum_value"],
+                "triggered_by": a.get("triggered_by", ""),
+                "pct_increase": a.get("pct_increase", 0),
+                "surge_month": a.get("surge_month", ""),
+            }
+            for a in alerts[:15]
+        ]
+
+        result["anomaly"] = {
+            "name": "Statistical Anomaly Detection",
+            "type": "Z-Score + CUSUM Dual Detector",
+            "algorithms": ["Monthly Z-Score (leave-one-out baseline)", "CUSUM (Cumulative Sum)"],
+            "params": {
+                "z_threshold": 2.0,
+                "cusum_k_factor": 0.5,
+                "min_recent_cases": 3,
+                "baseline_window": "6 months",
+                "severity_thresholds": {
+                    "Low":      "Z ≥ 1.5  (< 6.7% probability under H0)",
+                    "Medium":   "Z ≥ 2.0  (< 2.3%)",
+                    "High":     "Z ≥ 2.5  (< 0.6%)",
+                    "Critical": "Z ≥ 3.5  (< 0.02%)",
+                },
+            },
+            "stats": {
+                "total_alerts": len(alerts),
+                "by_severity": severity_counts,
+            },
+            "disease_scores": disease_scores,
+        }
+    except Exception as e:
+        result["anomaly"] = {"error": str(e), "name": "Statistical Anomaly Detection"}
+
+    # ── GNN Diffusion ─────────────────────────────────────────────────────────
+    try:
+        graph_summary = gnn_service.get_spread_graph_summary()
+        result["gnn"] = {
+            "name": "Disease Spread Simulation",
+            "type": "Graph Diffusion (Phase 1)",
+            "phase_note": "Phase 2: PyTorch Geometric ST-GNN after 6+ months of live data",
+            "params": {
+                "transmission_rate": 0.25,
+                "adjacency_threshold_km": 300,
+                "forecast_days": 7,
+                "edge_weight_formula": "1 − (distance_km / 300)",
+                "distance_metric": "Haversine",
+            },
+            "stats": {
+                "graph_nodes": graph_summary.get("nodes", 0),
+                "graph_edges": graph_summary.get("edges", 0),
+                "top_hubs": graph_summary.get("top_hubs", []),
+            },
+        }
+    except Exception as e:
+        result["gnn"] = {"error": str(e), "name": "Disease Spread Simulation"}
+
+    # ── Disease Forecaster ────────────────────────────────────────────────────
+    try:
+        fc = forecast_service.forecaster
+        trained = fc is not None and fc.forecast_model is not None
+
+        feature_cols = [
+            "disease_enc", "category_enc", "season_enc",
+            "month_num", "ritu_sandhi",
+            "cases_lag1", "cases_lag2", "cases_lag3",
+            "avg_severity",
+        ]
+
+        importances = []
+        if trained and hasattr(fc.forecast_model, "feature_importances_"):
+            imp = fc.forecast_model.feature_importances_
+            importances = [
+                {"feature": name, "importance": round(float(v), 4)}
+                for name, v in sorted(zip(feature_cols, imp), key=lambda x: -x[1])
+            ]
+
+        diseases_count = 0
+        training_samples = 0
+        months_of_data = 0
+        if trained and fc.last_data is not None:
+            diseases_count = len(fc.last_data)
+        if trained and fc.trends is not None and not fc.trends.empty:
+            training_samples = int(len(fc.trends))
+            if "month" in fc.trends.columns:
+                months_of_data = int(fc.trends["month"].nunique())
+
+        from disease_forecaster import MODEL_PATH
+        model_age_hours = None
+        if os.path.exists(MODEL_PATH):
+            age_secs = time.time() - os.path.getmtime(MODEL_PATH)
+            model_age_hours = round(age_secs / 3600, 1)
+
+        result["forecaster"] = {
+            "name": "Disease Forecaster",
+            "type": "Random Forest Regressor",
+            "params": {
+                "n_estimators": 200,
+                "max_depth": 10,
+                "random_state": 42,
+                "n_jobs": -1,
+                "retrain_interval": "24 hours",
+                "forecast_horizon": "3 months",
+                "feature_count": len(feature_cols),
+                "features": feature_cols,
+            },
+            "ritu_map": {
+                "Shishira": {"months": "Jan–Feb", "label": "Winter", "emoji": "❄️"},
+                "Vasanta":  {"months": "Mar–Apr", "label": "Spring", "emoji": "🌸"},
+                "Grishma":  {"months": "May–Jun", "label": "Summer", "emoji": "☀️"},
+                "Varsha":   {"months": "Jul–Aug", "label": "Monsoon", "emoji": "🌧️"},
+                "Sharad":   {"months": "Sep–Oct", "label": "Autumn", "emoji": "🍂"},
+                "Hemanta":  {"months": "Nov–Dec", "label": "Pre-winter", "emoji": "🌾"},
+            },
+            "sandhi_months": [1, 3, 5, 7, 9, 11],
+            "stats": {
+                "trained": trained,
+                "diseases_tracked": diseases_count,
+                "training_samples": training_samples,
+                "months_of_data": months_of_data,
+                "model_age_hours": model_age_hours,
+            },
+            "feature_importance": importances,
+        }
+    except Exception as e:
+        result["forecaster"] = {"error": str(e), "name": "Disease Forecaster"}
+
+    result["generated_at"] = datetime.datetime.utcnow().isoformat()
+    return result
 
 
 from services.registration_agent import registration_agent_router
