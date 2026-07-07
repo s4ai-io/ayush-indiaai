@@ -9,6 +9,7 @@ interface DiseaseSearchDropdownProps {
     required?: boolean;
     placeholder?: string;
     className?: string;
+    disabled?: boolean;
 }
 
 export function DiseaseSearchDropdown({
@@ -17,6 +18,7 @@ export function DiseaseSearchDropdown({
     required = false,
     placeholder = 'Search or select a disease...',
     className = '',
+    disabled = false,
 }: DiseaseSearchDropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState(value);
@@ -166,11 +168,12 @@ export function DiseaseSearchDropdown({
                     type="text"
                     value={searchQuery}
                     onChange={handleInputChange}
-                    onFocus={() => setIsOpen(true)}
+                    onFocus={() => !disabled && setIsOpen(true)}
                     onKeyDown={handleKeyDown}
                     placeholder={placeholder}
                     required={required}
-                    className="w-full pl-9 pr-16 p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all text-sm"
+                    disabled={disabled}
+                    className="w-full pl-9 pr-16 p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all text-sm disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                     autoComplete="off"
                     role="combobox"
                     aria-expanded={isOpen}
@@ -179,7 +182,7 @@ export function DiseaseSearchDropdown({
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                     {loading && <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />}
-                    {searchQuery && !loading && (
+                    {searchQuery && !loading && !disabled && (
                         <button
                             type="button"
                             onClick={clearSelection}
@@ -191,16 +194,17 @@ export function DiseaseSearchDropdown({
                     )}
                     <button
                         type="button"
-                        onClick={() => { setIsOpen(!isOpen); inputRef.current?.focus(); }}
+                        onClick={() => { if (!disabled) { setIsOpen(!isOpen); inputRef.current?.focus(); } }}
                         className="p-0.5 hover:bg-slate-100 rounded transition-colors"
                         tabIndex={-1}
+                        disabled={disabled}
                     >
                         <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                     </button>
                 </div>
             </div>
 
-            {isOpen && (
+            {isOpen && !disabled && (
                 <ul
                     ref={listRef}
                     className="absolute z-50 w-full mt-1 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg py-1"

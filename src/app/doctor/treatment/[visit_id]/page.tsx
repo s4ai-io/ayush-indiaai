@@ -9,13 +9,23 @@ import { Badge } from "@/components/ui/badge";
 import {
     Brain, Activity, Leaf, Coffee, Moon, Sun, CheckCircle, AlertTriangle,
     Shield, Heart, Stethoscope, FileText, ClipboardList, Sparkles, TrendingUp,
-    Clock, Target, Plus, Trash2, X, ThumbsUp, ThumbsDown, Save, Phone,
+    Clock, Target, Plus, Trash2, X, ThumbsUp, ThumbsDown, Save, Phone, History,
+    HeartPulse, Droplet, Thermometer, Gauge,
 } from 'lucide-react';
 import { DiseaseSearchDropdown } from '@/components/ui/DiseaseSearchDropdown';
 import { useRouter } from "next/navigation";
 import { GemmaVoiceChatPanel } from "@/components/GemmaVoiceChatPanel";
 import { API_BASE } from '@/lib/config';
-import type { VisitPatient, VisitContext, TreatmentPlan } from '@/types';
+import type { VisitPatient, VisitContext, TreatmentPlan, Vitals, PreviousVisitSummary } from '@/types';
+
+const VITAL_FIELDS: { key: keyof Vitals; label: string; unit: string; icon: typeof HeartPulse }[] = [
+    { key: 'bpm', label: 'Heart Rate', unit: 'BPM', icon: HeartPulse },
+    { key: 'sugar_level', label: 'Blood Sugar', unit: 'mg/dL', icon: Droplet },
+    { key: 'spo2', label: 'SpO2', unit: '%', icon: Activity },
+    { key: 'temperature', label: 'Temperature', unit: '°C', icon: Thermometer },
+    { key: 'systolic_bp', label: 'BP Systolic', unit: 'mmHg', icon: Gauge },
+    { key: 'diastolic_bp', label: 'BP Diastolic', unit: 'mmHg', icon: Gauge },
+];
 
 // ─── Outer shell ────────────────────────────────────────────────────────────
 export default function TreatmentPage({ params }: { params: Promise<{ visit_id: string }> }) {
@@ -41,6 +51,12 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
     const [medicalHistory, setMedicalHistory] = useState('');
     const [prakriti, setPrakriti] = useState('');
     const [vikriti, setVikriti] = useState('');
+
+    // Follow-up linkage + health parameters (vitals)
+    const [parentVisitId, setParentVisitId] = useState<string | null>(null);
+    const [previousVisit, setPreviousVisit] = useState<PreviousVisitSummary | null>(null);
+    const [vitals, setVitals] = useState<Vitals>({});
+    const isFollowup = !!parentVisitId;
 
     // Doctor prescribed manual inputs mapped from Agent
     const [doctorHerbs, setDoctorHerbs] = useState<string[]>([]);
@@ -111,6 +127,11 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                 setMedicalHistory(data.visit?.comorbidities || '');
                 setPrakriti(data.visit?.prakriti || '');
                 setVikriti(data.visit?.vikriti || '');
+
+                // Follow-up linkage + vitals
+                setParentVisitId(data.visit?.parentVisitId || null);
+                setPreviousVisit(data.previousVisit || null);
+                setVitals(data.visit?.vitals || {});
             } catch {
                 // fallback to the lighter endpoint
                 try {
@@ -129,6 +150,10 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                         setMedicalHistory(d.comorbidities || '');
                         setPrakriti(d.prakriti || '');
                         setVikriti(d.vikriti || '');
+
+                        setParentVisitId(d.parentVisitId || null);
+                        setPreviousVisit(d.previousVisit || null);
+                        setVitals(d.vitals || {});
                     }
                 } catch { }
             } finally {
@@ -361,6 +386,8 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                     feedback,
                     // Step 9b: send original AI plan
                     original_ai_plan: originalAiPlan,
+                    // Health parameters (vitals) captured this visit
+                    ...vitals,
                 }),
             });
             const data = await res.json();
@@ -460,6 +487,19 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                         </div>
                     </div>
 
+                    {isFollowup && (
+                        <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-200 text-indigo-800 rounded-2xl px-5 py-3 shadow-sm">
+                            <History className="w-5 h-5 shrink-0" />
+                            <div className="text-sm">
+                                <span className="font-bold">Follow-up Consultation:</span>{' '}
+                                {disease || previousVisit?.diagnosis || 'Previous condition'}
+                                {previousVisit?.visitDate && (
+                                    <span className="text-indigo-500"> — previous visit {new Date(previousVisit.visitDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
                         {/* ── LEFT: Clinical Assessment ── */}
@@ -476,7 +516,10 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                     {/* Disease */}
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Primary Condition <span className="text-red-500">*</span></label>
-                                        <DiseaseSearchDropdown value={disease} onChange={setDisease} required placeholder="Search for a disease..." />
+                                        <DiseaseSearchDropdown value={disease} onChange={setDisease} required placeholder="Search for a disease..." disabled={isFollowup} />
+                                        {isFollowup && (
+                                            <p className="text-xs text-slate-400">Locked to the condition being followed up. Start a new consultation to change the diagnosis.</p>
+                                        )}
                                     </div>
 
                                     {/* Symptoms */}
@@ -538,6 +581,45 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                                 <SelectItem value="Vata-Kapha">Vata-Kapha</SelectItem>
                                             </SelectContent>
                                         </Select>
+                                    </div>
+
+                                    {/* Health Parameters / Vitals */}
+                                    <div className="space-y-3 pt-2">
+                                        <label className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                                            <HeartPulse className="w-3.5 h-3.5 text-primary" /> Health Parameters / Vitals
+                                        </label>
+                                        <div className="space-y-2.5">
+                                            {VITAL_FIELDS.map(f => {
+                                                const prevVal = previousVisit?.vitals?.[f.key];
+                                                return (
+                                                    <div key={f.key} className="space-y-1">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-xs text-slate-500 flex items-center gap-1.5">
+                                                                <f.icon className="w-3.5 h-3.5 text-slate-400" /> {f.label}
+                                                            </span>
+                                                            {isFollowup && (
+                                                                <span className="text-[11px] text-slate-400">
+                                                                    Previous: <span className="font-medium text-slate-500">{prevVal != null ? `${prevVal} ${f.unit}` : '—'}</span>
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <input
+                                                                type="number"
+                                                                value={vitals[f.key] ?? ''}
+                                                                onChange={e => {
+                                                                    const raw = e.target.value;
+                                                                    setVitals(prev => ({ ...prev, [f.key]: raw === '' ? null : Number(raw) }));
+                                                                }}
+                                                                placeholder={isFollowup ? 'Current value' : f.label}
+                                                                className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                                                            />
+                                                            <span className="text-xs text-slate-400 w-14 shrink-0">{f.unit}</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
 
                                     {(doctorHerbs.length > 0 || doctorYoga.length > 0 || doctorDiet.length > 0 || doctorLifestyle.length > 0) && (

@@ -5,24 +5,16 @@ import { useRouter } from 'next/navigation';
 import { getRegistrations } from '../actions/getRegistrations';
 import {
     Search, User, FileText, Activity, MapPin, Briefcase,
-    ClipboardCheck, Clock, ChevronDown, ChevronUp,
+    ClipboardCheck, Clock, ChevronDown, ChevronUp, History,
     Pill, Leaf, Dumbbell, Calendar, Stethoscope,
     Phone, PhoneOff, Users, TrendingUp, X, Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { API_BASE } from '@/lib/config';
-import type { PatientRecord, CompletedDiagnosis, DiagnosisDetail } from '@/types';
-
-// Re-alias for local readability
-type Patient = PatientRecord;
+import type { PendingQueueEntry, CompletedDiagnosis, DiagnosisDetail } from '@/types';
 
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-/** Returns "City, State" but skips falsy parts so we never show ", Gujarat" */
-function formatLocation(city?: string, state?: string): string {
-    return [city, state].filter(Boolean).join(', ');
-}
 
 function formatDate(iso: string): string {
     try {
@@ -39,7 +31,7 @@ function initials(name: string): string {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DoctorDashboard() {
-    const [patients, setPatients] = useState<Patient[]>([]);
+    const [pendingQueue, setPendingQueue] = useState<PendingQueueEntry[]>([]);
     const [completedDiagnoses, setCompletedDiagnoses] = useState<CompletedDiagnosis[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
@@ -54,7 +46,7 @@ export default function DoctorDashboard() {
             setSearchQuery('');
             if (activeTab === 'pending') {
                 const data = await getRegistrations('pending');
-                setPatients(data);
+                setPendingQueue(data);
             } else {
                 try {
                     const res = await fetch(`${API_BASE}/api/diagnoses/completed`);
@@ -89,11 +81,10 @@ export default function DoctorDashboard() {
 
     // Filter
     const q = searchQuery.toLowerCase();
-    const filteredPatients = patients.filter(p =>
-        (p.first_name?.toLowerCase() || '').includes(q) ||
-        (p.last_name?.toLowerCase() || '').includes(q) ||
-        (p.mobile || '').includes(q) ||
-        (p.id_number?.toLowerCase() || '').includes(q)
+    const filteredQueue = pendingQueue.filter(p =>
+        (p.patient_name?.toLowerCase() || '').includes(q) ||
+        (p.patient_mobile || '').includes(q) ||
+        (p.diagnosis?.toLowerCase() || '').includes(q)
     );
     const filteredDiagnoses = completedDiagnoses.filter(d =>
         d.patient_name.toLowerCase().includes(q) ||
@@ -158,7 +149,7 @@ export default function DoctorDashboard() {
                         onClick={() => switchTab('pending')}
                         icon={<Clock className="w-4 h-4" />}
                         label="Pending Queue"
-                        count={activeTab === 'pending' && !loading ? patients.length : undefined}
+                        count={activeTab === 'pending' && !loading ? pendingQueue.length : undefined}
                         activeColor="bg-primary text-primary-foreground"
                     />
                     <TabButton
@@ -175,10 +166,10 @@ export default function DoctorDashboard() {
                 {loading ? (
                     <LoadingSkeleton />
                 ) : activeTab === 'pending' ? (
-                    filteredPatients.length > 0 ? (
+                    filteredQueue.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {filteredPatients.map(patient => (
-                                <PatientCard key={patient.id} patient={patient} />
+                            {filteredQueue.map(entry => (
+                                <QueueCard key={entry.record_id || entry.patient_id} entry={entry} />
                             ))}
                         </div>
                     ) : (
@@ -260,23 +251,30 @@ function TabButton({ active, onClick, icon, label, count, activeColor }: {
     );
 }
 
-function PatientCard({ patient }: { patient: Patient }) {
+function QueueCard({ entry }: { entry: PendingQueueEntry }) {
     const router = useRouter();
     const [starting, setStarting] = useState(false);
-    const location = formatLocation(patient.city, patient.state);
-    const hasMobile = patient.mobile && patient.mobile.trim().length > 0;
+    const hasMobile = entry.patient_mobile && entry.patient_mobile.trim().length > 0;
 
+    // A queued visit (record_id set) is resumed directly — no new consultation
+    // is created, so a receptionist's follow-up pick (or an earlier pending
+    // visit) is never orphaned. A never-consulted patient (record_id null)
+    // still gets a fresh consultation created on click, same as before.
     const handleConsult = async () => {
         setStarting(true);
         try {
+            if (entry.record_id) {
+                router.push(`/doctor/treatment/${entry.record_id}`);
+                return;
+            }
             const res = await fetch(`${API_BASE}/api/consultations`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    patientId: patient.id,
+                    patientId: entry.patient_id,
                     assessment: {
                         symptoms: '', diagnosis: '', notes: '',
-                        prakriti: '', vikriti: '', severity: 5, comorbidities: ''
+                        prakriti: '', vikriti: '', severity: 5, comorbidities: '',
                     }
                 })
             });
@@ -286,23 +284,25 @@ function PatientCard({ patient }: { patient: Patient }) {
         } catch (err) {
             console.error('Failed to start consultation:', err);
             alert('Could not start consultation. Please try again.');
-        } finally {
             setStarting(false);
         }
     };
 
     // Gender accent color
-    const accentClass = patient.gender === 'Female'
+    const accentClass = entry.patient_gender === 'Female'
         ? 'border-t-pink-400'
-        : patient.gender === 'Transgender'
+        : entry.patient_gender === 'Transgender'
             ? 'border-t-amber-400'
             : 'border-t-primary';
 
-    const avatarClass = patient.gender === 'Female'
+    const avatarClass = entry.patient_gender === 'Female'
         ? 'bg-pink-50 text-pink-600'
-        : patient.gender === 'Transgender'
+        : entry.patient_gender === 'Transgender'
             ? 'bg-amber-50 text-amber-600'
             : 'bg-primary/10 text-primary';
+
+    const [firstName, ...rest] = (entry.patient_name || '').split(' ');
+    const lastName = rest.join(' ');
 
     return (
         <div className={`group relative bg-card rounded-2xl shadow-sm border border-border border-t-4 ${accentClass} hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden`}>
@@ -311,27 +311,34 @@ function PatientCard({ patient }: { patient: Patient }) {
                 {/* Avatar + Name */}
                 <div className="flex items-center gap-3.5">
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-base shrink-0 ${avatarClass}`}>
-                        {patient.first_name?.[0]}{patient.last_name?.[0]}
+                        {firstName?.[0]}{lastName?.[0]}
                     </div>
                     <div className="min-w-0">
                         <h3 className="font-bold text-foreground text-base leading-tight truncate group-hover:text-primary transition-colors">
-                            {patient.first_name} {patient.last_name}
+                            {entry.patient_name || 'Unknown'}
                         </h3>
                         <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                             <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-medium">
-                                {patient.gender}
+                                {entry.patient_gender || 'Unknown'}
                             </span>
                             <span className="text-muted-foreground/50 text-xs">•</span>
-                            <span className="text-muted-foreground text-xs">{patient.age} yrs</span>
-                            {patient.blood_group && (
-                                <>
-                                    <span className="text-muted-foreground/50 text-xs">•</span>
-                                    <span className="text-xs font-semibold text-destructive/70">{patient.blood_group}</span>
-                                </>
-                            )}
+                            <span className="text-muted-foreground text-xs">{entry.patient_age} yrs</span>
                         </div>
                     </div>
                 </div>
+
+                {/* Follow-up badge, or plain "not yet diagnosed" for a fresh patient */}
+                {entry.is_followup ? (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                        <History className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">Follow-up: {entry.diagnosis || 'Condition'}</span>
+                    </div>
+                ) : entry.diagnosis ? (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100">
+                        <Clock className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">Awaiting prescription: {entry.diagnosis}</span>
+                    </div>
+                ) : null}
 
                 {/* Mobile */}
                 <div className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm ${hasMobile
@@ -342,21 +349,21 @@ function PatientCard({ patient }: { patient: Patient }) {
                         ? <Phone className="w-4 h-4 text-primary shrink-0" />
                         : <PhoneOff className="w-4 h-4 shrink-0" />
                     }
-                    <span className="font-medium truncate">{hasMobile ? patient.mobile : 'No mobile on record'}</span>
+                    <span className="font-medium truncate">{hasMobile ? entry.patient_mobile : 'No mobile on record'}</span>
                 </div>
 
                 {/* Location + Occupation */}
                 <div className="grid grid-cols-2 gap-2">
-                    {location && (
+                    {entry.patient_city && (
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
                             <MapPin className="w-3.5 h-3.5 shrink-0" />
-                            <span className="truncate">{location}</span>
+                            <span className="truncate">{entry.patient_city}</span>
                         </div>
                     )}
-                    {patient.occupation && (
+                    {entry.occupation && (
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground justify-end min-w-0">
                             <Briefcase className="w-3.5 h-3.5 shrink-0" />
-                            <span className="truncate">{patient.occupation}</span>
+                            <span className="truncate">{entry.occupation}</span>
                         </div>
                     )}
                 </div>
@@ -364,8 +371,8 @@ function PatientCard({ patient }: { patient: Patient }) {
                 {/* Footer */}
                 <div className="pt-3 border-t border-border flex items-center justify-between gap-3">
                     <div className="text-xs text-muted-foreground">
-                        <span className="block font-medium text-foreground/60">Registered</span>
-                        {formatDate(patient.created_at)}
+                        <span className="block font-medium text-foreground/60">{entry.record_id ? 'Waiting since' : 'Registered'}</span>
+                        {formatDate(entry.visit_date)}
                     </div>
                     <button
                         onClick={handleConsult}
@@ -373,7 +380,7 @@ function PatientCard({ patient }: { patient: Patient }) {
                         className="flex-1 flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 active:scale-95 text-primary-foreground py-2.5 px-4 rounded-xl font-semibold text-sm transition-all shadow-sm hover:shadow-primary/20 hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                         {starting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Stethoscope className="w-4 h-4" />}
-                        {starting ? 'Starting...' : 'Consult'}
+                        {starting ? 'Opening...' : 'Consult'}
                     </button>
                 </div>
             </div>
@@ -405,6 +412,11 @@ function CompletedCard({ d, isExpanded, isLoadingDetails, details, onToggle }: {
                         <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold border border-emerald-200">
                             {d.diagnosis}
                         </span>
+                        {d.is_followup && (
+                            <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200">
+                                <History className="w-3 h-3" /> Follow-up
+                            </span>
+                        )}
                     </div>
                     <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-muted-foreground">
                         <span>{d.patient_gender} · {d.patient_age} yrs</span>

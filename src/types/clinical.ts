@@ -105,6 +105,26 @@ export interface ClinicalAssessment {
     vikriti?: string;
     comorbidities?: string;
     notes: string;
+    parent_visit_id?: string | null;
+}
+
+/** Basic health parameters (vitals) captured at a visit */
+export interface Vitals {
+    bpm?: number | null;
+    sugar_level?: number | null;
+    spo2?: number | null;
+    temperature?: number | null;
+    systolic_bp?: number | null;
+    diastolic_bp?: number | null;
+}
+
+/** Summary of the prior visit for a followed-up condition */
+export interface PreviousVisitSummary {
+    visitId: string;
+    visitDate?: string;
+    diagnosis: string;
+    symptoms: string;
+    vitals: Vitals;
 }
 
 export interface ConsultationData {
@@ -136,6 +156,9 @@ export interface VisitContext {
     vikriti: string;
     comorbidities: string;
     patient?: VisitPatient;
+    parentVisitId?: string | null;
+    vitals?: Vitals;
+    previousVisit?: PreviousVisitSummary | null;
 }
 
 /** Complete visit details as returned by GET /api/visits/:id */
@@ -167,6 +190,8 @@ export interface VisitDetails {
         comorbidities: string;
         notes: string;
         prescription: Record<string, unknown>;
+        parentVisitId?: string | null;
+        vitals?: Vitals;
     };
     treatment: {
         herbs: string;
@@ -180,6 +205,7 @@ export interface VisitDetails {
         rating: string;
         comments: string;
     };
+    previousVisit?: PreviousVisitSummary | null;
 }
 
 // ── Diagnoses ───────────────────────────────────────────────────────────────
@@ -195,6 +221,37 @@ export interface CompletedDiagnosis {
     patient_mobile: string;
     diagnosis: string;
     symptoms: string;
+    visit_date: string;
+    parent_visit_id?: string | null;
+    is_followup?: boolean;
+}
+
+/**
+ * Doctor's Pending Queue entry. `record_id` is null for a patient who has
+ * never had any visit started yet (the card creates one on click); otherwise
+ * it points at the exact pending visit to resume — no new consultation is
+ * created for those.
+ */
+export interface PendingQueueEntry {
+    record_id: string | null;
+    patient_id: string;
+    patient_name: string;
+    patient_age: number;
+    patient_gender: string;
+    patient_city: string;
+    patient_mobile: string;
+    blood_group?: string;
+    occupation?: string;
+    diagnosis: string;
+    visit_date: string;
+    parent_visit_id?: string | null;
+    is_followup: boolean;
+}
+
+/** Distinct past diagnosis for the New-vs-Follow-up picker — no clinical detail. */
+export interface PatientCondition {
+    visit_id: string;
+    diagnosis: string;
     visit_date: string;
 }
 
@@ -212,6 +269,13 @@ export interface DiagnosisDetail {
     duration_weeks: number;
     improvement: number;
     outcome: string;
+    parent_visit_id?: string | null;
+    bpm?: number | null;
+    sugar_level?: number | null;
+    spo2?: number | null;
+    temperature?: number | null;
+    systolic_bp?: number | null;
+    diastolic_bp?: number | null;
 }
 
 // ── Treatment Plan ──────────────────────────────────────────────────────────

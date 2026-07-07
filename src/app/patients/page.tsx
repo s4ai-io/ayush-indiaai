@@ -10,8 +10,9 @@ import {
     ClipboardPlus, Lock, CheckCircle2
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import type { PatientDirectoryItem } from '@/types';
+import type { PatientDirectoryItem, PatientCondition } from '@/types';
 import { useAuth } from '@/components/layout/AuthProvider';
+import { FollowupChoiceDialog } from '@/components/consultation/FollowupChoiceDialog';
 
 
 export default function PatientsDirectoryPage() {
@@ -29,6 +30,11 @@ export default function PatientsDirectoryPage() {
     const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
     const [patientHistory, setPatientHistory] = useState<any[]>([]);
     const [historyLoading, setHistoryLoading] = useState(false);
+    const [followupDialogPatientId, setFollowupDialogPatientId] = useState<string | null>(null);
+    // Lightweight, role-agnostic condition list (diagnosis name + visit id/date
+    // only) — lets receptionists offer a follow-up menu too, without exposing
+    // the full clinical history that stays doctor/admin only.
+    const [patientConditions, setPatientConditions] = useState<PatientCondition[]>([]);
 
     useEffect(() => {
         const fetchPatients = async () => {
@@ -63,6 +69,15 @@ export default function PatientsDirectoryPage() {
     const fetchPatientHistory = async (patientId: string) => {
         setSelectedPatientId(patientId);
         setQueuedPatientId(null);
+        setPatientConditions([]);
+
+        // Lightweight condition list — fetched for every role so the
+        // New-vs-Follow-up dialog works for receptionists too.
+        fetch(`${API_BASE}/api/patients/${patientId}/conditions`)
+            .then(res => res.ok ? res.json() : [])
+            .then((data: PatientCondition[]) => setPatientConditions(data || []))
+            .catch(() => setPatientConditions([]));
+
         if (!canViewHistory) {
             // Backend would 403 this fetch anyway — receptionists only get the
             // demographics panel.
@@ -108,7 +123,7 @@ export default function PatientsDirectoryPage() {
         }
     };
 
-    const handleStartConsultation = async (patientId: string) => {
+    const handleStartConsultation = async (patientId: string, parentVisitId: string | null = null) => {
         setStartingConsultationId(patientId);
         try {
             const res = await fetch(`${API_BASE}/api/consultations`, {
@@ -118,7 +133,8 @@ export default function PatientsDirectoryPage() {
                     patientId,
                     assessment: {
                         symptoms: '', diagnosis: '', notes: '',
-                        prakriti: '', vikriti: '', severity: 5, comorbidities: ''
+                        prakriti: '', vikriti: '', severity: 5, comorbidities: '',
+                        parent_visit_id: parentVisitId,
                     }
                 })
             });
@@ -136,6 +152,17 @@ export default function PatientsDirectoryPage() {
             alert('Could not start consultation. Please try again.');
         } finally {
             setStartingConsultationId(null);
+        }
+    };
+
+    // Any role (including receptionists) can offer the New-vs-Follow-up
+    // choice — it only needs the lightweight condition list, not the full
+    // clinical history that stays doctor/admin only.
+    const handleConsultClick = (patientId: string) => {
+        if (patientConditions.length > 0) {
+            setFollowupDialogPatientId(patientId);
+        } else {
+            handleStartConsultation(patientId);
         }
     };
 
@@ -254,7 +281,7 @@ export default function PatientsDirectoryPage() {
                                                         </span>
                                                     ) : (
                                                         <Button
-                                                            onClick={() => handleStartConsultation(patientDetail.id)}
+                                                            onClick={() => handleConsultClick(patientDetail.id)}
                                                             disabled={startingConsultationId === patientDetail.id}
                                                             className="bg-emerald-600 hover:bg-emerald-700 text-white"
                                                         >
@@ -329,6 +356,20 @@ export default function PatientsDirectoryPage() {
 
                 </div>
             </div>
+
+            {followupDialogPatientId && (
+                <FollowupChoiceDialog
+                    open={!!followupDialogPatientId}
+                    onOpenChange={(open) => { if (!open) setFollowupDialogPatientId(null); }}
+                    patientId={followupDialogPatientId}
+                    patientName={patients.find(p => p.id === followupDialogPatientId)?.first_name || 'Patient'}
+                    onConfirm={(parentVisitId) => {
+                        const patientId = followupDialogPatientId;
+                        setFollowupDialogPatientId(null);
+                        if (patientId) handleStartConsultation(patientId, parentVisitId);
+                    }}
+                />
+            )}
         </div>
     );
 }

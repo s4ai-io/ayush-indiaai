@@ -626,6 +626,29 @@ async def create_consultation(data: ConsultationData):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+_VITALS_FIELDS = ("bpm", "sugar_level", "spo2", "temperature", "systolic_bp", "diastolic_bp")
+
+
+def _extract_vitals(record: dict) -> dict:
+    return {field: record.get(field) for field in _VITALS_FIELDS}
+
+
+def _build_previous_visit_summary(parent_visit_id: str | None) -> dict | None:
+    """For a follow-up visit, load the prior visit's diagnosis + vitals for side-by-side comparison."""
+    if not parent_visit_id:
+        return None
+    parent = csv_service.get_medical_record_by_id(parent_visit_id)
+    if not parent:
+        return None
+    return {
+        "visitId": parent_visit_id,
+        "visitDate": parent.get("visit_date"),
+        "diagnosis": parent.get("diagnosis", ""),
+        "symptoms": parent.get("symptoms", ""),
+        "vitals": _extract_vitals(parent),
+    }
+
+
 @app.get("/api/consultations/{visit_id}/treatment", tags=["Consultations"])
 async def get_consultation_context(visit_id: str):
     """
@@ -639,12 +662,15 @@ async def get_consultation_context(visit_id: str):
             
         patient_id = record.get("patient_id")
         patient = csv_service.get_patient_by_id(patient_id)
-        
+
         # _DictObj exposes fields as attributes, not dict keys
         first_name = getattr(patient, "first_name", "Unknown") if patient else "Unknown"
         last_name  = getattr(patient, "last_name",  "") if patient else ""
         mobile     = getattr(patient, "mobile",     "Unknown") if patient else "Unknown"
-        
+
+        parent_visit_id = record.get("parent_visit_id")
+        previous_visit = _build_previous_visit_summary(parent_visit_id)
+
         return {
             "patientId": patient_id,
             "patientName": f"{first_name} {last_name}".strip(),
@@ -655,7 +681,10 @@ async def get_consultation_context(visit_id: str):
             "prakriti":     record.get("prakriti", ""),
             "vikriti":      record.get("vikriti", ""),
             "severity":     record.get("severity", ""),
-            "comorbidities": record.get("comorbidities", "")
+            "comorbidities": record.get("comorbidities", ""),
+            "parentVisitId": parent_visit_id,
+            "vitals": _extract_vitals(record),
+            "previousVisit": previous_visit,
         }
     except HTTPException:
         raise
@@ -732,7 +761,10 @@ async def get_visit_details(visit_id: str):
                 "comorbidities": record.get("comorbidities", ""),
                 "notes": record.get("notes", ""),
                 "prescription": prescription,
+                "parentVisitId": record.get("parent_visit_id"),
+                "vitals": _extract_vitals(record),
             },
+            "previousVisit": _build_previous_visit_summary(record.get("parent_visit_id")),
             # AYUSH treatment plan
             "treatment": {
                 "herbs":                ayush.herbs_prescribed if ayush else "",
@@ -796,18 +828,19 @@ async def search_patients(q: str):
 @app.get("/api/patients", tags=["Patient Management"])
 async def get_patients(status: str = None):
     """
-    Get patients, optionally filtered by diagnosis status.
+    Get patients, optionally filtered by status.
 
     Query params:
-      - status=pending   → patients NOT yet diagnosed
-      - status=completed → patients already diagnosed
+      - status=pending   → doctor's queue: visits awaiting a prescription
+                           (first-time or follow-up) + never-consulted patients
+      - status=completed → visits already prescribed
       - (none)           → all patients
     """
     try:
         if status == "pending":
-            patients = csv_service.get_patients_by_status(diagnosis_done=False)
+            patients = csv_service.get_pending_visit_queue()
         elif status == "completed":
-            patients = csv_service.get_patients_by_status(diagnosis_done=True)
+            patients = csv_service.get_completed_diagnoses_summary()
         else:
             patients = csv_service.get_all_patients()
         return patients
@@ -828,6 +861,21 @@ async def get_patient(patient_id: str):
         return patient
     except Exception as e:
         print(f"Error fetching patient: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/patients/{patient_id}/conditions", tags=["Patient Management"])
+async def get_patient_conditions(patient_id: str):
+    """
+    Distinct past diagnoses for a patient (diagnosis name + visit id/date only) —
+    deliberately excludes symptoms/notes/prescription/vitals. Powers the
+    New-vs-Follow-up picker for ANY role, including receptionists, who are not
+    otherwise allowed to view a patient's full clinical history.
+    """
+    try:
+        return csv_service.get_patient_conditions(patient_id)
+    except Exception as e:
+        print(f"Error fetching patient conditions: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

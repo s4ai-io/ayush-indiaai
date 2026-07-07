@@ -104,6 +104,14 @@ class PrescriptionRequest(BaseModel):
     feedback: Optional[str] = Field(None, description="Doctor feedback text")
     original_ai_plan: Optional[dict] = Field(None, description="Original unmodified AI plan before doctor edits")
 
+    # Basic health parameters (vitals) captured at this visit
+    bpm: Optional[int] = Field(None, description="Heart rate (beats/min)")
+    sugar_level: Optional[float] = Field(None, description="Blood glucose (mg/dL)")
+    spo2: Optional[int] = Field(None, description="Blood oxygen saturation (%)")
+    temperature: Optional[float] = Field(None, description="Body temperature (°C)")
+    systolic_bp: Optional[int] = Field(None, description="Systolic blood pressure (mmHg)")
+    diastolic_bp: Optional[int] = Field(None, description="Diastolic blood pressure (mmHg)")
+
 
 class TreatmentFeedback(BaseModel):
     """Doctor feedback on treatment plan"""
@@ -213,6 +221,7 @@ class ClinicalAssessment(BaseModel):
     vikriti: Optional[str] = None
     comorbidities: Optional[str] = None
     notes: Optional[str] = ""
+    parent_visit_id: Optional[str] = Field(None, description="Prior visit ID being followed up, if any")
 
 class ConsultationData(BaseModel):
     visitId: Optional[str] = None

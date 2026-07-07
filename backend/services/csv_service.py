@@ -7,7 +7,7 @@ import uuid
 import json
 from datetime import datetime
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, desc
+from sqlalchemy import or_, and_, desc
 from models import SessionLocal, Patient, MedicalRecord, AyushTreatment, TreatmentFeedback, ClinicalOutcomeScore
 
 
@@ -101,32 +101,47 @@ class DBService:
             ).limit(limit).all()
             return [_DictObj(self._row_to_dict(p)) for p in patients]
 
-    def get_patients_by_status(self, diagnosis_done: bool, limit: int = 200):
-        with SessionLocal() as db:
-            patients = db.query(Patient).filter(
-                Patient.diagnosis_done == diagnosis_done
-            ).order_by(desc(Patient.created_at)).limit(limit).all()
-            return [_DictObj(self._row_to_dict(p)) for p in patients]
-
     # ─── Prescription / Diagnosis ────────────────────────────────
 
     def create_consultation(self, patient_id: str, assessment: dict) -> str:
         record_id = str(uuid.uuid4())
-        
+        parent_visit_id = assessment.get("parent_visit_id") or None
+
+        # Follow-up: pre-populate the new visit from the condition being followed up,
+        # so the doctor doesn't retype the same clinical picture each visit.
+        diagnosis = assessment.get("diagnosis", "")
+        symptoms = assessment.get("symptoms", "")
+        prakriti = assessment.get("prakriti", "")
+        vikriti = assessment.get("vikriti", "")
+        comorbidities = assessment.get("comorbidities", "")
+        notes = assessment.get("notes", "")
+
+        if parent_visit_id:
+            with SessionLocal() as db:
+                parent = db.query(MedicalRecord).filter(MedicalRecord.id == parent_visit_id).first()
+                if parent:
+                    diagnosis = diagnosis or parent.diagnosis or ""
+                    symptoms = symptoms or parent.symptoms or ""
+                    prakriti = prakriti or parent.prakriti or ""
+                    vikriti = vikriti or parent.vikriti or ""
+                    comorbidities = comorbidities or parent.comorbidities or ""
+                    notes = notes or parent.notes or ""
+
         m = MedicalRecord(
             id=record_id,
             patient_id=patient_id,
             visit_date=datetime.utcnow(),
-            diagnosis=assessment.get("diagnosis", ""),
-            symptoms=assessment.get("symptoms", ""),
-            prakriti=assessment.get("prakriti", ""),
-            vikriti=assessment.get("vikriti", ""),
+            diagnosis=diagnosis,
+            symptoms=symptoms,
+            prakriti=prakriti,
+            vikriti=vikriti,
             severity=str(assessment.get("severity", 5)),
-            comorbidities=assessment.get("comorbidities", ""),
-            notes=assessment.get("notes", ""),
-            prescription="{}"
+            comorbidities=comorbidities,
+            notes=notes,
+            prescription="{}",
+            parent_visit_id=parent_visit_id,
         )
-        
+
         with SessionLocal() as db:
             db.add(m)
             db.commit()
@@ -182,7 +197,8 @@ class DBService:
                         m.severity = str(data.get("severity"))
                     if data.get("comorbidities"):
                         m.comorbidities = data.get("comorbidities")
-                    
+                    self._apply_vitals(m, data)
+
                     disease = disease or m.diagnosis
 
             if not m:
@@ -200,6 +216,7 @@ class DBService:
                     notes=doctor_notes,
                     prescription=json.dumps(prescription_json),
                 )
+                self._apply_vitals(m, data)
                 db.add(m)
 
             # 2. AYUSH Treatment
@@ -291,6 +308,13 @@ class DBService:
             "feedback_id": feedback_id,
         }
 
+    @staticmethod
+    def _apply_vitals(record: MedicalRecord, data: dict) -> None:
+        """Copy any provided vitals fields onto a MedicalRecord row (leaves existing values untouched if omitted)."""
+        for field in ("bpm", "sugar_level", "spo2", "temperature", "systolic_bp", "diastolic_bp"):
+            if data.get(field) is not None:
+                setattr(record, field, data.get(field))
+
     def save_treatment_feedback(self, feedback_data: dict):
         f = TreatmentFeedback(
             id=str(uuid.uuid4()),
@@ -348,38 +372,134 @@ class DBService:
                     "duration_weeks": _safe_int(ayush.treatment_duration_weeks) if ayush else None,
                     "improvement": _safe_float(ayush.improvement_percentage) if ayush else None,
                     "outcome": ayush.outcome if ayush else None,
+                    "parent_visit_id": r.parent_visit_id,
+                    "bpm": r.bpm,
+                    "sugar_level": r.sugar_level,
+                    "spo2": r.spo2,
+                    "temperature": r.temperature,
+                    "systolic_bp": r.systolic_bp,
+                    "diastolic_bp": r.diastolic_bp,
                 })
             return result
 
-    def get_completed_diagnoses_summary(self, limit: int = 200) -> list:
+    # A visit counts as "awaiting a prescription" regardless of the patient's
+    # overall diagnosis_done flag — that flag is patient-level and stays True
+    # forever after the first diagnosis, which used to hide every follow-up
+    # visit (and any second pending visit) from the doctor's queue entirely.
+    _EMPTY_PRESCRIPTION = or_(
+        MedicalRecord.prescription.is_(None),
+        MedicalRecord.prescription == "",
+        MedicalRecord.prescription == "{}",
+    )
+
+    def _visit_queue(self, pending: bool, limit: int = 200) -> list:
         with SessionLocal() as db:
-            # Join patients and records
+            condition = self._EMPTY_PRESCRIPTION if pending else and_(
+                MedicalRecord.prescription.isnot(None),
+                MedicalRecord.prescription != "",
+                MedicalRecord.prescription != "{}",
+            )
             records = db.query(MedicalRecord, Patient).join(
                 Patient, MedicalRecord.patient_id == Patient.id
-            ).filter(
-                Patient.diagnosis_done == True
-            ).order_by(desc(MedicalRecord.visit_date)).limit(limit).all()
+            ).filter(condition).order_by(desc(MedicalRecord.visit_date)).limit(limit).all()
 
             result = []
             for r, p in records:
-                # convert to iso str manually
-                vd = r.visit_date.isoformat() if r.visit_date else None
-                first = p.first_name or ""
-                last = p.last_name or ""
-                
                 result.append({
                     "record_id": r.id,
                     "patient_id": r.patient_id,
-                    "patient_name": f"{first} {last}".strip(),
+                    "patient_name": f"{p.first_name or ''} {p.last_name or ''}".strip(),
                     "patient_age": p.age,
                     "patient_gender": p.gender or "",
                     "patient_city": p.city or "",
                     "patient_mobile": p.mobile or "",
+                    "blood_group": p.blood_group or "",
+                    "occupation": p.occupation or "",
                     "diagnosis": r.diagnosis or "",
                     "symptoms": r.symptoms or "",
-                    "visit_date": vd,
+                    "visit_date": r.visit_date.isoformat() if r.visit_date else None,
+                    "parent_visit_id": r.parent_visit_id,
+                    "is_followup": bool(r.parent_visit_id),
+                })
+            return result
+
+    def get_completed_diagnoses_summary(self, limit: int = 200) -> list:
+        return self._visit_queue(pending=False, limit=limit)
+
+    def get_pending_visit_queue(self, limit: int = 200) -> list:
+        """Doctor's Pending Queue: visits awaiting a prescription (first-time
+        or follow-up) PLUS patients who have never had any visit started yet.
+        """
+        with SessionLocal() as db:
+            pending_visits = db.query(MedicalRecord, Patient).join(
+                Patient, MedicalRecord.patient_id == Patient.id
+            ).filter(self._EMPTY_PRESCRIPTION).order_by(desc(MedicalRecord.visit_date)).all()
+
+            result = []
+            for r, p in pending_visits:
+                result.append({
+                    "record_id": r.id,
+                    "patient_id": r.patient_id,
+                    "patient_name": f"{p.first_name or ''} {p.last_name or ''}".strip(),
+                    "patient_age": p.age,
+                    "patient_gender": p.gender or "",
+                    "patient_city": p.city or "",
+                    "patient_mobile": p.mobile or "",
+                    "blood_group": p.blood_group or "",
+                    "occupation": p.occupation or "",
+                    "diagnosis": r.diagnosis or "",
+                    "visit_date": r.visit_date.isoformat() if r.visit_date else None,
+                    "parent_visit_id": r.parent_visit_id,
+                    "is_followup": bool(r.parent_visit_id),
                 })
 
+            never_consulted = db.query(Patient).filter(
+                Patient.id.notin_(db.query(MedicalRecord.patient_id).distinct())
+            ).all()
+            for p in never_consulted:
+                result.append({
+                    "record_id": None,
+                    "patient_id": p.id,
+                    "patient_name": f"{p.first_name or ''} {p.last_name or ''}".strip(),
+                    "patient_age": p.age,
+                    "patient_gender": p.gender or "",
+                    "patient_city": p.city or "",
+                    "patient_mobile": p.mobile or "",
+                    "blood_group": p.blood_group or "",
+                    "occupation": p.occupation or "",
+                    "diagnosis": "",
+                    "visit_date": p.created_at.isoformat() if p.created_at else None,
+                    "parent_visit_id": None,
+                    "is_followup": False,
+                })
+
+            result.sort(key=lambda x: x["visit_date"] or "", reverse=True)
+            return result[:limit]
+
+    def get_patient_conditions(self, patient_id_str: str) -> list:
+        """Distinct past diagnoses for a patient — diagnosis name + visit id/date
+        only, deliberately no symptoms/notes/prescription/vitals. Safe for any
+        role (receptionist included) to power the New-vs-Follow-up picker
+        without exposing full clinical history.
+        """
+        with SessionLocal() as db:
+            records = db.query(MedicalRecord).filter(
+                MedicalRecord.patient_id == patient_id_str
+            ).order_by(desc(MedicalRecord.visit_date)).all()
+
+            seen = set()
+            result = []
+            for r in records:
+                name = (r.diagnosis or "").strip()
+                key = name.lower()
+                if not name or key in seen:
+                    continue
+                seen.add(key)
+                result.append({
+                    "visit_id": r.id,
+                    "diagnosis": name,
+                    "visit_date": r.visit_date.isoformat() if r.visit_date else None,
+                })
             return result
 
     def _row_to_dict(self, row):

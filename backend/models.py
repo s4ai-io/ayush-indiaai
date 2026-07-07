@@ -50,6 +50,18 @@ class MedicalRecord(Base):
     notes = Column(Text, default="")
     prescription = Column(Text, default="")
 
+    # Follow-up linkage — points at the MedicalRecord of the prior visit for
+    # the same condition, so visits for one disease can be chained over time.
+    parent_visit_id = Column(String, nullable=True, index=True)
+
+    # Basic health parameters (vitals) captured at this visit.
+    bpm = Column(Integer, nullable=True)               # Heart rate (beats/min)
+    sugar_level = Column(Float, nullable=True)          # Blood glucose (mg/dL)
+    spo2 = Column(Integer, nullable=True)               # Blood oxygen saturation (%)
+    temperature = Column(Float, nullable=True)          # Body temperature (°C)
+    systolic_bp = Column(Integer, nullable=True)        # Systolic BP (mmHg)
+    diastolic_bp = Column(Integer, nullable=True)       # Diastolic BP (mmHg)
+
 class AyushTreatment(Base):
     __tablename__ = "ayush_treatments"
     
