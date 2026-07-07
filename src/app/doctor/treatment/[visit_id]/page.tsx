@@ -128,6 +128,12 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                 setParentVisitId(data.visit?.parentVisitId || null);
                 setPreviousVisit(data.previousVisit || null);
                 setVitals(data.visit?.vitals || {});
+
+                // Auto-load parent's last prescribed plan for follow-up visits
+                if (data.visit?.parentVisitId && data.previousVisit?.treatmentPlan) {
+                    setTreatmentPlan(data.previousVisit.treatmentPlan);
+                    setOriginalAiPlan(data.previousVisit.treatmentPlan);
+                }
             } catch {
                 // fallback to the lighter endpoint
                 try {
@@ -150,6 +156,11 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                         setParentVisitId(d.parentVisitId || null);
                         setPreviousVisit(d.previousVisit || null);
                         setVitals(d.vitals || {});
+
+                        if (d.parentVisitId && d.previousVisit?.treatmentPlan) {
+                            setTreatmentPlan(d.previousVisit.treatmentPlan);
+                            setOriginalAiPlan(d.previousVisit.treatmentPlan);
+                        }
                     }
                 } catch { }
             } finally {
@@ -367,6 +378,13 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
 
     // ── Submit prescription ────────────────────────────────────────────────
     const submitPrescription = async () => {
+        if (isFollowup) {
+            const missingVitals = VITAL_FIELDS.filter(f => vitals[f.key] == null);
+            if (missingVitals.length > 0) {
+                alert(`Please fill in all health parameters for this follow-up: ${missingVitals.map(f => f.label).join(', ')}.`);
+                return;
+            }
+        }
         setIsSubmitting(true);
         try {
             const res = await fetch(`${API_BASE}/api/prescribe`, {
@@ -470,6 +488,9 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                 {previousVisit?.visitDate && (
                                     <span className="text-indigo-500"> — previous visit {new Date(previousVisit.visitDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                                 )}
+                                {previousVisit?.treatmentPlan && (
+                                    <div className="text-indigo-600 mt-0.5">Showing last prescribed plan — edit the herbs, yoga, diet, and lifestyle sections below as needed for this follow-up.</div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -561,6 +582,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                     <div className="space-y-3 pt-2">
                                         <label className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
                                             <HeartPulse className="w-3.5 h-3.5 text-primary" /> Health Parameters / Vitals
+                                            {isFollowup && <span className="text-red-500">*</span>}
                                         </label>
                                         <div className="space-y-2.5">
                                             {VITAL_FIELDS.map(f => {
@@ -586,7 +608,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                                                     setVitals(prev => ({ ...prev, [f.key]: raw === '' ? null : Number(raw) }));
                                                                 }}
                                                                 placeholder={isFollowup ? 'Current value' : f.label}
-                                                                className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                                                                className={`w-full text-sm p-2 bg-slate-50 border rounded-lg focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all ${isFollowup && vitals[f.key] == null ? 'border-red-300' : 'border-slate-200'}`}
                                                             />
                                                             <span className="text-xs text-slate-400 w-14 shrink-0">{f.unit}</span>
                                                         </div>
@@ -625,13 +647,18 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                     <Button
                                         className="w-full mt-4 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white shadow-lg h-12 rounded-xl text-base font-bold tracking-wide transition-all hover:scale-[1.02] active:scale-[0.98]"
                                         onClick={generatePlan}
-                                        disabled={generating}
+                                        disabled={generating || isFollowup}
                                     >
                                         {generating
                                             ? <span className="flex items-center gap-2"><Brain className="w-4 h-4 animate-pulse" /> Analyzing...</span>
                                             : <span className="flex items-center gap-2"><Sparkles className="w-4 h-4" /> Generate AI Plan</span>
                                         }
                                     </Button>
+                                    {isFollowup && (
+                                        <p className="text-xs text-slate-400 text-center mt-2">
+                                            Editing the previously prescribed plan for this follow-up. Start a new consultation to generate a fresh AI plan.
+                                        </p>
+                                    )}
                                 </CardContent>
                             </Card>
 

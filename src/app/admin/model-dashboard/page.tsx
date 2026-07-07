@@ -1379,7 +1379,7 @@ function InspectDiseaseModalContent({ namcCode }: { namcCode: string }) {
                 <span>
                     Dosha State: <strong className="text-slate-700">{currentState.prakriti}</strong> (Prakriti) &amp; <strong className="text-slate-700">{currentState.vikriti}</strong> (Vikriti)
                 </span>
-                <span className="font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200/40">{actions.length} entry{actions.length !== 1 ? "s" : ""}</span>
+                <span className="font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200/40">{actions.length} {actions.length === 1 ? "entry" : "entries"}</span>
             </div>
 
             {/* Actions list */}

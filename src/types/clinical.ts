@@ -125,6 +125,7 @@ export interface PreviousVisitSummary {
     diagnosis: string;
     symptoms: string;
     vitals: Vitals;
+    treatmentPlan?: TreatmentPlan | null;
 }
 
 export interface ConsultationData {

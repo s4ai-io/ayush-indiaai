@@ -811,19 +811,62 @@ def _extract_vitals(record: dict) -> dict:
     return {field: record.get(field) for field in _VITALS_FIELDS}
 
 
+def _split_prescription_text(text: str | None) -> list[str]:
+    """Split a comma/period-separated free-text field (legacy prescription format) into list items."""
+    if not text:
+        return []
+    return [p.strip() for p in re.split(r"[,.]", text) if p.strip()]
+
+
+def _extract_previous_treatment_plan(visit_id: str, raw_prescription: str) -> dict | None:
+    """Best-effort reconstruction of a visit's prescribed plan, for follow-up auto-load.
+
+    Real doctor-saved prescriptions store the full structured plan under prescription["ai_plan"].
+    Older/synthetic records instead carry plain-text herbs/yoga/diet on the linked AyushTreatment
+    row (no "ai_plan" wrapper) — fall back to that so follow-ups on that data still get something
+    editable, rather than silently showing a blank panel.
+    """
+    if raw_prescription and raw_prescription != "{}":
+        try:
+            parsed = json.loads(raw_prescription)
+            plan = parsed.get("ai_plan") if isinstance(parsed, dict) else None
+            if isinstance(plan, dict) and plan:
+                return plan
+        except Exception:
+            pass  # malformed JSON — fall through to the AyushTreatment lookup below
+
+    from models import SessionLocal, AyushTreatment
+    with SessionLocal() as db:
+        treatment = db.query(AyushTreatment).filter(AyushTreatment.medical_record_id == visit_id).first()
+
+    if not treatment:
+        return None
+
+    herbs = [{"name": h, "dosage": "", "benefits": ""} for h in _split_prescription_text(treatment.herbs_prescribed)]
+    yoga = [{"practice": y, "duration": "", "benefits": ""} for y in _split_prescription_text(treatment.yoga_prescribed)]
+    diet = _split_prescription_text(treatment.diet_plan)
+    if not herbs and not yoga and not diet:
+        return None
+    return {"herbs": herbs, "yoga": yoga, "diet": diet, "lifestyle": []}
+
+
 def _build_previous_visit_summary(parent_visit_id: str | None) -> dict | None:
-    """For a follow-up visit, load the prior visit's diagnosis + vitals for side-by-side comparison."""
+    """For a follow-up visit, load the prior visit's diagnosis + vitals + last prescribed plan."""
     if not parent_visit_id:
         return None
     parent = csv_service.get_medical_record_by_id(parent_visit_id)
     if not parent:
         return None
+
+    previous_plan = _extract_previous_treatment_plan(parent_visit_id, parent.get("prescription", ""))
+
     return {
         "visitId": parent_visit_id,
         "visitDate": parent.get("visit_date"),
         "diagnosis": parent.get("diagnosis", ""),
         "symptoms": parent.get("symptoms", ""),
         "vitals": _extract_vitals(parent),
+        "treatmentPlan": previous_plan,
     }
 
 
@@ -1540,12 +1583,15 @@ async def get_q_table_state(
         }
     elif namc_code:
         # Return all states and actions matching this namc_code prefix
+        # (skip legacy/malformed keys that don't encode a valid prakriti_vikriti pair)
         states_list = []
         for sk, actions in q_table.items():
             if sk.startswith(f"{namc_code}_"):
                 parts = sk.rsplit("_", 2)
-                p = parts[1] if len(parts) > 1 else ""
-                v = parts[2] if len(parts) > 2 else ""
+                if len(parts) != 3 or not _DOSHA_RE.match(parts[1]) or not _DOSHA_RE.match(parts[2]):
+                    continue
+                p = parts[1]
+                v = parts[2]
                 states_list.append({
                     "state_key": sk,
                     "prakriti": p,
