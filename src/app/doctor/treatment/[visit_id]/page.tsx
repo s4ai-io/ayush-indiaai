@@ -78,10 +78,6 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
     const [feedbackId, setFeedbackId] = useState<string | null>(null);
 
     // Step 11: follow-up outcome state
-    const [followupValue, setFollowupValue] = useState('');
-    const [adherence, setAdherence] = useState('full');
-    const [followupSaved, setFollowupSaved] = useState(false);
-    const [followupResult, setFollowupResult] = useState<{ percentage_change?: number } | null>(null);
     const [medicalRecordId, setMedicalRecordId] = useState<string | null>(null);
 
     // Inline add/delete state
@@ -408,28 +404,6 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
     };
 
     // ── Step 11: Save follow-up outcome ───────────────────────────────────
-    const handleSaveFollowup = async () => {
-        if (!followupValue || !medicalRecordId) return;
-        try {
-            const res = await fetch('/api/outcomes', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    medical_record_id: medicalRecordId,
-                    followup_value: parseFloat(followupValue),
-                    adherence,
-                }),
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setFollowupResult(data);
-                setFollowupSaved(true);
-            }
-        } catch (err) {
-            console.error('Failed to save follow-up:', err);
-        }
-    };
-
     // ── NAMC Code Badge ───────────────────────────────────────────────────
     const getConfidenceBadge = () => {
         if (!treatmentPlan?.namc_code) return null;
@@ -1090,70 +1064,6 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                                 </Button>
                                             </div>
                                         </div>
-                                    </div>
-
-                                {/* Step 11: Follow-up Outcome section */}
-                                    <div className="mt-6 border rounded-lg p-4 bg-white shadow-sm">
-                                        <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                                            <TrendingUp className="w-5 h-5 text-blue-500" />
-                                            Follow-up Outcome
-                                        </h3>
-                                        {followupSaved ? (
-                                            <div className="text-green-600 font-medium flex items-center gap-2">
-                                                <CheckCircle className="w-5 h-5" />
-                                                Follow-up recorded.{followupResult?.percentage_change !== undefined && (
-                                                    <span> Improvement: {followupResult.percentage_change.toFixed(1)}%</span>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-3">
-                                                <div>
-                                                    <label className="text-sm text-gray-600">
-                                                        {treatmentPlan.target_vital
-                                                            ? <>Target vital: <span className="font-medium">{treatmentPlan.target_vital}</span></>
-                                                            : 'Enter follow-up measurement'}
-                                                    </label>
-                                                    {treatmentPlan.baseline_value && (
-                                                        <span className="ml-2 text-sm text-gray-500">
-                                                            Baseline: {treatmentPlan.baseline_value}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                {!medicalRecordId && (
-                                                    <p className="text-xs text-amber-600 italic">
-                                                        Prescribe the treatment first to enable follow-up recording.
-                                                    </p>
-                                                )}
-                                                <div className="flex flex-wrap items-center gap-2">
-                                                    <input
-                                                        type="number"
-                                                        step="0.1"
-                                                        placeholder={treatmentPlan.target_vital ? `Current ${treatmentPlan.target_vital}` : 'Follow-up value'}
-                                                        value={followupValue}
-                                                        onChange={e => setFollowupValue(e.target.value)}
-                                                        className="border rounded px-3 py-2 w-48 text-sm"
-                                                        disabled={!medicalRecordId}
-                                                    />
-                                                    <select
-                                                        value={adherence}
-                                                        onChange={e => setAdherence(e.target.value)}
-                                                        className="border rounded px-3 py-2 text-sm"
-                                                        disabled={!medicalRecordId}
-                                                    >
-                                                        <option value="full">Full adherence</option>
-                                                        <option value="partial">Partial</option>
-                                                        <option value="none">None</option>
-                                                    </select>
-                                                    <button
-                                                        onClick={handleSaveFollowup}
-                                                        disabled={!medicalRecordId || !followupValue}
-                                                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                                    >
-                                                        Save Follow-up
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )}
                                     </div>
 
                                 </div>
