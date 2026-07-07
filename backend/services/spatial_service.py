@@ -90,7 +90,7 @@ class SpatialService:
     """
 
     EPS_KM      = 400
-    MIN_SAMPLES = 2
+    MIN_SAMPLES = 5
     TOP_CITIES  = 6   # max cities per disease to show in a cluster result
 
     def get_disease_clusters(
