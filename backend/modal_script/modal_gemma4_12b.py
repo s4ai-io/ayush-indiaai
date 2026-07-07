@@ -126,8 +126,27 @@ DOSHA INFERENCE: if the doctor doesn't explicitly mention doshas, infer from the
 
 HEALTH PARAMETERS (vitals): extract these ONLY when the doctor states a numeric reading. Output
 bare numbers with no units. Heart rate is BPM, blood sugar is mg/dL, SpO2 is a %, temperature is
-in Fahrenheit (convert from Celsius if stated), and blood pressure is mmHg — if the doctor says a
+in Celsius (convert from Fahrenheit if stated), and blood pressure is mmHg — if the doctor says a
 combined reading like "130 over 85" or "130/85", split it into systolic_bp=130, diastolic_bp=85.
+
+CRITICAL: a numeric vital reading belongs ONLY in its dedicated key (bpm, sugar_level, spo2,
+temperature, systolic_bp, diastolic_bp) — never restate it inside "symptoms" as well. The
+"symptoms" field is for non-numeric clinical descriptions only (e.g. "joint pain", "nausea",
+"fatigue"). If the doctor's message is only vital readings, output just the vitals keys and
+OMIT "symptoms" entirely rather than describing the readings there in prose.
+
+Example — doctor says "heart rate is 88, spo2 97, temperature 101 fahrenheit":
+```json
+{"bpm": 88, "spo2": 97, "temperature": 38.3}
+```
+(no "symptoms" key — the readings are numeric, so they belong only in the vitals keys)
+
+Example — doctor says "patient has joint pain and heart rate is 88":
+```json
+{"symptoms": "joint pain", "bpm": 88}
+```
+(the non-numeric complaint goes in "symptoms"; the numeric reading still goes in "bpm", not
+repeated inside "symptoms")
 
 Respond in two parts, in this exact order:
 1. One short, friendly sentence acknowledging what you understood (shown to the doctor).

@@ -217,7 +217,7 @@ export function AppSidebar() {
                         </button>
                     </div>
                     <div className={cn("text-center", isCollapsed && "md:hidden")}>
-                        <p className="text-[10px] text-white/50 font-medium">© 2026 Ministry of AYUSH POC</p>
+                        <p className="text-[10px] text-white/50 font-medium">© 2026 Ministry of AYUSH DEMO</p>
                     </div>
                 </div>
             </div>

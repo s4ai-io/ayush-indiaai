@@ -22,7 +22,7 @@ const VITAL_FIELDS: { key: keyof Vitals; label: string; unit: string; icon: type
     { key: 'bpm', label: 'Heart Rate', unit: 'BPM', icon: HeartPulse },
     { key: 'sugar_level', label: 'Blood Sugar', unit: 'mg/dL', icon: Droplet },
     { key: 'spo2', label: 'SpO2', unit: '%', icon: Activity },
-    { key: 'temperature', label: 'Temperature', unit: '°F', icon: Thermometer },
+    { key: 'temperature', label: 'Temperature', unit: '°C', icon: Thermometer },
     { key: 'systolic_bp', label: 'BP Systolic', unit: 'mmHg', icon: Gauge },
     { key: 'diastolic_bp', label: 'BP Diastolic', unit: 'mmHg', icon: Gauge },
 ];

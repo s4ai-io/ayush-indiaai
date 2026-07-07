@@ -146,7 +146,61 @@ sequenceDiagram
     Voice_Orchestrator-->>User: EHR Created Successfully
 ```
 
-**Path B — Personalised Treatment Recommendation Engine:**
+**Path B — Personalised Treatment Recommendation Engine — ✅ UPDATED (2026-07-07), supersedes both the 2026-07-04 version and the first 2026-07-07 pass below (that pass still showed a Patient_Clustering_Engine lane; removed per explicit direction — see [AI_TREATMENT_ENGINE_CONTEXT.md](AI_TREATMENT_ENGINE_CONTEXT.md) §1: clustering still runs in code but has zero influence on the RL state or the recommendation, so it doesn't belong in outward-facing material).**
+Real flow change confirmed via commit `597f6db` ("feat: implement RL Q-table update logic triggered specifically by patient follow-up outcomes") plus direct reads of `rl_service.py`, `hybrid_service.py`, `main.py`, `csv_service.py`, and the follow-up UI in `src/app/doctor/treatment/[visit_id]/page.tsx`. Structural changes vs. the original 2026-07-04 diagram:
+1. **RL state key changed** from `Cluster ID + Disease` to `NAMC Code + Prakriti + Vikriti`.
+2. **Q-values now only move from a confirmed follow-up outcome.** `/api/prescribe`'s background task no longer touches the RL Q-table at all — `retrain_from_feedback()` is not called from anywhere in current `main.py` (dead in the production path). The only path that moves a production Q-value is `POST /api/visits/{visit_id}/outcome` → `rl_service.apply_followup_outcome()`.
+3. **Reward blends two signals**: the doctor's dropdown (Improved / No Change / Worsened) selects a **reward band** (`OUTCOME_BANDS`: improved 0.2→1.0, no_change −0.2→0.2, worsened −1.0→−0.2); the objective vitals delta (`signed`, rescaled to [-1,1], direction-aware per vital via `_VITAL_DIRECTION`/`_VITAL_NORMALISER` — e.g. lower HbA1c/BP is better, higher PEFR is better) only picks the position *within* that band. Code's own comment: "keeps one noisy vitals reading from flipping the doctor's overall clinical call." Every herb/yoga/diet/lifestyle item in the parent visit's final plan is rewarded uniformly (judges the plan as a whole, not per-item).
+Live DB check (2026-07-07): 15 `ClinicalOutcomeScore` rows, 10 already closed via real confirmed follow-up outcomes, 5 pending — this loop is active, not theoretical.
+```mermaid
+sequenceDiagram
+    actor Clinician
+    participant Recommendation_Orchestrator
+    participant RL_Bandit_Engine
+    participant Outcome_Store
+
+    Note over Clinician,Outcome_Store: INITIAL VISIT
+
+    Clinician->>Recommendation_Orchestrator: Request Treatment Plan (POST /api/recommend)
+    Recommendation_Orchestrator->>RL_Bandit_Engine: get_best_actions_by_namc(namc_code, prakriti, vikriti)
+    Note over RL_Bandit_Engine: State key = NAMC Code + Prakriti + Vikriti
+    RL_Bandit_Engine-->>Recommendation_Orchestrator: Learned herbs/yoga/diet/lifestyle (Q > 0)
+    Recommendation_Orchestrator-->>Clinician: Hybrid Recommendation + Explainability
+
+    Clinician->>Recommendation_Orchestrator: Confirm & Prescribe (POST /api/prescribe)
+    Recommendation_Orchestrator->>Outcome_Store: Save TreatmentFeedback (ml_context: namc_code, prakriti, vikriti)
+    Recommendation_Orchestrator->>Outcome_Store: Create PENDING ClinicalOutcomeScore<br/>(target_vital picked per disease, baseline = null)
+    Note over Outcome_Store: e.g. Diabetes → HbA1c, Hypertension → Systolic BP,<br/>else → Symptom Severity (1-10)
+    Note over RL_Bandit_Engine: No Q-value changes yet —<br/>reward only comes from a confirmed follow-up outcome
+
+    Note over Clinician,Outcome_Store: FOLLOW-UP VISIT (weeks later, same patient)
+
+    Clinician->>Recommendation_Orchestrator: Register follow-up visit (parent_visit_id = initial visit)
+    Recommendation_Orchestrator-->>Clinician: Auto-loads parent's prescribed plan + prior vitals for comparison
+    Clinician->>Recommendation_Orchestrator: Record new vitals + Prescribe (POST /api/prescribe)
+    Clinician->>Recommendation_Orchestrator: Judge previous plan: Improved / No Change / Worsened (POST /api/visits/{id}/outcome)
+    Recommendation_Orchestrator->>Outcome_Store: Find PENDING outcome for parent visit
+    Recommendation_Orchestrator->>Recommendation_Orchestrator: Compute vitals delta →<br/>signed value in [-1, 1] (direction-aware per vital)
+
+    alt Doctor says Improved
+        Recommendation_Orchestrator->>RL_Bandit_Engine: reward = blend(signed, band 0.2 → 1.0)
+        Note over RL_Bandit_Engine: Q(s,a) += lr × (reward − Q(s,a))<br/>for every herb/yoga/diet/lifestyle in the plan → Q increases
+    else Doctor says No Change
+        Recommendation_Orchestrator->>RL_Bandit_Engine: reward = blend(signed, band −0.2 → 0.2)
+        Note over RL_Bandit_Engine: Q nudged only slightly, either direction
+    else Doctor says Worsened
+        Recommendation_Orchestrator->>RL_Bandit_Engine: reward = blend(signed, band −1.0 → −0.2)
+        Note over RL_Bandit_Engine: Q(s,a) += lr × (reward − Q(s,a))<br/>for every action in the plan → Q decreases
+    end
+
+    RL_Bandit_Engine-->>Recommendation_Orchestrator: Updated Q-values (feeds next recommendation for this NAMC+Prakriti+Vikriti state)
+    Recommendation_Orchestrator->>Outcome_Store: Mark outcome as closed (is_retrained = true)
+```
+Not shown in the diagram (kept out to stay focused, but real and worth knowing): `hybrid_service.py` also has an opt-in LLM narration step (`ENABLE_LLM_NARRATION` env var) that calls the Modal Gemma endpoint to generate a 2-3 sentence clinical explanation of the finalised plan — off by default, falls back to the explainability-string join when disabled or unreachable.
+
+<details>
+<summary>Superseded 2026-07-04 version (old Cluster+Disease state key, prescribe-time Q-update) — kept for reference only, do not use</summary>
+
 ```mermaid
 sequenceDiagram
     actor Clinician
@@ -180,7 +234,7 @@ sequenceDiagram
     Note over RL_Bandit_Engine: Q(s,a) += learning_rate * (reward − Q(s,a))<br/>reward from doctor_rating / outcome score
     RL_Bandit_Engine--)Recommendation_Orchestrator: Q-table updated (feeds next recommendation)
 ```
-Verified against `services/ISHAAyush_service.py` (direct substring search on `data/Codified_Ayurvedic_disease.csv`, NAMC codes), `services/patient_clustering_service.py` (sklearn Pipeline: StandardScaler + OneHotEncoder → KMeans, n_clusters=10, persisted as `data/models/patient_cluster_model.pkl`), `services/rl_service.py` (epsilon-greedy contextual bandit, Q-table keyed `"{cluster_id}_{disease}"`, persisted as `data/models/rl_q_table.pkl`, updated via `Q(s,a) += learning_rate * (reward - Q(s,a))` with `learning_rate=0.1, epsilon=0.2`), and `services/hybrid_service.py` (the merge orchestrator). Closed loop confirmed via `main.py`: `/api/prescribe` → `background_tasks.add_task(trigger_retraining)` → calls `clustering_service.retrain_clusters()` + `rl_service.retrain_from_feedback()` + `rl_service.retrain_from_outcomes()`. This is the strongest "continuously learns from clinician feedback" evidence in the whole codebase — worth emphasizing verbally in the demo.
+</details>
 
 ### Slide 5 — System Architecture (component diagram) — ✅ FINALIZED (2026-07-06), minimal IDP-image style
 **Supersedes the 2026-07-04 four-layer flowchart** (Presentation / Core Processing / Data Persistence / Cloud GPU Services) — that version is preserved in git history if needed. User provided the S4AI IDP deck's system-architecture image (three colored zones: Client Side / Server Side–CPU / On-Prem GPU Infrastructure, with labeled arrows like "REST API", "Orchestrates", "Inference Request", "Results") and asked for a minimal diagram in that exact style, **Gemma-4 pipeline only**: CopilotKit/AG-UI boxes removed, AI4Bharat ASR + IndicTrans2 + Phi-4 fallback path excluded, treatment/outbreak engines not shown.
