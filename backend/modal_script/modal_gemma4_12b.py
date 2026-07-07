@@ -124,6 +124,11 @@ DOSHA INFERENCE: if the doctor doesn't explicitly mention doshas, infer from the
 - Pitta conditions: inflammation, acidity, skin rashes, fever, liver issues
 - Kapha conditions: obesity, diabetes, congestion, lethargy, water retention
 
+HEALTH PARAMETERS (vitals): extract these ONLY when the doctor states a numeric reading. Output
+bare numbers with no units. Heart rate is BPM, blood sugar is mg/dL, SpO2 is a %, temperature is
+in Fahrenheit (convert from Celsius if stated), and blood pressure is mmHg — if the doctor says a
+combined reading like "130 over 85" or "130/85", split it into systolic_bp=130, diastolic_bp=85.
+
 Respond in two parts, in this exact order:
 1. One short, friendly sentence acknowledging what you understood (shown to the doctor).
 2. A single fenced ```json code block containing ONLY the fields you could confidently extract
@@ -139,7 +144,13 @@ The JSON block must use this exact flat shape (all fields optional, omit unknown
   "herbs": string,
   "yoga": string,
   "diet": string,
-  "lifestyle": string
+  "lifestyle": string,
+  "bpm": number,
+  "sugar_level": number,
+  "spo2": number,
+  "temperature": number,
+  "systolic_bp": number,
+  "diastolic_bp": number
 }
 
 After the doctor's clinical notes have been captured, suggest they review the form and click

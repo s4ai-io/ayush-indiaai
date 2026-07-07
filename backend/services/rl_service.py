@@ -315,6 +315,68 @@ class RLRecommendationService:
 
         return {"status": "success", "message": f"Processed {processed_count} automated outcomes for RL.", "processed": processed_count}
 
+    # Doctor's explicit follow-up judgment sets the reward's sign/band; the objective
+    # vitals-derived `signed` value (already rescaled to [-1, 1], see main.py's
+    # /api/visits/{visit_id}/outcome) only picks the position within that band. This
+    # keeps one noisy vitals reading from flipping the doctor's overall clinical call.
+    OUTCOME_BANDS = {
+        "improved":  (0.2, 1.0),
+        "no_change": (-0.2, 0.2),
+        "worsened":  (-1.0, -0.2),
+    }
+
+    @classmethod
+    def _compute_outcome_reward(cls, doctor_reported_outcome: str, signed: float) -> float:
+        lo, hi = cls.OUTCOME_BANDS.get(doctor_reported_outcome, (-0.2, 0.2))
+        signed = min(1.0, max(-1.0, signed))
+        return lo + (signed + 1) / 2 * (hi - lo)
+
+    def apply_followup_outcome(self, parent_medical_record_id: str, doctor_reported_outcome: str,
+                                signed: float) -> dict:
+        """
+        Apply a single follow-up outcome to the PARENT visit's prescribed plan — the only
+        path in production that is allowed to move a Q-value. Rewards every herb/yoga/diet/
+        lifestyle action in the parent's final_plan uniformly (this judges the plan as a
+        whole, not a diff against what the AI originally suggested).
+        """
+        with SessionLocal() as db:
+            fb = db.query(TreatmentFeedback).filter(
+                TreatmentFeedback.medical_record_id == parent_medical_record_id
+            ).first()
+            if not fb:
+                return {"status": "skipped", "reason": "no TreatmentFeedback for parent visit"}
+
+            ctx = json.loads(fb.ml_context or "{}")
+            namc_code = ctx.get("namc_code", "UNKNOWN")
+            prakriti  = ctx.get("prakriti", "")
+            vikriti   = ctx.get("vikriti", "")
+            state = self._get_state_key(namc_code, prakriti, vikriti)
+
+            final_plan = json.loads(fb.final_plan or fb.ai_plan or "{}")
+            reward = self._compute_outcome_reward(doctor_reported_outcome, signed)
+
+            if state not in self.q_table:
+                self.q_table[state] = {}
+
+            updated = {}
+            for key in self._plan_action_keys(final_plan, []):
+                old_q = self.q_table[state].get(key, 0.0)
+                new_q = old_q + self.learning_rate * (reward - old_q)
+                self.q_table[state][key] = new_q
+                updated[key] = round(new_q, 4)
+
+            self._save_model()
+
+            outcome = db.query(ClinicalOutcomeScore).filter(
+                ClinicalOutcomeScore.medical_record_id == parent_medical_record_id,
+                ClinicalOutcomeScore.is_retrained == False,
+            ).first()
+            if outcome:
+                outcome.is_retrained = True
+                db.commit()
+
+        return {"status": "success", "state_key": state, "reward": round(reward, 4), "updated_q_values": updated}
+
     def retrain_instant(self, feedback_id: str, db, demo_mode: bool = False) -> dict:
         """Single-row Q-update. Returns {herb_name: new_q_value} for frontend animation."""
         fb = db.query(TreatmentFeedback).filter(TreatmentFeedback.id == feedback_id).first()

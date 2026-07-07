@@ -120,6 +120,7 @@ class ClinicalOutcomeScore(Base):
     calculated_reward = Column(Float, default=0.0)
     is_retrained = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    doctor_reported_outcome = Column(String, nullable=True)  # "improved" | "no_change" | "worsened"
 
 def init_db():
     Base.metadata.create_all(bind=engine)

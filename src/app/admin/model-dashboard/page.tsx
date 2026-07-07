@@ -107,7 +107,7 @@ function StatePicker({
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
-type Tab = "demo" | "history" | "compare" | "cohort" | "outcomes" | "coverage"
+type Tab = "demo" | "history" | "compare" | "outcomes" | "coverage"
 
 export default function ModelDashboardPage() {
     const [activeTab, setActiveTab] = useState<Tab>("demo")
@@ -140,7 +140,7 @@ export default function ModelDashboardPage() {
 
                 {/* ── Tabs ── */}
                 <div className="flex gap-1 border-b border-slate-200">
-                    {(["demo", "history", "compare", "cohort", "outcomes", "coverage"] as Tab[]).map(tab => (
+                    {(["demo", "history", "compare", "outcomes", "coverage"] as Tab[]).map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -152,9 +152,8 @@ export default function ModelDashboardPage() {
                             {tab === "demo" ? "Live Demo" :
                                 tab === "history" ? "State History" :
                                     tab === "compare" ? "Compare States" :
-                                        tab === "cohort" ? "Cohort Analytics" :
-                                            tab === "coverage" ? "Learning Coverage" :
-                                                "Outcomes"}
+                                        tab === "coverage" ? "Learning Coverage" :
+                                            "Outcomes"}
                         </button>
                     ))}
                 </div>
@@ -169,7 +168,6 @@ export default function ModelDashboardPage() {
                 )}
                 {activeTab === "history" && <StateHistoryTab />}
                 {activeTab === "compare" && <CompareStatesTab />}
-                {activeTab === "cohort" && <CohortTab />}
                 {activeTab === "outcomes" && <OutcomesTab />}
                 {activeTab === "coverage" && (
                     <LearningCoverageTab
@@ -917,19 +915,6 @@ function CompareStatesTab() {
                     </div>
                 ))}
             </div>
-        </div>
-    )
-}
-
-// ── Cohort Analytics Tab ──────────────────────────────────────────────────────
-
-function CohortTab() {
-    return (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 text-center space-y-3">
-            <h2 className="text-xl font-bold text-slate-700">Cohort Analytics — Coming Soon</h2>
-            <p className="text-slate-500 max-w-md mx-auto leading-relaxed">
-                K-Means clustering results will appear here once the clustering analytics pipeline is connected.
-            </p>
         </div>
     )
 }

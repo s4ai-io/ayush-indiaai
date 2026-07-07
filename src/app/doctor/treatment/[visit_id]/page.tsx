@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
     Brain, Activity, Leaf, Coffee, Moon, Sun, CheckCircle, AlertTriangle,
     Shield, Heart, Stethoscope, FileText, ClipboardList, Sparkles, TrendingUp,
-    Clock, Target, Plus, Trash2, X, ThumbsUp, ThumbsDown, Save, Phone, History,
+    Clock, Target, Plus, Trash2, X, Save, Phone, History,
     HeartPulse, Droplet, Thermometer, Gauge,
 } from 'lucide-react';
 import { DiseaseSearchDropdown } from '@/components/ui/DiseaseSearchDropdown';
@@ -22,7 +22,7 @@ const VITAL_FIELDS: { key: keyof Vitals; label: string; unit: string; icon: type
     { key: 'bpm', label: 'Heart Rate', unit: 'BPM', icon: HeartPulse },
     { key: 'sugar_level', label: 'Blood Sugar', unit: 'mg/dL', icon: Droplet },
     { key: 'spo2', label: 'SpO2', unit: '%', icon: Activity },
-    { key: 'temperature', label: 'Temperature', unit: '°C', icon: Thermometer },
+    { key: 'temperature', label: 'Temperature', unit: '°F', icon: Thermometer },
     { key: 'systolic_bp', label: 'BP Systolic', unit: 'mmHg', icon: Gauge },
     { key: 'diastolic_bp', label: 'BP Diastolic', unit: 'mmHg', icon: Gauge },
 ];
@@ -66,9 +66,13 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
 
     // Doctor prescription / feedback
     const [doctorNotes, setDoctorNotes] = useState('');
-    const [rating, setRating] = useState<'positive' | 'negative' | null>(null);
     const [feedback, setFeedback] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Follow-up only: did the PREVIOUS plan work? Drives the RL reward for the
+    // parent visit's herbs/yoga/diet/lifestyle — the only thing that ever moves a
+    // Q-value in production now (see POST /api/visits/{visit_id}/outcome).
+    const [doctorReportedOutcome, setDoctorReportedOutcome] = useState<'improved' | 'no_change' | 'worsened' | null>(null);
 
     // AI Proposal Banner State
     const [proposedData, setProposedData] = useState<any>(null);
@@ -236,6 +240,16 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
         if (typeof args.vikriti === 'string' && args.vikriti.trim()) setVikriti(args.vikriti.trim());
         if (typeof args.prakriti === 'string' && args.prakriti.trim()) setPrakriti(args.prakriti.trim());
 
+        const extractedVitals: Vitals = {};
+        for (const { key } of VITAL_FIELDS) {
+            const value = args[key];
+            const num = typeof value === 'number' ? value : typeof value === 'string' ? parseFloat(value) : NaN;
+            if (!Number.isNaN(num)) extractedVitals[key] = num;
+        }
+        if (Object.keys(extractedVitals).length) {
+            setVitals((prev) => ({ ...prev, ...extractedVitals }));
+        }
+
         const extractedHerbs = splitExtractedItems(args.herbs);
         const extractedYoga = splitExtractedItems(args.yoga);
         const extractedDiet = splitExtractedItems(args.diet);
@@ -384,6 +398,10 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                 alert(`Please fill in all health parameters for this follow-up: ${missingVitals.map(f => f.label).join(', ')}.`);
                 return;
             }
+            if (!doctorReportedOutcome) {
+                alert('Please indicate whether the previous treatment plan showed improvement.');
+                return;
+            }
         }
         setIsSubmitting(true);
         try {
@@ -396,7 +414,6 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                     disease, symptoms, prakriti, vikriti, comorbidities: medicalHistory,
                     treatmentPlan,
                     doctorNotes,
-                    rating,
                     feedback,
                     // Step 9b: send original AI plan
                     original_ai_plan: originalAiPlan,
@@ -412,6 +429,22 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
             if (data.medical_record_id || data.record_id) {
                 setMedicalRecordId(data.medical_record_id || data.record_id);
             }
+
+            // Follow-up only: close out the PARENT visit's pending outcome now that
+            // this visit's vitals are saved — this is what actually moves the
+            // parent plan's Q-values, based on doctorReportedOutcome + the vitals delta.
+            if (isFollowup && doctorReportedOutcome) {
+                try {
+                    await fetch(`${API_BASE}/api/visits/${visitId}/outcome`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ doctor_reported_outcome: doctorReportedOutcome }),
+                    });
+                } catch {
+                    // Non-fatal — the prescription itself already saved successfully.
+                }
+            }
+
             alert("Treatment Plan Prescribed & Saved Successfully!");
             setTimeout(() => router.push('/doctor?tab=completed'), 500);
         } catch (err: any) {
@@ -617,6 +650,28 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                             })}
                                         </div>
                                     </div>
+
+                                    {/* Follow-up only: did the PREVIOUS plan actually help? This — plus the
+                                        vitals above — is what updates the previous plan's herb/yoga/diet/
+                                        lifestyle Q-scores. Nothing about today's plan affects that score. */}
+                                    {isFollowup && (
+                                        <div className="space-y-2 pt-2">
+                                            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                                                <TrendingUp className="w-3.5 h-3.5 text-primary" /> Did the Previous Treatment Plan Improve the Patient?
+                                                <span className="text-red-500">*</span>
+                                            </label>
+                                            <Select value={doctorReportedOutcome ?? undefined} onValueChange={(v) => setDoctorReportedOutcome(v as 'improved' | 'no_change' | 'worsened')}>
+                                                <SelectTrigger className={`w-full bg-slate-50 border rounded-lg ${!doctorReportedOutcome ? 'border-red-300' : 'border-slate-200'}`}>
+                                                    <SelectValue placeholder="Select an outcome..." />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="improved">Improved</SelectItem>
+                                                    <SelectItem value="no_change">No Change</SelectItem>
+                                                    <SelectItem value="worsened">Worsened</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
 
                                     {(doctorHerbs.length > 0 || doctorYoga.length > 0 || doctorDiet.length > 0 || doctorLifestyle.length > 0) && (
                                         <div className="rounded-xl border border-primary/15 bg-primary/5 p-4 space-y-3">
@@ -1059,19 +1114,6 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                                             AI Feedback
                                         </h3>
                                         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5 ring-1 ring-slate-100">
-                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                                <label className="text-sm font-bold text-slate-700">How accurate was this AI plan?</label>
-                                                <div className="flex gap-3">
-                                                    <Button variant={rating === 'positive' ? "default" : "outline"} size="sm" onClick={() => setRating('positive')}
-                                                        className={`rounded-xl transition-all ${rating === 'positive' ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "text-emerald-700 border-emerald-200 hover:bg-emerald-50"}`}>
-                                                        <ThumbsUp className="w-4 h-4 mr-1.5" /> Accurate
-                                                    </Button>
-                                                    <Button variant={rating === 'negative' ? "default" : "outline"} size="sm" onClick={() => setRating('negative')}
-                                                        className={`rounded-xl transition-all ${rating === 'negative' ? "bg-red-500 hover:bg-red-600 text-white" : "text-red-700 border-red-200 hover:bg-red-50"}`}>
-                                                        <ThumbsDown className="w-4 h-4 mr-1.5" /> Needs Changes
-                                                    </Button>
-                                                </div>
-                                            </div>
                                             <textarea
                                                 className="w-full text-sm p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 outline-none transition-all resize-none shadow-sm"
                                                 placeholder="Notes on AI accuracy — what was correct/incorrect?"

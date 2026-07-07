@@ -264,20 +264,25 @@ async def get_recommendation(patient: PatientProfile):
 @app.post("/api/ml/retrain", tags=["Continuous Learning"])
 async def trigger_retraining():
     """
-    Manually trigger the ML retraining pipeline:
+    Manually trigger the non-RL-reward parts of the retraining pipeline:
     1. Retrain Patient Clustering (K-Means) on all historical AHIMS data.
-    2. Retrain Reinforcement Learning (Bandits) on unprocessed clinician feedback.
+
+    Does NOT call retrain_from_feedback(): production Q-values are only ever moved
+    by a confirmed follow-up outcome via POST /api/visits/{visit_id}/outcome, never
+    by the doctor's initial rating at prescribe time.
+
+    Does NOT call retrain_from_outcomes(): that batch/backfill path would mark
+    ClinicalOutcomeScore rows as is_retrained=True before the follow-up outcome
+    endpoint has a chance to close them with real vitals + doctor judgment.
+    retrain_from_outcomes() is intentionally kept out of the auto-trigger to avoid
+    racing with the live apply_followup_outcome path.
     """
     try:
         cluster_res = clustering_service.retrain_clusters()
-        rl_feedback_res = rl_service.retrain_from_feedback()
-        rl_outcomes_res = rl_service.retrain_from_outcomes()
-        
+
         return {
             "status": "success",
             "clustering": cluster_res,
-            "reinforcement_learning_feedback": rl_feedback_res,
-            "reinforcement_learning_outcomes": rl_outcomes_res
         }
     except Exception as e:
         print(f"❌ Error triggering ML retraining: {e}")
@@ -1843,6 +1848,89 @@ async def save_outcome(req: OutcomeRequest, background_tasks: BackgroundTasks):
         "percentage_change": pct,
         "calculated_reward": calculated_reward,
     }
+
+
+class FollowupOutcomeRequest(PydanticBase):
+    doctor_reported_outcome: str  # "improved" | "no_change" | "worsened"
+
+
+def _resolve_vital_reading(record, target_vital: str):
+    """
+    Read the value on a MedicalRecord matching target_vital. No PEFR or BMI column
+    exists in the live vitals form, so those (and the generic Symptom Severity
+    bucket) fall back to the `severity` field the doctor fills on every visit.
+    """
+    if target_vital == "HbA1c (%)":
+        return record.sugar_level
+    if target_vital == "Systolic BP (mmHg)":
+        return record.systolic_bp
+    try:
+        return float(record.severity) if record.severity not in (None, "") else None
+    except (TypeError, ValueError):
+        return None
+
+
+@app.post("/api/visits/{visit_id}/outcome", tags=["Outcomes"])
+async def save_followup_outcome(visit_id: str, req: FollowupOutcomeRequest):
+    """
+    Close out the PARENT visit's pending outcome using this follow-up visit's just-saved
+    vitals plus the doctor's explicit judgment of whether the previous plan worked. This
+    (together with the isolated Live Demo tab) is the only path that moves a production
+    Q-value — reward always comes from a confirmed follow-up outcome, never from the
+    doctor's rating at prescribe time. Call this after POST /api/prescribe has saved this
+    follow-up visit's vitals.
+    """
+    from models import SessionLocal, MedicalRecord, ClinicalOutcomeScore
+
+    if req.doctor_reported_outcome not in ("improved", "no_change", "worsened"):
+        raise HTTPException(status_code=400, detail="doctor_reported_outcome must be improved, no_change, or worsened")
+
+    with SessionLocal() as db:
+        visit = db.query(MedicalRecord).filter(MedicalRecord.id == visit_id).first()
+        if not visit:
+            raise HTTPException(status_code=404, detail="Visit not found")
+        if not visit.parent_visit_id:
+            raise HTTPException(status_code=400, detail="This visit has no parent visit to close an outcome for")
+
+        parent = db.query(MedicalRecord).filter(MedicalRecord.id == visit.parent_visit_id).first()
+        if not parent:
+            raise HTTPException(status_code=404, detail="Parent visit not found")
+
+        outcome = db.query(ClinicalOutcomeScore).filter(
+            ClinicalOutcomeScore.medical_record_id == visit.parent_visit_id,
+            ClinicalOutcomeScore.is_retrained == False,
+        ).first()
+        if not outcome:
+            raise HTTPException(status_code=404, detail="No pending outcome for the parent visit")
+
+        target_vital = outcome.target_vital or "Symptom Severity (1-10)"
+        baseline = _resolve_vital_reading(parent, target_vital)
+        followup = _resolve_vital_reading(visit, target_vital)
+
+        if baseline is None or followup is None or baseline == 0:
+            pct = 0.0
+        else:
+            higher_is_better = _VITAL_DIRECTION.get(target_vital, False)
+            if higher_is_better:
+                pct = ((followup - baseline) / abs(baseline)) * 100
+            else:
+                pct = ((baseline - followup) / abs(baseline)) * 100
+
+        normaliser = _VITAL_NORMALISER.get(target_vital, 30.0)
+        signed = min(1.0, max(-1.0, pct / normaliser))
+
+        outcome.baseline_value = baseline
+        outcome.followup_value = followup
+        outcome.percentage_change = round(pct, 2)
+        outcome.doctor_reported_outcome = req.doctor_reported_outcome
+        # Pre-blend signed vitals signal, stored for audit; the actual Q-update reward
+        # (blended with the doctor's dropdown) is computed in apply_followup_outcome.
+        outcome.calculated_reward = round(signed, 4)
+        db.commit()
+        parent_visit_id = visit.parent_visit_id
+
+    result = rl_service.apply_followup_outcome(parent_visit_id, req.doctor_reported_outcome, signed)
+    return {"status": "success", "percentage_change": pct, "signed": signed, **result}
 
 
 # ── End of Revamp Endpoints ────────────────────────────────────────────────────
