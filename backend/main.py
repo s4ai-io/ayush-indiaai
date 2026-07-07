@@ -1405,12 +1405,15 @@ async def get_q_table_state(
         }
     elif namc_code:
         # Return all states and actions matching this namc_code prefix
+        # (skip legacy/malformed keys that don't encode a valid prakriti_vikriti pair)
         states_list = []
         for sk, actions in q_table.items():
             if sk.startswith(f"{namc_code}_"):
                 parts = sk.rsplit("_", 2)
-                p = parts[1] if len(parts) > 1 else ""
-                v = parts[2] if len(parts) > 2 else ""
+                if len(parts) != 3 or not _DOSHA_RE.match(parts[1]) or not _DOSHA_RE.match(parts[2]):
+                    continue
+                p = parts[1]
+                v = parts[2]
                 states_list.append({
                     "state_key": sk,
                     "prakriti": p,
