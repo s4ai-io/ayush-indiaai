@@ -9,12 +9,14 @@ Matching Strategy:
 import os
 import re
 import logging
+import unicodedata
 import pandas as pd
 import numpy as np
 import difflib
 import json
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from rapidfuzz import process as fuzz_process, fuzz
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +38,9 @@ class ISHAAyushService:
         self.vectorizer = TfidfVectorizer(analyzer='char', ngram_range=(2, 3), lowercase=True)
         self.tfidf_matrix = None
         self.all_diseases = []
+        # fuzzy index: cleaned_name → original_name (built once at startup)
+        self._fuzzy_cleaned: list[str] = []
+        self._fuzzy_originals: list[str] = []
 
     # ------------------------------------------------------------------
     # Initialization
@@ -77,6 +82,7 @@ class ISHAAyushService:
             if self.all_diseases:
                 self.tfidf_matrix = self.vectorizer.fit_transform(self.all_diseases)
 
+            self._build_fuzzy_index()
             self.initialized = True
             print(f"✓ ISHAAyush Service loaded: {len(self.df)} codified diseases")
             return True
@@ -106,6 +112,42 @@ class ISHAAyushService:
         diseases = self.df['Name English'].tolist() + self.df['Disease'].tolist()
         # Filter out empty strings and return unique sorted list
         return sorted(list(set([d.strip() for d in diseases if d and isinstance(d, str) and d.strip()])))
+
+    @staticmethod
+    def _clean_for_matching(name: str) -> str:
+        """Strip TM suffixes, arrows, diacritics, and punctuation for matching only."""
+        s = re.sub(r'\(TM\d*\)', '', name)
+        s = re.sub(r'[⇒→]', '', s)
+        s = unicodedata.normalize('NFKD', s)
+        s = s.encode('ascii', 'ignore').decode('ascii')
+        s = re.sub(r'[^a-z0-9 ]', ' ', s.lower())
+        return ' '.join(s.split())
+
+    def _build_fuzzy_index(self) -> None:
+        self._fuzzy_originals = list(self.all_diseases)
+        self._fuzzy_cleaned = [self._clean_for_matching(d) for d in self._fuzzy_originals]
+
+    def match_disease(self, query: str, threshold: int = 88) -> str | None:
+        """
+        Match a free-text disease name (LLM-extracted) against the approved list.
+        Returns the original disease name (with TM2 etc.) if score >= threshold, else None.
+        Uses WRatio which balances substring and full-string similarity — avoids
+        token_set_ratio's false positives where a short query (e.g. "diabetes") scores
+        100 against any disease containing that word (e.g. "Carbuncles due to diabetes").
+        """
+        if not self._fuzzy_cleaned or not query:
+            return None
+        cleaned_query = self._clean_for_matching(query)
+        result = fuzz_process.extractOne(
+            cleaned_query,
+            self._fuzzy_cleaned,
+            scorer=fuzz.WRatio,
+            score_cutoff=threshold,
+        )
+        if result is None:
+            return None
+        _, _, idx = result
+        return self._fuzzy_originals[idx]
 
     def get_suggestions(self, query: str, limit: int = 3) -> list:
         """

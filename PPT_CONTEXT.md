@@ -243,9 +243,13 @@ Mapping vs. the IDP image: Preprocessing (DeSkew/Watermark/OCR Router) → Audio
 
 User's final tweaks vs. the first draft (2026-07-06): layout `flowchart TB` (stacked zones) instead of LR; GPU zone labeled **"On-Prem GPU Infrastructure"** (matches the IDP image verbatim — consistent with the 2026-07-04 decision that on-prem refers to production deployment capability, demo runs on Modal); the results-flow terminus changed from "Evaluation Pipeline (Accuracy Benchmarking)" to **"Live Form Update With audio"** — i.e., the diagram ends at the live EHR-form auto-fill UX rather than the offline accuracy evaluator.
 ```mermaid
-flowchart TB
+---
+config:
+  layout: dagre
+---
+flowchart LR
  subgraph CLIENT["Client Side"]
-    direction LR
+    direction TB
         USER(("User"))
         FE["Frontend App<br>(Next.js)"]
   end
@@ -255,18 +259,23 @@ flowchart TB
         PRE["Audio Pre-processing<br>(Decode → Mono → Resample 16kHz →<br>Normalize → Chunk)"]
         DB[("Secure EHR Store<br>(PostgreSQL)")]
         JSON["Structured EHR Fields Extracts<br>(JSON)"]
-        EVAL["Live Form Update With audio"]
+        REC["Recommendation Engine<br>(Prakriti Rules + Reinforcement Learning)"]
+        MODEL[("Learned Model Store<br>(Q-Table)")]
   end
  subgraph GPU["On-Prem GPU Infrastructure"]
         GEMMA["Gemma-4-12B Multimodal<br>(Audio-native, A100)"]
   end
     USER -- Interacts --> FE
     FE <-- REST API --> API
-    API -- Orchestrates --> PRE
+    API -- Orchestrates --> PRE & REC
     API <-- Save EHR --> DB
     PRE -- Inference Request (Audio + Prompt) --> GEMMA
     GEMMA -- Results --> JSON
-    JSON --> EVAL
+    PRE <-- "Audio-Text Alignment" --> JSON
+    JSON -- Save Extracted EHR --> DB
+    JSON --> EVAL["EVAL"]
+    REC <-- Learned Recommendation --> MODEL
+    REC -- Save Feedback & Outcome --> DB
 
     classDef clientStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
     classDef serverStyle fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px

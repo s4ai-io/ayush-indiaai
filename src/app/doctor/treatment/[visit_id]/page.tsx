@@ -1141,7 +1141,7 @@ function TreatmentPageContent({ visitId }: { visitId: string }) {
                     </div>
                 </div>
             </div>
-            <GemmaVoiceChatPanel flow="treatment" onExtracted={applyExtractedClinicalAssessment} isOpen={isAssistantOpen} onOpenChange={setIsAssistantOpen} />
+            <GemmaVoiceChatPanel key={visitId} flow="treatment" onExtracted={applyExtractedClinicalAssessment} isOpen={isAssistantOpen} onOpenChange={setIsAssistantOpen} />
         </div>
     );
 }

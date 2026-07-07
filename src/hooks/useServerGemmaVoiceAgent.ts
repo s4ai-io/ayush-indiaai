@@ -19,6 +19,9 @@ const MODEL_ENDPOINTS: Record<VoiceModel, string> = {
   phi4: "/api/phi4-turn",
 };
 
+// Last N messages (user + assistant combined) sent as conversation_history.
+const MAX_HISTORY_MESSAGES = 12;
+
 /**
  * Records mic audio (same MediaRecorder/webm approach as VoiceInputButton —
  * the Modal service decodes whatever format the browser produces) or sends a
@@ -64,10 +67,16 @@ export function useServerGemmaVoiceAgent(flow: VoiceFlow, options?: UseServerGem
         if (input.audioBlob) formData.append("audio", input.audioBlob, "recording.webm");
         if (input.text?.trim()) formData.append("user_text_prompt", input.text.trim());
         formData.append("flow", flow);
-        // Text-only history — no raw audio replay across turns.
+        // Text-only history — no raw audio replay across turns. Capped to the
+        // last MAX_HISTORY_MESSAGES so a single bad/hallucinated turn can't
+        // keep poisoning every later turn for the rest of a long session.
         formData.append(
           "conversation_history",
-          JSON.stringify(messagesRef.current.map((m) => ({ role: m.role, content: m.content })))
+          JSON.stringify(
+            messagesRef.current
+              .slice(-MAX_HISTORY_MESSAGES)
+              .map((m) => ({ role: m.role, content: m.content }))
+          )
         );
 
         const res = await fetch(MODEL_ENDPOINTS[input.model], {

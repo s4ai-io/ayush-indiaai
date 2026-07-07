@@ -91,6 +91,7 @@ class RunLogger:
             "transcriptor": None,
             "translator": None,
             "vllm_phi4": None,
+            "gemma4_turn": None,
         }
         self._override_path: Optional[str] = None   # set by load_existing()
         _ensure_dir(RUNS_DIR)
@@ -132,14 +133,14 @@ class RunLogger:
 
     def update_step(
         self,
-        step: str,          # "transcriptor" | "translator" | "vllm_phi4"
+        step: str,          # "transcriptor" | "translator" | "vllm_phi4" | "gemma4_turn"
         *,
         input: Optional[Dict[str, Any]] = None,
         output: Optional[Any] = None,
         error: Optional[str] = None,
     ) -> None:
         """Attach input / output / error for a pipeline step."""
-        if step not in ("transcriptor", "translator", "vllm_phi4"):
+        if step not in ("transcriptor", "translator", "vllm_phi4", "gemma4_turn"):
             raise ValueError(f"Unknown step: {step!r}")
         self._record[step] = {"input": input, "output": output, "error": error}
 

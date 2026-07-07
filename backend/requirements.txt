@@ -24,3 +24,4 @@ sentence-transformers>=2.7.0
 # Auth (RBAC)
 pyjwt>=2.9.0
 bcrypt>=4.2.0
+rapidfuzz>=3.0.0

@@ -42,140 +42,6 @@ CHUNK_SEC = 28
 OVERLAP_SEC = 2.5
 SAMPLE_RATE = 16000
 
-# ── System prompts ──────────────────────────────────────────────────────────
-# Ported from the gemma-4-integration branch's src/services/voiceModel/prompts.ts
-# (on-device Gemma-4-E2B pipeline). Same output contract — one acknowledgement
-# sentence + a fenced ```json block — and the exact same field names
-# registration_agent.py / treatment_agent.py already use, so the frontend's
-# existing merge logic (applyProposedRegistrationData etc.) needs no changes
-# regardless of which pipeline produced the data.
-
-REGISTRATION_SYSTEM_PROMPT = """You are an AI Assistant helping a Medical Receptionist fill out a Patient Registration form for an Ayush EHR system.
-
-The user speaks in various Indic languages (Hindi, Marathi, Gujarati, etc.) or English, as audio. You must understand the audio directly.
-
-CRITICAL RULE: ALL data you extract MUST BE IN ENGLISH, regardless of the language spoken.
-- Translate occupations, addresses, cities, and concepts into English.
-- Transliterate Indian names into English characters.
-- NEVER output Hindi/Gujarati/other script text in the JSON block — translate everything first.
-
-Update the form with ANY available information immediately — do not wait for a complete section.
-
-Respond in two parts, in this exact order:
-1. One short, friendly sentence acknowledging what you understood (shown to the user).
-2. A single fenced ```json code block containing ONLY the fields you could confidently extract
-   from the user's latest message. Omit fields you don't have data for — do not guess.
-
-The JSON block must use this exact shape (all fields optional, omit unknown ones):
-{
-  "basicInfo": {
-    "firstName": string,
-    "lastName": string,
-    "gender": "Male" | "Female" | "Transgender",
-    "age": string,
-    "maritalStatus": "Married" | "Unmarried" | "Divorcee" | "Widow"
-  },
-  "contactInfo": {
-    "mobileNumber": string,
-    "address": string,
-    "state": "Andhra Pradesh" | "Assam" | "Bihar" | "Chhattisgarh" | "Delhi" | "Goa" | "Gujarat" | "Haryana" |
-      "Jammu and Kashmir" | "Jharkhand" | "Karnataka" | "Kerala" | "Madhya Pradesh" | "Maharashtra" | "Odisha" |
-      "Punjab" | "Rajasthan" | "Tamil Nadu" | "Telangana" | "Uttar Pradesh" | "Uttarakhand" | "West Bengal",
-    "city": string,  // a major city belonging to the extracted state, e.g. Mumbai/Pune/Nagpur/Nashik/Thane
-      // for Maharashtra, New Delhi/Dwarka/Rohini for Delhi, Bangalore/Mysore/Mangalore/Hubli for Karnataka,
-      // Ahmedabad/Surat/Vadodara/Rajkot for Gujarat, Lucknow/Kanpur/Varanasi/Agra/Noida/Ghaziabad for Uttar
-      // Pradesh, Chennai/Coimbatore/Madurai for Tamil Nadu, Kolkata/Howrah/Durgapur for West Bengal,
-      // Hyderabad/Warangal for Telangana, Jaipur/Jodhpur/Udaipur for Rajasthan, Kochi/Thiruvananthapuram for
-      // Kerala, Chandigarh/Amritsar/Ludhiana for Punjab, Bhopal/Indore/Gwalior for Madhya Pradesh, and the
-      // relevant state capital/major city for any other state
-    "pincode": string
-  },
-  "otherInfo": {
-    "occupation": string,
-    "bloodGroup": "A+" | "A-" | "B+" | "B-" | "O+" | "O-" | "AB+" | "AB-",
-    "idType": "Aadhar" | "PAN Card" | "Voter ID",
-    "idNumber": string
-  }
-}
-
-If the user said "Single", map maritalStatus to "Unmarried". If they said "Bengaluru", map city to "Bangalore".
-If the state isn't mentioned but the city is, infer the correct state from the city.
-If nothing extractable was said, omit the json block entirely and just acknowledge/ask a clarifying question."""
-
-TREATMENT_SYSTEM_PROMPT = """You are an AI Clinical Assistant helping a doctor fill out the Clinical Assessment form for an Ayush Treatment Plan.
-
-The doctor speaks in various Indic languages (Hindi, Marathi, Gujarati, etc.) or English, as audio. You must understand the audio directly.
-
-CRITICAL RULE: ALL data you extract MUST BE IN ENGLISH, regardless of the language spoken.
-- Translate symptoms, comorbidities, dietary habits, and concepts into English.
-- NEVER output Hindi/Gujarati/other script text in the JSON block — translate everything first.
-
-Update the form with ANY available information immediately — do not wait for all fields.
-
-You must choose the disease value from the approved disease list below whenever the doctor's
-message describes a disease that matches one of these names. If no approved disease is a close
-clinical/name match, return "disease": null instead of inventing or returning an off-list disease.
-
-Approved disease list:
-__APPROVED_DISEASE_LIST__
-
-DOSHA INFERENCE: if the doctor doesn't explicitly mention doshas, infer from the disease/symptoms:
-- Vata conditions: joint pain, anxiety, insomnia, dry skin, constipation
-- Pitta conditions: inflammation, acidity, skin rashes, fever, liver issues
-- Kapha conditions: obesity, diabetes, congestion, lethargy, water retention
-
-HEALTH PARAMETERS (vitals): extract these ONLY when the doctor states a numeric reading. Output
-bare numbers with no units. Heart rate is BPM, blood sugar is mg/dL, SpO2 is a %, temperature is
-in Celsius (convert from Fahrenheit if stated), and blood pressure is mmHg — if the doctor says a
-combined reading like "130 over 85" or "130/85", split it into systolic_bp=130, diastolic_bp=85.
-
-CRITICAL: a numeric vital reading belongs ONLY in its dedicated key (bpm, sugar_level, spo2,
-temperature, systolic_bp, diastolic_bp) — never restate it inside "symptoms" as well. The
-"symptoms" field is for non-numeric clinical descriptions only (e.g. "joint pain", "nausea",
-"fatigue"). If the doctor's message is only vital readings, output just the vitals keys and
-OMIT "symptoms" entirely rather than describing the readings there in prose.
-
-Example — doctor says "heart rate is 88, spo2 97, temperature 101 fahrenheit":
-```json
-{"bpm": 88, "spo2": 97, "temperature": 38.3}
-```
-(no "symptoms" key — the readings are numeric, so they belong only in the vitals keys)
-
-Example — doctor says "patient has joint pain and heart rate is 88":
-```json
-{"symptoms": "joint pain", "bpm": 88}
-```
-(the non-numeric complaint goes in "symptoms"; the numeric reading still goes in "bpm", not
-repeated inside "symptoms")
-
-Respond in two parts, in this exact order:
-1. One short, friendly sentence acknowledging what you understood (shown to the doctor).
-2. A single fenced ```json code block containing ONLY the fields you could confidently extract
-   from the doctor's latest message. Omit fields you don't have data for — do not guess.
-
-The JSON block must use this exact flat shape (all fields optional, omit unknown ones):
-{
-  "disease": string | null,
-  "symptoms": string,
-  "comorbidities": string,
-  "vikriti": "Vata" | "Pitta" | "Kapha",
-  "prakriti": "Vata" | "Pitta" | "Kapha" | "Vata-Pitta" | "Pitta-Kapha" | "Vata-Kapha",
-  "herbs": string,
-  "yoga": string,
-  "diet": string,
-  "lifestyle": string,
-  "bpm": number,
-  "sugar_level": number,
-  "spo2": number,
-  "temperature": number,
-  "systolic_bp": number,
-  "diastolic_bp": number
-}
-
-After the doctor's clinical notes have been captured, suggest they review the form and click
-"Generate Treatment Plan" manually — do not claim to have generated it yourself.
-If nothing extractable was said, omit the json block entirely and just acknowledge/ask a clarifying question."""
-
 # Used only for the internal "keep listening" turns between chunks of a long
 # recording — never shown to the end user, no JSON block requested.
 CHUNK_LISTEN_INSTRUCTION = (
@@ -183,25 +49,6 @@ CHUNK_LISTEN_INSTRUCTION = (
     "details (names, numbers, symptoms, etc.) in one short sentence. Do NOT "
     "summarize the whole conversation yet and do NOT output a json block."
 )
-
-NARRATION_SYSTEM_PROMPT = """You are an Ayurvedic clinical explainer integrated into an AYUSH Electronic Health Record system.
-Your sole role is to explain why a finalised treatment plan was chosen for a specific patient.
-You must NOT add, suggest, or remove any herbs, yoga practices, or treatments.
-Respond in exactly 2-3 concise sentences. Be clinically grounded and reference the patient's dosha profile."""
-
-FLOW_PROMPTS = {
-    "registration": REGISTRATION_SYSTEM_PROMPT,
-    "treatment": TREATMENT_SYSTEM_PROMPT,
-    "narration": NARRATION_SYSTEM_PROMPT,
-}
-
-
-def get_system_prompt(flow: Optional[str], disease_list: Optional[str] = None) -> str:
-    prompt = FLOW_PROMPTS.get(flow or "registration", REGISTRATION_SYSTEM_PROMPT)
-    if flow == "treatment":
-        disease_text = disease_list or "- No approved diseases available"
-        return prompt.replace("__APPROVED_DISEASE_LIST__", disease_text)
-    return prompt
 
 
 def preprocess_audio(audio_bytes: bytes, target_sr: int = SAMPLE_RATE):
@@ -326,7 +173,7 @@ async def health():
 
 @app.cls(
     image=gemma12b_image,
-    gpu="A100",
+    gpu="H100",
     scaledown_window=5 * MINUTES,
     timeout=10 * MINUTES,
     volumes={"/root/.cache/huggingface": hf_cache_vol},
@@ -371,9 +218,8 @@ class Gemma12BVoiceService:
 
     def process_turn(
         self,
+        system_prompt: str,
         audio_bytes: Optional[bytes] = None,
-        flow: Optional[str] = None,
-        disease_list: Optional[str] = None,
         conversation_history: Optional[List[Dict[str, str]]] = None,
         user_text_prompt: Optional[str] = None,
         max_new_tokens: int = 512,
@@ -383,8 +229,9 @@ class Gemma12BVoiceService:
         either audio (chunked and chained internally when it exceeds
         Gemma-4's ~30s per-clip cap) or, if no audio was supplied, a plain
         text turn — mirrors ChatEngine.generate()'s text-only path on that
-        same branch, so the chat panel can support typed messages too."""
-        system_prompt = get_system_prompt(flow, disease_list=disease_list)
+        same branch, so the chat panel can support typed messages too.
+        The system_prompt is built by the caller (backend/main.py) and passed
+        in verbatim — Modal does not construct or modify it."""
         history = conversation_history or []
 
         if not audio_bytes:
@@ -395,11 +242,12 @@ class Gemma12BVoiceService:
                 + history
                 + [{"role": "user", "content": user_text_prompt}]
             )
-            final_text, tokens = self._generate(messages, max_new_tokens=max_new_tokens, do_sample=True)
+            final_text, tokens = self._generate(messages, max_new_tokens=max_new_tokens, do_sample=False)
             reply, extracted = parse_structured_reply(final_text)
             return {
                 "reply": reply,
                 "extracted": extracted,
+                "raw_model_output": final_text,
                 "tokens_generated": tokens,
                 "chunks_processed": 0,
                 "audio_duration_seconds": 0.0,
@@ -431,12 +279,13 @@ class Gemma12BVoiceService:
                 if user_text_prompt:
                     user_content.append({"type": "text", "text": user_text_prompt})
                 messages = base_history + [{"role": "user", "content": user_content}]
-                final_text, tokens = self._generate(messages, max_new_tokens=max_new_tokens, do_sample=True)
+                final_text, tokens = self._generate(messages, max_new_tokens=max_new_tokens, do_sample=False)
                 total_generated_tokens += tokens
 
         reply, extracted = parse_structured_reply(final_text)
 
         return {
+            "raw_model_output": final_text,
             "reply": reply,
             "extracted": extracted,
             "tokens_generated": total_generated_tokens,
@@ -449,8 +298,7 @@ class Gemma12BVoiceService:
         @web_app.post("/api/upload-audio")
         async def upload_audio(
             file: Optional[UploadFile] = File(None),
-            flow: Optional[str] = Form("registration"),
-            disease_list: Optional[str] = Form(None),
+            system_prompt: str = Form(...),
             conversation_history: Optional[str] = Form(None),
             user_text_prompt: Optional[str] = Form(None),
             max_new_tokens: int = Form(512),
@@ -465,9 +313,8 @@ class Gemma12BVoiceService:
                     history = json.loads(conversation_history)
 
                 result = self.process_turn(
+                    system_prompt=system_prompt,
                     audio_bytes=audio_bytes,
-                    flow=flow,
-                    disease_list=disease_list,
                     conversation_history=history,
                     user_text_prompt=user_text_prompt,
                     max_new_tokens=max_new_tokens,
@@ -501,10 +348,13 @@ def test():
         f.seek(0)
         audio_bytes = f.read()
 
+    from utils.gemma4_prompts import get_system_prompt
+    system_prompt = get_system_prompt("registration")
+
     print("Triggering process_turn.remote() with 65s of audio (expect chunks_processed=3)...")
     res = service.process_turn.remote(
+        system_prompt=system_prompt,
         audio_bytes=audio_bytes,
-        flow="registration",
         max_new_tokens=256,
     )
     print("=" * 60)

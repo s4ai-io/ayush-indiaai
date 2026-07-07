@@ -27,7 +27,7 @@ from config import (
     DEFAULT_ALLOWED_ORIGINS,
 )
 from utils.run_logger import RunLogger, VOICE_DIR
-from utils import phi4_prompts
+from utils import phi4_prompts, gemma4_prompts
 
 from utils.validators import (
     PatientProfile,
@@ -1336,6 +1336,11 @@ async def gemma4_turn(
     an acknowledgement + structured JSON extraction in one hop, instead of
     the two-hop ASR + IndicTrans2 pipeline. This is a separate flow from
     Cloud (STT+Phi-4) — it does not touch the AG-UI/Phi-4 workflow at all.
+
+    Every call is logged via RunLogger (step "gemma4_turn") so a bad
+    extraction can be replayed later: the raw audio is saved to VOICE_DIR
+    and the exact history/prompt sent to Modal plus its raw pre-parse
+    output are recorded alongside the parsed result.
     """
     modal_gemma_url = os.getenv("MODAL_GEMMA_URL")
     if not modal_gemma_url:
@@ -1344,33 +1349,72 @@ async def gemma4_turn(
     if audio is None and not user_text_prompt:
         raise HTTPException(status_code=400, detail="Provide audio, user_text_prompt, or both")
 
+    disease_str = _approved_disease_prompt_list() if flow == "treatment" else None
+    system_prompt = gemma4_prompts.get_system_prompt(flow, disease_list=disease_str)
+
+    rl = RunLogger()
+    voice_path = None
+    audio_bytes = None
+    if audio is not None:
+        audio_bytes = await audio.read()
+        ts = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f")[:23].replace(":", "-")
+        ext = (audio.filename or "audio.webm").rsplit(".", 1)[-1]
+        voice_path = os.path.join(VOICE_DIR, f"{ts}_{rl.run_id}.{ext}")
+        with open(voice_path, "wb") as f:
+            f.write(audio_bytes)
+        rl.set_voice_file(voice_path)
+
+    gemma_input = {
+        "flow": flow,
+        "system_prompt": system_prompt,
+        "voice_file": voice_path,
+        "user_text_prompt": user_text_prompt,
+        "conversation_history": json.loads(conversation_history) if conversation_history else [],
+        "modal_gemma_url": modal_gemma_url,
+    }
+
     try:
         async with httpx.AsyncClient(timeout=GEMMA_REQUEST_TIMEOUT) as client:
-            form_data = {"flow": flow}
-            if flow == "treatment":
-                form_data["disease_list"] = _approved_disease_prompt_list()
+            form_data = {"system_prompt": system_prompt}
             if conversation_history:
                 form_data["conversation_history"] = conversation_history
             if user_text_prompt:
                 form_data["user_text_prompt"] = user_text_prompt
             files = {}
-            if audio is not None:
-                audio_bytes = await audio.read()
+            if audio_bytes is not None:
                 files["file"] = (audio.filename or "audio.wav", audio_bytes, audio.content_type or "audio/wav")
             resp = await client.post(modal_gemma_url, data=form_data, files=files or None)
 
         if resp.status_code != 200:
+            rl.update_step(
+                "gemma4_turn",
+                input=gemma_input,
+                output=None,
+                error=f"Modal Gemma-4 error {resp.status_code}: {resp.text[:500]}",
+            )
+            rl.finalize()
             raise HTTPException(status_code=resp.status_code, detail=f"Modal Gemma-4 error: {resp.text[:300]}")
 
         data = resp.json()
         data["extracted"] = _normalize_extracted_treatment_disease(flow, data.get("extracted"))
+        if flow == "treatment" and isinstance(data.get("extracted"), dict):
+            data["disease_match"] = {
+                "raw": data["extracted"].get("disease_raw"),
+                "matched": data["extracted"].get("disease"),
+            }
+        rl.update_step("gemma4_turn", input=gemma_input, output=data, error=None)
+        rl.finalize()
         return data
 
     except httpx.TimeoutException:
+        rl.update_step("gemma4_turn", input=gemma_input, output=None, error="Modal Gemma-4 request timed out")
+        rl.finalize()
         raise HTTPException(status_code=504, detail="Modal Gemma-4 request timed out")
     except HTTPException:
         raise
     except Exception as exc:
+        rl.update_step("gemma4_turn", input=gemma_input, output=None, error=str(exc))
+        rl.finalize()
         raise HTTPException(status_code=500, detail=f"Gemma-4 turn failed: {exc}")
 
 
@@ -1409,15 +1453,10 @@ def _normalize_extracted_treatment_disease(flow: str | None, extracted):
         extracted["disease"] = None
         return extracted
 
-    approved = ISHAAyush_service.get_disease_list()
-    exact_by_lower = {name.lower(): name for name in approved}
-    exact = exact_by_lower.get(raw_text.lower())
-    if exact:
-        extracted["disease"] = exact
-        return extracted
-
-    suggestions = ISHAAyush_service.get_suggestions(raw_text, limit=1)
-    extracted["disease"] = suggestions[0] if suggestions else None
+    matched = ISHAAyush_service.match_disease(raw_text, threshold=85)
+    print(f"[disease_match] raw='{raw_text}' → matched='{matched}'")
+    extracted["disease"] = matched
+    extracted["disease_raw"] = raw_text
     return extracted
 
 
