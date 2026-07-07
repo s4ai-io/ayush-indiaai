@@ -25,6 +25,7 @@ from __future__ import annotations
 import math
 from collections import defaultdict
 from datetime import datetime, timedelta
+from itertools import combinations
 
 from models import SessionLocal, MedicalRecord, Patient
 from services.gnn_service import _CITY_COORDS, _haversine
@@ -82,6 +83,51 @@ def _dbscan(
     return labels
 
 
+def _diameter(members: list[int], coords: list[tuple[float, float]]) -> float:
+    """Max pairwise distance between any two of the given point indices."""
+    if len(members) < 2:
+        return 0.0
+    return max(
+        _haversine(*coords[a], *coords[b])
+        for a, b in combinations(members, 2)
+    )
+
+
+def _split_chained_cluster(
+    indices: list[int],
+    coords: list[tuple[float, float]],
+    cap_km: float,
+) -> list[list[int]]:
+    """
+    DBSCAN groups points by density-*reachability*, which chains through
+    intermediates: A-B and B-C within eps each puts A, B and C in one
+    cluster even if A and C are nowhere near each other (e.g. Kolkata →
+    Ranchi → ... → Chandigarh ends up "one cluster" spanning 1400+ km,
+    even though eps=400km). That contradicts the product's stated
+    definition of a cluster ("cities within `cap_km` of each other").
+
+    Re-splits a DBSCAN cluster via complete-linkage agglomeration bounded
+    by `cap_km`, so every final group only ever merges when *all* existing
+    members stay within cap_km of the new point — no more chaining.
+    """
+    groups = [[i] for i in indices]
+
+    while True:
+        best = None  # (diameter, i, j)
+        for i in range(len(groups)):
+            for j in range(i + 1, len(groups)):
+                d = _diameter(groups[i] + groups[j], coords)
+                if d <= cap_km and (best is None or d < best[0]):
+                    best = (d, i, j)
+        if best is None:
+            break
+        _, i, j = best
+        groups[i] = groups[i] + groups[j]
+        del groups[j]
+
+    return groups
+
+
 # ─── Spatial Service ──────────────────────────────────────────────────────────
 
 class SpatialService:
@@ -91,7 +137,6 @@ class SpatialService:
 
     EPS_KM      = 400
     MIN_SAMPLES = 2
-    TOP_CITIES  = 6   # max cities per disease to show in a cluster result
 
     def get_disease_clusters(
         self,
@@ -152,15 +197,29 @@ class SpatialService:
 
             labels = _dbscan(coords, self.EPS_KM, self.MIN_SAMPLES)
 
-            # ── Group labels into clusters ────────────────────────────────────
-            cluster_map: dict[int, list[int]] = defaultdict(list)
+            # ── Group labels into clusters, splitting any that chained past
+            #    EPS_KM back down to genuinely-nearby groups ─────────────────
+            raw_map: dict[int, list[int]] = defaultdict(list)
+            for idx, lbl in enumerate(labels):
+                if lbl != -1:
+                    raw_map[lbl].append(idx)
+
+            cluster_map: dict[int, list[int]] = {}
             noise_idx = -1
+            next_id = 0
+            for indices in raw_map.values():
+                for group in _split_chained_cluster(indices, coords, self.EPS_KM):
+                    if len(group) >= self.MIN_SAMPLES:
+                        cluster_map[next_id] = group
+                        next_id += 1
+                    else:
+                        cluster_map[noise_idx] = group
+                        noise_idx -= 1
+
             for idx, lbl in enumerate(labels):
                 if lbl == -1:
-                    cluster_map[noise_idx].append(idx)
+                    cluster_map[noise_idx] = [idx]
                     noise_idx -= 1
-                else:
-                    cluster_map[lbl].append(idx)
 
             for label, indices in cluster_map.items():
                 is_noise = (label < 0)
@@ -178,8 +237,6 @@ class SpatialService:
                 cent_lat = sum(_CITY_COORDS[c][0] * w for c, w in zip(cluster_cities, cluster_weights)) / total_w
                 cent_lon = sum(_CITY_COORDS[c][1] * w for c, w in zip(cluster_cities, cluster_weights)) / total_w
 
-                from itertools import combinations
-                
                 # Spread = maximum pairwise distance between any two cities in the cluster
                 if len(cluster_cities) > 1:
                     spread_km = max(
@@ -193,7 +250,10 @@ class SpatialService:
                     "cluster_id":   int(label),
                     "disease":      disease,
                     "is_noise":     is_noise,
-                    "cities":       sorted(cluster_cities, key=lambda c: city_counts[c], reverse=True)[:self.TOP_CITIES],
+                    # Full list, not top-N: total_cases/spread_km are computed
+                    # over every member city, so truncating here would make
+                    # "View Cases" silently miss cities that are part of the total.
+                    "cities":       sorted(cluster_cities, key=lambda c: city_counts[c], reverse=True),
                     "city_cases":   {c: city_counts[c] for c in cluster_cities},
                     "total_cases":  total_cases,
                     "centroid_lat": round(cent_lat, 4),
