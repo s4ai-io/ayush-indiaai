@@ -49,6 +49,7 @@ const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
             { href: "/admin/staff", label: "Staff Management", icon: UserCog, isActive: (p) => p === "/admin/staff", roles: ["admin"] },
             { href: "/admin/accuracy", label: "Accuracy Evaluator", icon: ShieldAlert, isActive: (p) => p === "/admin/accuracy", roles: ["admin"] },
             { href: "/admin/model-dashboard", label: "Model Intelligence", icon: BrainCircuit, isActive: (p) => p === "/admin/model-dashboard", roles: ["admin"] },
+            { href: "/admin/analytics-models", label: "Analytics Models", icon: BarChart2, isActive: (p) => p === "/admin/analytics-models", roles: ["admin"] },
         ],
     },
 ];
