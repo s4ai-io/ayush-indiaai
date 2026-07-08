@@ -153,7 +153,7 @@ RBAC_RULES = [
     (None, "/api/dietary-plan", (DOCTOR, ADMIN)),
     (None, "/api/copilot/treatment", (DOCTOR, ADMIN)),
     (None, "/api/copilot/doctor", (DOCTOR, ADMIN)),
-    (None, "/api/gemma4-turn", (DOCTOR, ADMIN)),
+    (None, "/api/gemma4-turn", ALL_ROLES),
     (None, "/api/phi4-turn", (DOCTOR, ADMIN)),
     # Receptionist: intake
     ("POST", "/api/patients", (RECEPTIONIST, ADMIN)),
